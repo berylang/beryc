@@ -1,0 +1,25 @@
+#pragma once
+#include "node.h"
+#include <string>
+
+
+
+struct IntLitNode : public ASTNode {
+    long long value;
+    IntLitNode(long long v) : value(v) {
+        type = NodeType::INT_LIT;
+    }
+};
+
+
+
+struct IdentNode : public ASTNode {
+    std::string name;
+    std::string varType;
+
+    IdentNode(const std::string& name, const std::string& varType):
+        name(name), varType(varType) {
+            type = NodeType::IDENT;
+        }
+};
+

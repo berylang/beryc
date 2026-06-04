@@ -1,0 +1,13 @@
+#pragma once
+#include <string>
+
+enum class TokenType {
+    TOKEN_INT, TOKEN_IDENT, TOKEN_EQUAL, TOKEN_INT_LIT, TOKEN_SEMICOLON,
+    TOKEN_EOF, TOKEN_RUN, TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_CONST, TOKEN_COMMA
+};
+
+struct Token {
+    TokenType type;
+    std::string lexeme;
+    int line;
+};
