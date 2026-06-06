@@ -5,10 +5,12 @@
 
 static std::unordered_map<std::string, TokenType> keywords = {
     {"int", TokenType::TOKEN_INT},
+    {"float", TokenType::TOKEN_FLOAT},
     {"run", TokenType::TOKEN_RUN},
     {"bool", TokenType::TOKEN_BOOL},
     {"true", TokenType::TOKEN_TRUE},
     {"false", TokenType::TOKEN_FALSE}
+    
 };
 
 Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), errors(false) {}
@@ -58,6 +60,9 @@ void Lexer::scanNumber() {
 
     if (!isAtEnd() && peek() == '.' && isDigit(peekNext())){ 
         advance();
+        while (!isAtEnd() && isDigit(peek())) advance();
+
+        tokens.push_back({TokenType::TOKEN_DECIMAL_LIT, source.substr(start, current - start), line});
         
     } else {
         tokens.push_back({TokenType::TOKEN_INT_LIT, source.substr(start, current - start), line});
