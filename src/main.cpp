@@ -6,6 +6,8 @@
 #include "parser/parser.h"
 #include "sema/sema.h"
 #include "codegen/codegen.h"
+#include "common/version.h"
+#include "common/platform.h"
 
 
 int main(int argc, char* argv[]) {
@@ -13,6 +15,11 @@ int main(int argc, char* argv[]) {
        std::cerr << "bery: error: no input file\n";
        return 1;
    }
+
+   if (std::string(argv[1]) == "--version" || std::string(argv[1]) == "-v") {
+        std::cout << "Bery " << BERY_VERSION << "\n";
+        return 0;
+    }
 
 
    std::ifstream file(argv[1]);
@@ -45,7 +52,6 @@ int main(int argc, char* argv[]) {
 CodeGen codegen(ast.get());
 codegen.generate(irFile);
 
-
-std::cout << "Bery: Success !!\n";
+    std::cout << "Bery: " << BERY_VERSION << " compiled successfully\n";
 return 0;
 }
