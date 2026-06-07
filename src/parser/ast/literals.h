@@ -22,6 +22,14 @@ struct BoolLitNode: public ASTNode {
     bool value;
     BoolLitNode(bool v) : value(v) {type = NodeType::BOOL_LIT;}
 };
+
+struct DecimalLitNode : public ASTNode {
+    double value;
+    DecimalLitNode(double v) : value(v) {
+        type = NodeType::DECIMAL_LIT;
+    }
+};
+
 struct IdentNode : public ASTNode {
     std::string name;
     std::string varType;

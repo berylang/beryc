@@ -81,9 +81,10 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
         case TokenType::TOKEN_INT_LIT: 
             advance();
             return std::make_unique<IntLitNode>(std::stoll(t.lexeme));
-        case TokenType::TOKEN_DECIMAL_LIT:
+        case TokenType::TOKEN_DECIMAL_LIT: 
             advance();
-            return std::make_unique<DoubleLitNode>(std::stod(t.lexeme));
+            return std::make_unique<DecimalLitNode>(std::stod(t.lexeme));
+        
         case TokenType::TOKEN_TRUE:
             advance();
             return std::make_unique<BoolLitNode>(true);
@@ -114,7 +115,7 @@ Token Parser::consume(TokenType type, const std::string& msg) {
 bool Parser::isTypeToken(TokenType t) {
     return t == TokenType::TOKEN_INT ||
            t == TokenType::TOKEN_BOOL ||
-           t == TokenType::TOKEN_DOUBLE;
+           t == TokenType::TOKEN_FLOAT;
 }
 
 bool Parser::hasErrors() {return errors;}

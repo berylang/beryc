@@ -1,15 +1,17 @@
 #include "lexer.h"
 #include <unordered_map>
 #include <stdexcept>
+#include <iostream>
 
 
 static std::unordered_map<std::string, TokenType> keywords = {
     {"int", TokenType::TOKEN_INT},
+    {"float", TokenType::TOKEN_FLOAT},
     {"run", TokenType::TOKEN_RUN},
     {"bool", TokenType::TOKEN_BOOL},
     {"true", TokenType::TOKEN_TRUE},
-    {"false", TokenType::TOKEN_FALSE},
-    {"double",TokenType::TOKEN_DOUBLE}
+    {"false", TokenType::TOKEN_FALSE}
+    
 };
 
 Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), errors(false) {}
@@ -50,6 +52,22 @@ void Lexer::scanToken() {
             break;
         case ',':
             tokens.push_back({TokenType::TOKEN_COMMA, ",", line});
+            break;
+        case '-':
+            if(peek()=='-'){
+                if(peekNext()=='-'){ 
+                    advance();
+                    advance();
+                    skipComments(false);
+                    return;
+                }
+                else if(peekNext()=='!'){ 
+                    advance();
+                    advance();
+                    skipComments(true);
+                    return;
+                }
+            }
     }
 }
 //@todo - add TOKEN_DECIMAL_LIT;
@@ -60,8 +78,9 @@ void Lexer::scanNumber() {
     if (!isAtEnd() && peek() == '.' && isDigit(peekNext())){ 
         advance();
         while (!isAtEnd() && isDigit(peek())) advance();
-        tokens.push_back({TokenType::TOKEN_DECIMAL_LIT, source.substr(start, current - start), line});
 
+        tokens.push_back({TokenType::TOKEN_DECIMAL_LIT, source.substr(start, current - start), line});
+        
     } else {
         tokens.push_back({TokenType::TOKEN_INT_LIT, source.substr(start, current - start), line});
     }
@@ -85,6 +104,30 @@ void Lexer::skipWhitespaces() {
             advance();
         }
         else break;
+    }
+}
+
+void Lexer::skipComments(bool isMLC){
+    if(isMLC){
+        while(!isAtEnd()){
+            if(peek()=='!' && peekNext()=='-'){
+                advance();
+                advance();
+                if(peek()=='-'){
+                    advance();
+                    return;
+                }
+            }
+            if(peek()=='\n'){line++;}
+            advance();
+        }
+        errors=true;
+        std::cerr<<"Bery:Error:Unclosed Comments\n";
+        
+    }
+    else{
+        while(!isAtEnd() && peek()!='\n'){advance();}
+
     }
 }
 

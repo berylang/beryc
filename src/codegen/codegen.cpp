@@ -35,6 +35,9 @@ void CodeGen::generate(const std::string& outputPath) {
            if (decl->value->type == NodeType::INT_LIT) {
             initVal = std::to_string(static_cast<IntLitNode*>(decl->value.get())->value);
            } 
+           else if (decl->value->type == NodeType::DECIMAL_LIT ){
+               initVal = std::to_string(static_cast<DecimalLitNode*>(decl->value.get())->value);
+           }
            else if (decl->value->type == NodeType::BOOL_LIT) {
             initVal = static_cast<BoolLitNode*>(decl->value.get())->value? "1" :"0";
            }
@@ -61,6 +64,12 @@ std::string CodeGen::genLiteral(ASTNode* node, const std::string& varType, std::
        return reg;
    }
 
+   if (node->type == NodeType::DECIMAL_LIT) {
+       auto* lit = static_cast<DecimalLitNode*>(node);
+       out << "    " << reg << " = fadd " << llvmType(varType) << " 0.0, " << lit->value << "\n";
+       return reg;
+   }
+
    if (node->type == NodeType::BOOL_LIT) {
       auto* lit = static_cast<BoolLitNode*>(node);
       out << "    " << reg << " = add i1 0, " << (lit->value? 1:0) << "\n";
@@ -72,6 +81,8 @@ std::string CodeGen::genLiteral(ASTNode* node, const std::string& varType, std::
 std::string CodeGen::llvmType(const std::string& t) {
    if (t == "int") return "i32";
    if (t == "bool") return "i1";
+   if (t == "float") return "float";
+   if (t == "double") return "double";
    return "i32";
 }
 std::string CodeGen::newReg() {
