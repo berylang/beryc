@@ -80,6 +80,7 @@ std::string CodeGen::genLiteral(ASTNode* node, const std::string& varType, std::
 
 std::string CodeGen::llvmType(const std::string& t) {
    if (t == "int") return "i32";
+   if (t == "bigint") return "i64";
    if (t == "bool") return "i1";
    if (t == "float") return "float";
    if (t == "double") return "double";

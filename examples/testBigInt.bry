@@ -1,0 +1,3 @@
+run {
+    bigint checkBI = 1345;
+}

@@ -7,6 +7,7 @@
 static std::unordered_map<std::string, TokenType> keywords = {
     {"int", TokenType::TOKEN_INT},
     {"float", TokenType::TOKEN_FLOAT},
+    {"bigint", TokenType::TOKEN_BIGINT},
     {"double", TokenType::TOKEN_DOUBLE},
     {"run", TokenType::TOKEN_RUN},
     {"bool", TokenType::TOKEN_BOOL},
@@ -82,7 +83,8 @@ void Lexer::scanNumber() {
 
         tokens.push_back({TokenType::TOKEN_DECIMAL_LIT, source.substr(start, current - start), line});
         
-    } else {
+    }
+    else {
         tokens.push_back({TokenType::TOKEN_INT_LIT, source.substr(start, current - start), line});
     }
 }

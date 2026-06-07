@@ -11,7 +11,6 @@ struct IntLitNode : public ASTNode {
     }
 };
 
-
 struct BoolLitNode: public ASTNode {
     bool value;
     BoolLitNode(bool v) : value(v) {type = NodeType::BOOL_LIT;}
