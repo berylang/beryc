@@ -48,7 +48,7 @@ bool SemanticAnalyzer::typeMatchesLiteral(const std::string& type, NodeType litT
    if (type == "int"    && litType == NodeType::INT_LIT)     return true;
    if (type == "float"    && litType == NodeType::DECIMAL_LIT)     return true;
    if (type == "bool" && litType == NodeType::BOOL_LIT) return true;
-   if (type == "double" && litType == NodeType::TOKEN_DECIMAL_LIT)  return true;
+   if (type == "double" && litType == NodeType::DECIMAL_LIT)  return true;
    return false;
 }
 bool SemanticAnalyzer::hasErrors() { return errors; }
