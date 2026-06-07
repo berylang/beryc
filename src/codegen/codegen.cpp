@@ -64,6 +64,12 @@ std::string CodeGen::genLiteral(ASTNode* node, const std::string& varType, std::
        return reg;
    }
 
+   if (node->type == NodeType::BIGINT_LIT) {
+       auto* lit = static_cast<BigIntLitNode*>(node);
+       out << "    " << reg << " = add " << llvmType(varType) << " 0, " << lit->value << "\n";
+       return reg;
+   }
+
    if (node->type == NodeType::DECIMAL_LIT) {
        auto* lit = static_cast<DecimalLitNode*>(node);
        out << "    " << reg << " = fadd " << llvmType(varType) << " 0.0, " << lit->value << "\n";
@@ -80,6 +86,7 @@ std::string CodeGen::genLiteral(ASTNode* node, const std::string& varType, std::
 
 std::string CodeGen::llvmType(const std::string& t) {
    if (t == "int") return "i32";
+   if (t == "bigint") return "i64";
    if (t == "bool") return "i1";
    if (t == "float") return "float";
    if (t == "double") return "double";
