@@ -7,6 +7,7 @@
 static std::unordered_map<std::string, TokenType> keywords = {
     {"int", TokenType::TOKEN_INT},
     {"float", TokenType::TOKEN_FLOAT},
+    {"double", TokenType::TOKEN_DOUBLE},
     {"run", TokenType::TOKEN_RUN},
     {"bool", TokenType::TOKEN_BOOL},
     {"true", TokenType::TOKEN_TRUE},
