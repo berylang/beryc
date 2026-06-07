@@ -11,14 +11,6 @@ struct IntLitNode : public ASTNode {
     }
 };
 
-struct BigIntLitNode : public ASTNode {
-    std::string value;
-    BigIntLitNode(const std::string &v) : value(v) {
-        type = NodeType::BIGINT_LIT;
-    }
-};
-
-
 struct BoolLitNode: public ASTNode {
     bool value;
     BoolLitNode(bool v) : value(v) {type = NodeType::BOOL_LIT;}

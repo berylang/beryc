@@ -115,7 +115,7 @@ Token Parser::consume(TokenType type, const std::string& msg) {
 
 bool Parser::isTypeToken(TokenType t) {
     return t == TokenType::TOKEN_INT ||
-           t == TokenType::TOKEN_BIGINT ||
+            t == TokenType::TOKEN_BIGINT ||
            t == TokenType::TOKEN_BOOL ||
            t == TokenType::TOKEN_FLOAT;
 }
