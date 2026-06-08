@@ -27,6 +27,11 @@ class Parser {
     std::unique_ptr<ASTNode> parseLiteral();
     bool isArrayDecl();
     std::unique_ptr<ASTNode> parseArrayDecl();
+    
+    //Expressions
     std::unique_ptr<ASTNode> parseExpression();
+    std::unique_ptr<ASTNode> parsePrimary();
+    std::unique_ptr<ASTNode> parsePostfix();
+    std::unique_ptr<ASTNode> parseUnary();
 };
 

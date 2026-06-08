@@ -19,6 +19,5 @@ private:
    void genVarDecl(ASTNode* node, std::ostream& out);
    void genArrayDecl(ASTNode* node, std::ostream& out);
    
-   std::string genLiteral(ASTNode* node, const std::string& varType, std::ostream& out);
-
-}; 
+   std::string genExpression(ASTNode* node, const std::string& expectedType, std::ostream& out);
+};

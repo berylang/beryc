@@ -12,7 +12,9 @@ static std::unordered_map<std::string, TokenType> keywords = {
     {"run", TokenType::TOKEN_RUN},
     {"bool", TokenType::TOKEN_BOOL},
     {"true", TokenType::TOKEN_TRUE},
-    {"false", TokenType::TOKEN_FALSE}
+    {"false", TokenType::TOKEN_FALSE},
+    {"char", TokenType::TOKEN_CHAR}
+
     
 };
 
@@ -60,6 +62,8 @@ void Lexer::scanToken() {
             break;
         case ']':
             tokens.push_back({TokenType::TOKEN_RBRACKET, "]", line});
+        case '\'':
+            scanCharLit();
             break;
         case '-':
             if(peek()=='-'){
@@ -75,7 +79,58 @@ void Lexer::scanToken() {
                     skipComments(true);
                     return;
                 }
+                else{
+                    advance();
+                    tokens.push_back({TokenType::TOKEN_DEC, "--", line});
+                    return;
+                }
             }
+            else if(peek()=='='){
+                //@todo: Add TOKEN_MINUSEQ 
+                return;
+            }
+            else{
+                tokens.push_back({TokenType::TOKEN_MINUS, "-", line});
+                return;
+            }
+            break;
+        case '+':
+            if(peek()=='+'){
+                tokens.push_back({TokenType::TOKEN_INC, "++", line});
+                return;
+            }
+            else if(peek()=='='){
+                //@todo: Add TOKEN_PLUSEQ
+                return;
+            }
+            else{
+                //@todo: Add TOKEN_PLUS
+                return;
+            }
+            break;
+        case '~':
+            tokens.push_back({TokenType::TOKEN_TILDE, "~", line});
+            return;
+        case '!':
+            if(peek()=='='){
+                //@todo: Add TOKEN_NOTEQ
+                return;
+            }
+            else if(peek()=='>' && peekNext()=='<'){
+                //@todo: Add TOKEN_NOTBET
+                return;
+            }
+            else{
+                tokens.push_back({TokenType::TOKEN_BANG, "!", line});
+                return;
+            }
+            break;
+        case '(':
+            tokens.push_back({TokenType::TOKEN_LPARAN, "(", line});
+            return;
+        case ')':
+            tokens.push_back({TokenType::TOKEN_RPARAN, ")", line});
+            return;
     }
 }
 //@todo - add TOKEN_DECIMAL_LIT;
@@ -94,6 +149,76 @@ void Lexer::scanNumber() {
         tokens.push_back({TokenType::TOKEN_INT_LIT, source.substr(start, current - start), line});
     }
 }
+
+// @todo - Enhance it later for Errors
+void Lexer::scanCharLit() {
+    if (errors) return; 
+
+    if (peek() == '\'') { 
+        errors = true;
+        std::cerr << "Bery:Error:Empty Char Literal\n";
+        advance(); 
+        return;
+    }
+
+    char value = 0;
+
+    if (peek() == '\\') { 
+        advance(); 
+        if (isAtEnd() || peek() == '\'') { 
+            errors = true;
+            std::cerr << "Bery:Error:Incomplete Escape Sequence\n";
+            return;
+        }
+
+        char es = advance();
+        switch (es) {
+            case 'n':  value = '\n'; break;
+            case 't':  value = '\t'; break;
+            case 'r':  value = '\r'; break;
+            case '\\': value = '\\'; break;
+            case '0':  value = '\0'; break;
+            case '"':  value = '\"'; break;
+            case '\'': value = '\''; break;
+            default:
+                errors = true;
+                std::cerr << "Bery:Error:Invalid Escape Sequence\n";
+                return;
+        }
+    } 
+    
+    else {
+        if (peek() == '\n' || peek() == '\r') {
+            errors = true;
+            std::cerr << "Bery:Error:Newline in char literal\n";
+            return;
+        }
+        value = advance();
+    }
+
+    if (!isAtEnd() && peek() == '\'') {        
+        advance(); 
+        tokens.push_back({TokenType::TOKEN_CHAR_LIT, std::string(1,value), line});
+        return;
+    }
+
+    bool foundClosingQuote = false;
+    while (!isAtEnd() && peek() != '\'' && peek() != '\n' && peek() != '\r') {
+        advance();
+    }
+    if (!isAtEnd() && peek() == '\'') {
+        advance(); 
+        foundClosingQuote = true;
+    }
+    errors = true;
+
+    if (foundClosingQuote) {
+        std::cerr << "Bery:Error:Multi-character Char Literal\n";
+    } else {
+        std::cerr << "Bery:Error:Unclosed Char Literal\n";
+    }
+}
+
 void Lexer::scanIdentifierOrKeyword() {
     int start = current - 1;
     while (!isAtEnd() && isAlphaNumeric(peek())) advance();

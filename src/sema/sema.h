@@ -21,5 +21,6 @@ private:
    void analyzeVarDecl(ASTNode* node);
    void analyzeArrayDecl(ASTNode* node);
    bool typeMatchesLiteral(const std::string& type, NodeType litType);
+   std::string analyzeExpression(ASTNode* node);
 };
   
