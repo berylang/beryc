@@ -39,7 +39,11 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
    if (decl->value) {
        std::string exprtype = analyzeExpression(decl->value.get());
        if(exprtype!="unknown" && exprtype!=decl->varType){
-        if(!(decl->varType == "float" && exprtype == "int")&& !(decl->varType == "double" && exprtype == "int") && !(decl->varType == "bigint" && exprtype == "int")){
+        if(!(decl->varType == "float" && exprtype == "int")&&
+         !(decl->varType == "double" && exprtype == "int") &&
+         !(decl->varType == "bigint" && exprtype == "int")&&
+         !(decl->varType == "double" && exprtype == "float")&&
+         !(decl->varType == "float" && exprtype == "double")){
             std::cerr<<"Bery:Error: Type mismatch for "<<decl->name<<" . Expected '"<<decl->varType<<"', got '"<<exprtype<<"' \n";
             errors = true;
             return;
@@ -63,7 +67,7 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
     if(!node) return "unknown";
     switch(node->type){
         case NodeType::INT_LIT: return "int";
-        case NodeType::DECIMAL_LIT: return "float";
+        case NodeType::DECIMAL_LIT: return "double";
         case NodeType::BOOL_LIT: return "bool";
         case NodeType::CHAR_LIT: return "char";
         case NodeType::IDENT:{
