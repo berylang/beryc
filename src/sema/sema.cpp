@@ -144,6 +144,32 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
             std::string rType = analyzeExpression(binary->right.get());
 
             if(lType != rType){
+                if ((lType == "bigint" && rType == "int") ||
+                    (lType == "int" && rType == "bigint")) {
+                    return "int";
+                }
+                if ((lType == "float" && rType == "int") ||
+                    (lType == "int" && rType == "float")) {
+                    return "float";
+                }
+                if ((lType == "bigint" && rType == "float") ||
+                    (lType == "float" && rType == "bigint")) {
+                    return "float";
+                }
+                
+                if ((lType == "bigint" && rType == "double") ||
+                    (lType == "double" && rType == "bigint")) {
+                    return "double";
+                }
+                 if ((lType == "int" && rType == "double") ||
+                    (lType == "double" && rType == "int")) {
+                    return "double";
+                }
+                if ((lType == "float" && rType == "double") ||
+                    (lType == "double" && rType == "float")) {
+                    return "double";
+                }
+
                 std::cerr<<"Bery:Error: Type mismatch in binary expression\n";
                 errors=true;
                 return "unknown";

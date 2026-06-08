@@ -69,7 +69,7 @@ void Lexer::scanToken() {
         case '*':
             if(peek() == '*'){
                 advance();
-                tokens.push_back({TokenType::TOKEN_POWER, "*", line});
+                tokens.push_back({TokenType::TOKEN_POWER, "**", line});
                 return;
             }
             else{
@@ -77,10 +77,10 @@ void Lexer::scanToken() {
             }
             break;
         case '/':
-            tokens.push_back({TokenType::TOKEN_FSLASH, "*", line});
+            tokens.push_back({TokenType::TOKEN_FSLASH, "/", line});
             break;
         case '%':
-            tokens.push_back({TokenType::TOKEN_PERCENT, "*", line});
+            tokens.push_back({TokenType::TOKEN_PERCENT, "%", line});
             break;
         
         case '-':
