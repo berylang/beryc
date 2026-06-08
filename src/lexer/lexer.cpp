@@ -95,9 +95,8 @@ void Lexer::scanNumber() {
 }
 
 void Lexer::scanCharLit() {
-    if (errors) return; //avoids duplicate error statements
+    if (errors) return; 
 
-    // to handle empty character literal: ''
     if (peek() == '\'') { 
         errors = true;
         std::cerr << "Bery:Error:Empty Char Literal\n";
@@ -107,11 +106,10 @@ void Lexer::scanCharLit() {
 
     char value = 0;
 
-    // to handle escape sequences
     if (peek() == '\\') { 
         advance(); 
 
-        if (isAtEnd() || peek() == '\'') { // check for '\'
+        if (isAtEnd() || peek() == '\'') { 
             errors = true;
             std::cerr << "Bery:Error:Incomplete Escape Sequence\n";
             return;
@@ -131,7 +129,7 @@ void Lexer::scanCharLit() {
                 return;
         }
     } 
-    // to handle regular(letter,digit,syambol,space) characters
+    
     else {
         if (peek() == '\n' || peek() == '\r') {
             errors = true;
@@ -141,26 +139,29 @@ void Lexer::scanCharLit() {
         value = advance();
     }
 
-    // single char followed immediately by a closing '
+    
     if (!isAtEnd() && peek() == '\'') {
+        
         advance(); 
-        tokens.push_back({TokenType::TOKEN_CHAR_LIT, std::string(1, value), line});
+
+        tokens.push_back({TokenType::TOKEN_CHAR_LIT, std::string(1,value), line});
         return;
     }
 
-    // to correctly differentiate multi-character error and unclosed char error
     bool foundClosingQuote = false;
+
     while (!isAtEnd() && peek() != '\'' && peek() != '\n' && peek() != '\r') {
         advance();
     }
 
-    //reached end and a closing ' present - more than one char present
+
     if (!isAtEnd() && peek() == '\'') {
         advance(); 
         foundClosingQuote = true;
     }
 
     errors = true;
+
     if (foundClosingQuote) {
         std::cerr << "Bery:Error:Multi-character Char Literal\n";
     } else {
