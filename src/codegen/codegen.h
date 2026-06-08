@@ -17,6 +17,8 @@ private:
    std::string newReg();
    std::string llvmType(const std::string& berryType);
    void genVarDecl(ASTNode* node, std::ostream& out);
+   void genArrayDecl(ASTNode* node, std::ostream& out);
    
    std::string genLiteral(ASTNode* node, const std::string& varType, std::ostream& out);
-};
+
+}; 
