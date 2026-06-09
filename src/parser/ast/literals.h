@@ -46,3 +46,9 @@ struct StringLitNode : public ASTNode {
         type = NodeType::STRING_LIT;
     } 
 };
+
+struct NullLitNode : public ASTNode {
+    NullLitNode() {
+        type = NodeType :: NULL_LIT;
+    }
+};
