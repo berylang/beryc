@@ -96,6 +96,7 @@ bool SemanticAnalyzer::typeMatchesLiteral(const std::string& type, NodeType litT
    if (type == "bool" && litType == NodeType::BOOL_LIT) return true;
    if (type == "double" && litType == NodeType::DECIMAL_LIT)  return true;
    if (type == "char"    && litType == NodeType::CHAR_LIT)     return true;
+   if (type == "string" && litType == NodeType::STRING_LIT) return true;
    return false;
 }
 
@@ -107,6 +108,7 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
         case NodeType::DECIMAL_LIT: return "double";
         case NodeType::BOOL_LIT: return "bool";
         case NodeType::CHAR_LIT: return "char";
+        case NodeType::STRING_LIT: return "string";
         case NodeType::IDENT:{
             auto* ident = static_cast<IdentNode*>(node);
             if(!symbolTable.exists(ident->name)){

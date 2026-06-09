@@ -107,6 +107,9 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
         case TokenType::TOKEN_CHAR_LIT:
             advance();
             return std::make_unique<CharLitNode>(t.lexeme[0]);
+        case TokenType::TOKEN_STRING_LIT:
+            advance();
+            return std::make_unique<StringLitNode>(t.lexeme);
         default:
             errors = true;
             throw std::runtime_error("Expected literal at line " + std::to_string(t.line));
@@ -138,6 +141,9 @@ std::unique_ptr<ASTNode> Parser::parsePrimary(){
         case TokenType::TOKEN_CHAR_LIT:
             advance();
             return std::make_unique<CharLitNode>(t.lexeme[0]);
+        case TokenType::TOKEN_STRING_LIT:
+            advance();
+            return std::make_unique<StringLitNode>(t.lexeme);
         case TokenType::TOKEN_IDENT:{
             advance();
             return std::make_unique<IdentNode>(t.lexeme,"");
@@ -245,7 +251,8 @@ bool Parser::isTypeToken(TokenType t) {
            t == TokenType::TOKEN_BOOL ||
            t == TokenType::TOKEN_FLOAT ||
            t == TokenType::TOKEN_DOUBLE ||
-           t == TokenType::TOKEN_CHAR;
+           t == TokenType::TOKEN_CHAR ||
+           t == TokenType::TOKEN_STRING; 
 }
 
 bool Parser::isArrayDecl() {

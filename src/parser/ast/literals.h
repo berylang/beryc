@@ -40,3 +40,9 @@ struct CharLitNode : public ASTNode {
     }
 };
 
+struct StringLitNode : public ASTNode {
+    std::string value;
+    StringLitNode(std::string& s) : value(s) {
+        type = NodeType::STRING_LIT;
+    } 
+};

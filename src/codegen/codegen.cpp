@@ -11,7 +11,8 @@
 #include "../parser/ast/expressions.h"
 
 CodeGen::CodeGen(ASTNode* root)
-   : root(root), regCounter(0) {}
+   : root(root), regCounter(0), strCounter(0) {}
+
 
 void CodeGen::generate(const std::string& outputPath) {
    auto* program = static_cast<ProgramNode*>(root);
@@ -87,7 +88,9 @@ void CodeGen::generate(const std::string& outputPath) {
            out << "@" << decl->name << " = global " << arrType << " " << initVal << "\n";
        }
    }
-   out << "\n" << body.str();
+
+   out << globalStrings.str() << "\n";
+   out << body.str();
 }
 
 void CodeGen::genVarDecl(ASTNode* node, std::ostream& out) {
@@ -148,6 +151,21 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
        auto* lit = static_cast<CharLitNode*>(node);
        out << "    " << reg << " = add " << lt << " 0, " << (int)lit->value << "\n"; //for ascii
        return reg;
+   }
+
+   if (node->type == NodeType::STRING_LIT) {
+        auto* lit = static_cast<StringLitNode*>(node);
+        std::string strVal = lit->value;
+        std::string escapedStr = escapeLLVMString(strVal);
+
+        int strlen = strVal.length() + 1;
+        std::string globalName = "@.str." + std::to_string(strCounter++);
+
+        globalStrings << globalName << " = private unnamed_addr constant [" << strlen << " x i8] c\"" <<escapedStr << "\"\n";
+        std::string reg = newReg();
+        out << "    " << reg << " = getelementptr [" << strlen << " x i8], [" << strlen << " x i8]* " << globalName << ", i32 0, i32 0\n";
+
+        return reg;
    }
    if(node->type == NodeType::IDENT){
     std::string reg = newReg();
@@ -210,7 +228,28 @@ std::string CodeGen::llvmType(const std::string& t) {
    if (t == "float") return "float";
    if (t == "double") return "double";
    if (t == "char") return "i8";
+   if (t == "string") return "i8*";
    return "i32";
+}
+
+std::string CodeGen::escapeLLVMString(const std::string& str) {
+    std::ostringstream escaped;
+
+    for (char c : str) {
+        if (c == '\n') escaped << "\\0A";
+        else if (c == '\t') escaped << "\\09";
+        else if (c == '\r') escaped << "\\0D";
+        else if (c == '\\') escaped << "\\5C";
+        else if (c == '"') escaped << "\\22";
+        else if (c < 32 || c > 126) {
+            escaped << "\\" << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << (int)(unsigned char) c;
+        } else {
+            escaped << c;
+        }
+    }
+    
+    escaped << "\\00";
+    return escaped.str();
 }
 std::string CodeGen::newReg() {
    return "%" + std::to_string(++regCounter);

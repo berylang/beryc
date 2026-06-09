@@ -13,9 +13,8 @@ static std::unordered_map<std::string, TokenType> keywords = {
     {"bool", TokenType::TOKEN_BOOL},
     {"true", TokenType::TOKEN_TRUE},
     {"false", TokenType::TOKEN_FALSE},
-    {"char", TokenType::TOKEN_CHAR}
-
-    
+    {"char", TokenType::TOKEN_CHAR},
+    {"string", TokenType::TOKEN_STRING}
 };
 
 Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), errors(false) {}
@@ -65,6 +64,9 @@ void Lexer::scanToken() {
             break;
         case '\'':
             scanCharLit();
+            break;
+        case '"':
+            scanStringLit();
             break;
         case '*':
             if(peek() == '*'){
@@ -237,6 +239,42 @@ void Lexer::scanCharLit() {
     }
 }
 
+void Lexer::scanStringLit() {
+    std::string value = "";
+    while (!isAtEnd() && peek() != '"') {
+        if (peek() == '\n') line++;
+        if (peek() == '\\') {
+            advance();
+            if (isAtEnd()) break;
+            
+            char es = advance();
+            switch (es) {
+                case 'n':  value += '\n'; break;
+                case 't':  value += '\t'; break;
+                case 'r':  value += '\r'; break;
+                case '\\': value += '\\'; break;
+                case '0':  value += '\0'; break;
+                case '"':  value += '\"'; break;
+                case '\'': value += '\''; break;
+                default:
+                    errors = true;
+                    std::cerr << "Bery:Error: Invalid escape sequence in string at line " << line << "\n";
+                    value += es; 
+                    break;
+            }
+        } else {
+            value += advance();
+        }
+    }
+    if (isAtEnd()) {
+        errors = true;
+        std::cerr << "Bery:Error: Unclosed string literal at line " << line << "\n";
+        return;
+    }
+
+    advance(); 
+    tokens.push_back({TokenType::TOKEN_STRING_LIT, value, line});
+}
 void Lexer::scanIdentifierOrKeyword() {
     int start = current - 1;
     while (!isAtEnd() && isAlphaNumeric(peek())) advance();

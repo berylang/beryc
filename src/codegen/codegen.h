@@ -13,9 +13,13 @@ public:
 private:
    ASTNode* root;
    int regCounter;
+   int strCounter = 0;
+   std::ostringstream globalStrings;
 
    std::string newReg();
    std::string llvmType(const std::string& berryType);
+   std::string escapeLLVMString(const std::string& str);
+
    void genVarDecl(ASTNode* node, std::ostream& out);
    void genArrayDecl(ASTNode* node, std::ostream& out);
    
