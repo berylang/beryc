@@ -28,6 +28,7 @@ class Lexer {
     void scanIdentifierOrKeyword();
     void scanNumber(); // eitehr flaot or int
     void scanCharLit(); //for char
+    void scanStringLit(); // for strings
     bool isDigit(char c);
     bool isAlpha(char c);
     bool isAlphaNumeric(char c);

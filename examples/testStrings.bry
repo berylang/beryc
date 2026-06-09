@@ -1,0 +1,5 @@
+run {
+    string name = "Luffy";
+    string a = "Hello\nMy name is Vitthal\t Humbe";
+    string arr[2] = {"Bery", "C++"};
+}
