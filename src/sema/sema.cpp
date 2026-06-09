@@ -41,7 +41,19 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
    }
    if (decl->value) {
        std::string exprtype = analyzeExpression(decl->value.get());
-       if(exprtype!="unknown" && exprtype!=decl->varType){
+       if(exprtype == "null"){
+        if(decl->varType == "int" || 
+            decl->varType == "float"  || 
+            decl->varType == "double" || 
+            decl->varType == "char" || 
+            decl->varType == "bigint" || 
+            decl->varType == "bool" ){
+            std::cerr << "Bery:Error: null can only be assigned to reference types\n";
+            errors = true;
+            return;
+        }
+       }
+       else if(exprtype!="unknown" && exprtype!=decl->varType){
         if(!(decl->varType == "float" && exprtype == "int")&&
          !(decl->varType == "double" && exprtype == "int") &&
          !(decl->varType == "bigint" && exprtype == "int")&&
@@ -78,6 +90,14 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
        errors = true;
        return;
    }
+
+   if (decl->initializers.size() == 1 &&
+        decl->initializers[0]->type == NodeType::NULL_LIT) {
+
+        symbolTable.add(decl->name, {decl->elementType + "[]" , false, true,0});
+        return;
+    }
+
 for (auto& initVal : decl->initializers) {
        if (!typeMatchesLiteral(decl->elementType, initVal->type)) {
            std::cerr << "bery: error: type mismatch in array initialization for '" << decl->name << "'.\n";
@@ -109,6 +129,7 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
         case NodeType::BOOL_LIT: return "bool";
         case NodeType::CHAR_LIT: return "char";
         case NodeType::STRING_LIT: return "string";
+        case NodeType::NULL_LIT: return "null";
         case NodeType::IDENT:{
             auto* ident = static_cast<IdentNode*>(node);
             if(!symbolTable.exists(ident->name)){

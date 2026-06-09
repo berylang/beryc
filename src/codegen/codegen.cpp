@@ -167,6 +167,10 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
 
         return reg;
    }
+
+   if(node->type == NodeType::NULL_LIT){
+    return "null";
+   }
    if(node->type == NodeType::IDENT){
     std::string reg = newReg();
     auto* ident = static_cast<IdentNode*>(node);

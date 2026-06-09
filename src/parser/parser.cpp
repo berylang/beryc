@@ -154,6 +154,9 @@ std::unique_ptr<ASTNode> Parser::parsePrimary(){
             consume(TokenType::TOKEN_RPARAN, "Expected ')' after expression");
             return std::make_unique<GroupedExprNode>(std::move(expression));
         }
+        case TokenType::TOKEN_NULL:
+            advance();
+            return std::make_unique<NullLitNode>();
         default:
             errors = true;
             throw std::runtime_error("Expected valid expression at line " + std::to_string(t.line));
@@ -286,15 +289,20 @@ std::unique_ptr<ASTNode> Parser::parseArrayDecl() {
     std::vector<std::unique_ptr<ASTNode>> initializers;
     if (check(TokenType::TOKEN_EQUAL)) {
         advance(); 
-        consume(TokenType::TOKEN_LBRACE, "Expected '{'");
+        if(check(TokenType::TOKEN_NULL)){
+            initializers.push_back(parseExpression());
+        }else {
+            consume(TokenType::TOKEN_LBRACE, "Expected '{'");
         
-        if (!check(TokenType::TOKEN_RBRACE)) {
-            do {
-                initializers.push_back(parseExpression());
-            } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
+            if (!check(TokenType::TOKEN_RBRACE)) {
+                do {
+                    initializers.push_back(parseExpression());
+                } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
+            }
+            
+            consume(TokenType::TOKEN_RBRACE, "Expected '}'");
         }
         
-        consume(TokenType::TOKEN_RBRACE, "Expected '}'");
     }
 
     consume(TokenType::TOKEN_SEMICOLON, "Expected ';'");
