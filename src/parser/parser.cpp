@@ -86,6 +86,7 @@ std::vector<std::unique_ptr<ASTNode>> Parser::parseVarDecl(bool isConst) {
     consume(TokenType::TOKEN_SEMICOLON, "Expected ';'");
     return decls;
 }
+
 std::unique_ptr<ASTNode> Parser::parseLiteral() {
     Token t = peek();
 
@@ -121,9 +122,8 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
 
 std::unique_ptr<ASTNode> Parser::parseExpression(){
     //@change: When you implement top level expression change the call here
-    return parseRelational();
+    return parseShift();
 }
-
 
 std::unique_ptr<ASTNode> Parser::parsePrimary(){
     Token t = peek();
@@ -236,17 +236,18 @@ std::unique_ptr<ASTNode> Parser::parseAdditive(){
     return left;
 }
 
-std::unique_ptr<ASTNode> Parser::parseRelational(){
+std::unique_ptr<ASTNode> Parser::parseShift(){
     auto left = parseAdditive();
-    
-    while(check(TokenType::TOKEN_GTHAN)){
-        std::string optr = peek().lexeme;
+
+    while(check(TokenType::TOKEN_LSHIFT) || check(TokenType::TOKEN_RSHIFT)){
+
+        std::string op = peek().lexeme;
         advance();
-        
+
         auto right = parseAdditive();
-        
+
         left = std::make_unique<BinaryExprNode>(
-            optr,
+            op,
             std::move(left),
             std::move(right)
         );

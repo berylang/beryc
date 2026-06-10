@@ -87,10 +87,26 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
        return;
    }
     for (auto& initVal : decl->initializers) {
-        if (!typeMatchesLiteral(decl->elementType, initVal->type)) {
-            std::cerr << "bery: error: type mismatch in array initialization for '" << decl->name << "'.\n";
-            errors = true;
-            return;
+        std::string exprType = analyzeExpression(initVal.get());
+
+        if (exprType != "unknown" && exprType != decl->elementType) {
+            if (exprType == "null") {
+                if (decl->elementType != "string") {
+                    std::cerr << "Bery:Error: Cannot assign 'null' to non-reference type '" << decl->elementType << "'\n";
+                    errors = true;
+                    return;
+                }
+                continue;
+            }
+            if (!(decl->elementType == "float" && exprType == "int") &&
+                !(decl->elementType == "float" && exprType == "double") &&
+                !(decl->elementType == "double" && exprType == "int") &&
+                !(decl->elementType == "double" && exprType == "float") &&
+                !(decl->elementType == "bigint" && exprType == "int")) {
+                    std::cerr << "Bery:Error: Type mismatch in array initialization for '"<<decl->name<<"' . Expected '"<<decl->elementType<<"', got '"<<exprType<<"' \n";
+                    errors = true;
+                    return;
+                }
         }
    }
 
@@ -151,21 +167,11 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
         }
         case NodeType::BINARY_EXPR:{
             auto* binary = static_cast<BinaryExprNode*>(node);
+
             std::string lType = analyzeExpression(binary->left.get());
             std::string rType = analyzeExpression(binary->right.get());
-            // Helper lambda to check if a type is numeric
-            auto isNumeric = [](const std::string& t) {
-                return t == "int" || t == "bigint" || t == "float" || t == "double";
-            };
             
-            if (binary->optr == ">") {
-                if (!isNumeric(lType) || !isNumeric(rType)) {
-                    std::cerr << "Bery:Error: Relational operator '>' requires numeric operands. Got '" << lType << "' and '" << rType << "'\n";
-                    errors = true;
-                    return "unknown";
-                }
-                return "bool";
-            }
+
             if(lType != rType){
                 if ((lType == "bigint" && rType == "int") ||
                     (lType == "int" && rType == "bigint")) {
@@ -196,6 +202,18 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
                 std::cerr<<"Bery:Error: Type mismatch in binary expression\n";
                 errors=true;
                 return "unknown";
+            }
+            if(binary->optr=="<<" || binary->optr==">>"){
+                if(rType!="int" && rType!="bigint"){
+                    std::cerr<<"Bery:Error: Right operand should be in integer type\n";
+                    errors=true;
+                    return "unknown";
+                }
+                if(binary->right < 0){
+                    std::cerr<<"Bery:Error: Right operand should cannot be negative integer\n";
+                    errors=true;
+                    return "unknown";
+                }
             }
             return lType;
         }

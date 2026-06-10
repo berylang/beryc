@@ -31,25 +31,13 @@ void CodeGen::generate(const std::string& outputPath) {
    body << "    ret i32 0\n";
    body << "}\n";
    std::ofstream out(outputPath);
+   out << "declare double @llvm.pow.f64(double, double)\n";
 
    for (auto& node : program->globals) {
        if (node->type == NodeType::VAR_DECL) {
            auto* decl = static_cast<VarDeclNode*>(node.get());
            std::string lt = llvmType(decl->varType);
-           std::string initVal = "0";
-           if (decl->value) {
-               if (decl->value->type == NodeType::INT_LIT) {
-                initVal = std::to_string(static_cast<IntLitNode*>(decl->value.get())->value);
-               } 
-               else if (decl->value->type == NodeType::DECIMAL_LIT ){
-                   initVal = std::to_string(static_cast<DecimalLitNode*>(decl->value.get())->value);
-               }
-               else if (decl->value->type == NodeType::BOOL_LIT) {
-                initVal = static_cast<BoolLitNode*>(decl->value.get())->value? "1" :"0";
-               }else if (decl->value->type == NodeType::CHAR_LIT) {
-            initVal = std::to_string(static_cast<CharLitNode*>(decl->value.get())->value);
-           } 
-           }
+           std::string initVal = extractConstant(decl->value.get());
            out << "@" << decl->name << " = global " << lt << " " << initVal << "\n";
        } 
        else if (node->type == NodeType::ARRAY_DECL) {
@@ -64,15 +52,7 @@ void CodeGen::generate(const std::string& outputPath) {
            } else {
                initVal = "[";
                for (size_t i = 0; i < decl->initializers.size(); ++i) {
-                   std::string elemVal = "0";
-                   auto* initNode = decl->initializers[i].get();
-                   if (initNode->type == NodeType::INT_LIT) {
-                       elemVal = std::to_string(static_cast<IntLitNode*>(initNode)->value);
-                   } else if (initNode->type == NodeType::DECIMAL_LIT) {
-                       elemVal = std::to_string(static_cast<DecimalLitNode*>(initNode)->value);
-                   } else if (initNode->type == NodeType::BOOL_LIT) {
-                       elemVal = static_cast<BoolLitNode*>(initNode)->value ? "1" : "0";
-                   }
+                   std::string elemVal = extractConstant(decl->initializers[i].get());
                    initVal += lt + " " + elemVal;
                    if (i + 1 < decl->initializers.size()) {
                        initVal += ", ";
@@ -125,19 +105,27 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
    std::string lt = llvmType(expectedType);
    bool isFloat = (expectedType=="float" || expectedType=="double");
    if (node->type == NodeType::INT_LIT) {
+    auto* lit = static_cast<IntLitNode*>(node);
+    if (isFloat) {
+        std::string tmp = newReg();
         std::string reg = newReg();
-       auto* lit = static_cast<IntLitNode*>(node);
-       out << "    " << reg << " = add " << lt << " 0, " << lit->value << "\n";
-       return reg;
+        out << "    " << tmp << " = add i32 0, " << lit->value << "\n";
+        out << "    " << reg << " = sitofp i32 " << tmp << " to " << lt << "\n";
+        return reg;
+    } else {
+        std::string reg = newReg();
+        out << "    " << reg << " = add " << lt << " 0, " << lit->value << "\n";
+        return reg;
+    }
    }
 
    if (node->type == NodeType::DECIMAL_LIT) {
-        std::string reg = newReg();
-       auto* lit = static_cast<DecimalLitNode*>(node);
-       std::ostringstream ss;
-       ss << std::showpoint << lit->value;
-       out << "    " << reg << " = fadd " << lt << " 0.0, " << ss.str() << "\n";
-       return reg;
+    auto* lit = static_cast<DecimalLitNode*>(node);
+    std::ostringstream ss;
+    ss << std::scientific << std::setprecision(17) << lit->value;
+    std::string reg = newReg();
+    out << "    " << reg << " = fadd " << lt << " 0.0, " << ss.str() << "\n";
+    return reg;
    }
 
    if (node->type == NodeType::BOOL_LIT) {
@@ -169,9 +157,6 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
         return reg;
    }
 
-   if(node->type == NodeType::NULL_LIT){
-    return "null";
-   }
    if(node->type == NodeType::IDENT){
     std::string reg = newReg();
     auto* ident = static_cast<IdentNode*>(node);
@@ -200,29 +185,90 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
         return reg;
 
     }
-    if(unary->optr == "--" || unary->optr == "++" || unary->optr == "post++" || unary->optr == "post--"){
+    if (unary->optr == "--" || unary->optr == "++" || unary->optr == "post++" || unary->optr == "post--") {
+        if (unary->operand->type != NodeType::IDENT) return "0";
         auto* ident = static_cast<IdentNode*>(unary->operand.get());
         std::string oldvalreg = genExpression(unary->operand.get(), expectedType, out);
         std::string newvalreg = newReg();
-        std::string one = isFloat?"1.0":"1";
+        std::string one = isFloat ? "1.0" : "1";
         std::string opins;
-        if(unary->optr == "++" || unary->optr == "post++"){
-            opins = isFloat?"fadd ":"add ";
-        }
-        else if(unary->optr == "--" || unary->optr == "post--"){
-            opins = isFloat?"fsub ":"sub ";
+        if (unary->optr == "++" || unary->optr == "post++") {
+            opins = isFloat ? "fadd " : "add ";
+        } else {
+            opins = isFloat ? "fsub " : "sub ";
         }
         out << "    " << newvalreg << " = " << opins << lt << " " << oldvalreg << ", " << one << "\n";
         out << "    store " << lt << " " << newvalreg << ", " << lt << "* %" << ident->name << "\n";
-        if(unary->optr == "post++" || unary->optr == "post--"){
+        if (unary->optr == "post++" || unary->optr == "post--") {
             return oldvalreg;
-        }
-        else{
+        } else {
             return newvalreg;
         }
     }
    }
-   
+
+    if(node->type == NodeType::BINARY_EXPR){
+        auto* binary = static_cast<BinaryExprNode*>(node);
+
+        std::string leftReg = genExpression(binary->left.get(), expectedType, out);
+        std::string rightReg = genExpression(binary->right.get(), expectedType, out);
+        std::string resultReg = newReg();
+
+        if(isFloat){
+            if(binary->optr == "+"){
+                out << "    " << resultReg << " = fadd " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "-"){
+                out << "    " << resultReg << " = fsub " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "*"){
+                out << "    " << resultReg << " = fmul " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "/"){
+                out << "    " << resultReg << " = fdiv " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "**"){
+                if(expectedType == "float"){
+                    std::string leftDouble = newReg();
+                    std::string rightDouble = newReg();
+                    out << "    " << leftDouble << " = fpext float " << leftReg << " to double\n";
+                    out << "    " << rightDouble << " = fpext float " << rightReg << " to double\n";
+                    
+                    std::string powReg = newReg();
+                    out << "    " << powReg << " = call double @llvm.pow.f64(double " << leftDouble << ", double " << rightDouble << ")\n";
+                    out << "    " << resultReg << " = fptrunc double " << powReg << " to float\n";
+                }else{
+                    out << "    " << resultReg << " = call double @llvm.pow.f64(double " << leftReg << ", double " << rightReg << ")\n";
+                }
+            }else{
+                return "0";
+            }
+        }else{
+            if(binary->optr == "+"){
+                out << "    " << resultReg << " = add " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "-"){
+                out << "    " << resultReg << " = sub " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "*"){
+                out << "    " << resultReg << " = mul " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "/"){
+                out << "    " << resultReg << " = sdiv " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "%"){
+                out << "    " << resultReg << " = srem " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }else if(binary->optr == "**"){
+                std::string leftDouble = newReg();
+                std::string rightDouble = newReg();
+
+                out << "    " << leftDouble << " = sitofp " << lt << " " << leftReg << " to double\n";
+                out << "    " << rightDouble << " = sitofp " << lt << " " << rightReg << " to double\n";
+
+                std::string powReg = newReg();
+
+                out << "    " << powReg << " = call double @llvm.pow.f64(double " << leftDouble << ", double " << rightDouble << ")\n";
+                out << "    " << resultReg << " = fptosi double " << powReg << " to " << lt << "\n";
+            }else{
+                return "0";
+            }
+        }
+
+        return resultReg;
+    }
+
    return "0";
 }
 
@@ -255,6 +301,41 @@ std::string CodeGen::escapeLLVMString(const std::string& str) {
     
     escaped << "\\00";
     return escaped.str();
+}
+
+std::string CodeGen::extractConstant(ASTNode* node) {
+    if (!node) return "0";
+    if (node->type == NodeType::INT_LIT) {
+        return std::to_string(static_cast<IntLitNode*>(node)->value);
+    } else if (node->type == NodeType::DECIMAL_LIT) {
+    std::ostringstream ss;
+    ss << std::scientific << std::setprecision(17) << static_cast<DecimalLitNode*>(node)->value;
+    return ss.str();
+}
+    else if (node->type == NodeType::BOOL_LIT) {
+        return static_cast<BoolLitNode*>(node)->value ? "1" : "0";
+    } 
+    else if (node->type == NodeType::CHAR_LIT) {
+        return std::to_string(static_cast<CharLitNode*>(node)->value);
+    }else if (node->type == NodeType::STRING_LIT) {
+        auto* lit = static_cast<StringLitNode*>(node);
+        std::string strVal = lit->value;
+        std::string escapedStr = escapeLLVMString(strVal);
+        int len = strVal.length() + 1;
+        std::string globalName = "@.str." + std::to_string(strCounter++);
+        globalStrings << globalName << " = private unnamed_addr constant [" << len << " x i8] c\"" << escapedStr << "\"\n";
+        return "getelementptr ([" + std::to_string(len) + " x i8], [" + std::to_string(len) + " x i8]* " + globalName + ", i32 0, i32 0)";
+    }
+    else if (node->type == NodeType::NULL_LIT) {
+        return "null";
+    }
+    else if (node->type == NodeType::UNARY_EXPR) {
+        auto* unary = static_cast<UnaryExprNode*>(node);
+        if (unary->optr == "-") {
+            return "-" + extractConstant(unary->operand.get());
+        }
+    }
+    return "0";
 }
 std::string CodeGen::newReg() {
    return "%" + std::to_string(++regCounter);
