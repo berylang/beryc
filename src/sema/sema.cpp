@@ -151,10 +151,21 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
         }
         case NodeType::BINARY_EXPR:{
             auto* binary = static_cast<BinaryExprNode*>(node);
-
             std::string lType = analyzeExpression(binary->left.get());
             std::string rType = analyzeExpression(binary->right.get());
-
+            // Helper lambda to check if a type is numeric
+            auto isNumeric = [](const std::string& t) {
+                return t == "int" || t == "bigint" || t == "float" || t == "double";
+            };
+            
+            if (binary->optr == ">") {
+                if (!isNumeric(lType) || !isNumeric(rType)) {
+                    std::cerr << "Bery:Error: Relational operator '>' requires numeric operands. Got '" << lType << "' and '" << rType << "'\n";
+                    errors = true;
+                    return "unknown";
+                }
+                return "bool";
+            }
             if(lType != rType){
                 if ((lType == "bigint" && rType == "int") ||
                     (lType == "int" && rType == "bigint")) {

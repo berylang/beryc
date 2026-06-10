@@ -1,0 +1,12 @@
+run {
+    --! bool res = 5 > true;
+    int res2 = 5 > 3;!--
+    bool res4 = 5 > 3;
+
+
+    int a = 5;
+    int b = 3;
+    int c = 6;
+    bool res = (a + b) > c;
+
+}

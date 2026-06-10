@@ -146,6 +146,9 @@ void Lexer::scanToken() {
                 return;
             }
             break;
+        case '>':
+            tokens.push_back({TokenType::TOKEN_GTHAN, ">", line});
+            break ;
         case '(':
             tokens.push_back({TokenType::TOKEN_LPARAN, "(", line});
             return;
