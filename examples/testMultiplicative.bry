@@ -1,3 +1,9 @@
 run {
-    double a = 10.2 ** 2.3;
+    float a = 10.2 ** 2.3;
+
+    int b = 4 * 5;
+
+    double c = 10/3;
+
+    bigint d = 10%5;
 }
