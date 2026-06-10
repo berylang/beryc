@@ -227,6 +227,24 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
                 return "int";
             }
         }
+        case NodeType::BETWEEN_EXPR:{
+            auto* between = static_cast<BetweenExprNode*>(node);
+            std::string valueType = analyzeExpression(between->value.get());
+            std::string lowerType = analyzeExpression(between->lower.get());
+            std::string upperType = analyzeExpression(between->upper.get());
+
+            auto validType = [](const std::string& type){
+                return type == "int" || type == "bigint" || type == "float" || type == "double" || type == "char";
+            };
+
+            if(!validType(valueType) || !validType(lowerType) || !validType(upperType)){
+                std::cerr<<"Bery:Error: Between operator supports only int, bigint, float, double and char\n";
+                errors = true;
+                return "unknown";
+            }
+            return "bool";
+        }
+        
         default:
             std::cerr<<"Bery:Error: Unknown expression \n";
             errors = true;

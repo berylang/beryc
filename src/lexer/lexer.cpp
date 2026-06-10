@@ -138,7 +138,8 @@ void Lexer::scanToken() {
                 return;
             }
             else if(peek()=='>' && peekNext()=='<'){
-                //@todo: Add TOKEN_NOTBET
+                advance();
+                tokens.push_back({TokenType::TOKEN_NOT_BETWEEN, "!><", line});
                 return;
             }
             else{
@@ -174,7 +175,7 @@ void Lexer::scanToken() {
                 return;
             }
             else if(peek()=='<'){
-                //@todo: Add TOKEN_BETWEEN
+                tokens.push_back({TokenType::TOKEN_BETWEEN, "><", line});
                 return;
             }
             else if(peek()=='='){
