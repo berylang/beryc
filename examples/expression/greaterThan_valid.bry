@@ -1,0 +1,15 @@
+run {
+    int a = 10;
+    double b = 20.5;
+    bigint c = 100;
+    float d = 5.5;
+
+
+    bool r1 = a > b;
+    bool r2 = b > c;
+    bool r3 = c > d;
+    bool r4 = d > a;
+
+
+    bool r5 = (a + 5) > (b * 2.0);
+}

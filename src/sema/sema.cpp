@@ -167,11 +167,21 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
         }
         case NodeType::BINARY_EXPR:{
             auto* binary = static_cast<BinaryExprNode*>(node);
-
             std::string lType = analyzeExpression(binary->left.get());
             std::string rType = analyzeExpression(binary->right.get());
-            
+        
+            auto isNumeric = [](const std::string& t) {
+                return t == "int" || t == "bigint" || t == "float" || t == "double";
+            };
 
+            if (binary->optr == ">") {
+                if (!isNumeric(lType) || !isNumeric(rType)) {
+                    std::cerr << "Bery:Error: Relational operator '>' requires numeric operands. Got '" << lType << "' and '" << rType << "'\n";
+                    errors = true;
+                    return "unknown";
+                }
+                return "bool";
+            }
             if(lType != rType){
                 if ((lType == "bigint" && rType == "int") ||
                     (lType == "int" && rType == "bigint")) {
@@ -209,10 +219,13 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
                     errors=true;
                     return "unknown";
                 }
-                if(binary->right < 0){
-                    std::cerr<<"Bery:Error: Right operand should cannot be negative integer\n";
-                    errors=true;
-                    return "unknown";
+                if (binary->right->type == NodeType::INT_LIT) {
+                    auto* intLit = static_cast<IntLitNode*>(binary->right.get());
+                    if (intLit->value < 0) {
+                        std::cerr << "Bery:Error: Right operand cannot be a negative integer\n";
+                        errors = true;
+                        return "unknown";
+                    }
                 }
             }
             return lType;

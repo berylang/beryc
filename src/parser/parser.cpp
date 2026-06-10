@@ -122,7 +122,7 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
 
 std::unique_ptr<ASTNode> Parser::parseExpression(){
     //@change: When you implement top level expression change the call here
-    return parseShift();
+    return parseRelational();
 }
 
 std::unique_ptr<ASTNode> Parser::parsePrimary(){
@@ -254,6 +254,37 @@ std::unique_ptr<ASTNode> Parser::parseShift(){
     }
     return left;
 }
+
+
+std::unique_ptr<ASTNode> Parser::parseRelational(){
+    auto left = parseBetween();
+    
+    while(check(TokenType::TOKEN_GTHAN)){
+        std::string optr = peek().lexeme;
+        advance();
+        
+        auto right = parseBetween();
+        
+        left = std::make_unique<BinaryExprNode>(
+            optr,
+            std::move(left),
+            std::move(right)
+        );
+    }
+    return left;
+}
+
+std::unique_ptr<ASTNode> Parser::parseBetween(){
+    // @todo: Implement between and not-between operators (e.g., >< and !><) here.
+    return parseBitwise();
+    
+}
+
+std::unique_ptr<ASTNode> Parser::parseBitwise(){
+    // @todo: Implement bitwise operators (e.g., &, |, ^) here.
+    return parseShift();
+}
+
 
 Token Parser::advance() {return tokens[current++];}
 

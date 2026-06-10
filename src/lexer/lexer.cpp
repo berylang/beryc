@@ -146,9 +146,6 @@ void Lexer::scanToken() {
                 return;
             }
             break;
-        case '>':
-            tokens.push_back({TokenType::TOKEN_GTHAN, ">", line});
-            break ;
         case '(':
             tokens.push_back({TokenType::TOKEN_LPARAN, "(", line});
             return;
@@ -171,24 +168,25 @@ void Lexer::scanToken() {
             }
             break;
         case '>':
-            if(peek()=='>'){
-                
+            if (peek() == '>') {
+                advance(); // Consume the second '>'
                 tokens.push_back({TokenType::TOKEN_RSHIFT, ">>", line});
                 return;
             }
-            else if(peek()=='<'){
+            else if (peek() == '<') {
                 //@todo: Add TOKEN_BETWEEN
                 return;
             }
-            else if(peek()=='='){
+            else if (peek() == '=') {
                 //@todo: Add TOKEN_GREATEQ
                 return;
             }
-            else{
-                //@todo: Add TOKEN_GREATTHAN
+            else {
+                tokens.push_back({TokenType::TOKEN_GTHAN, ">", line});
                 return;
             }
             break;
+
         }
 }
 //@todo - add TOKEN_DECIMAL_LIT;

@@ -1,0 +1,5 @@
+run {
+    int a = 10;
+    int b = 5;
+    int err = a > b; --- Error: Type mismatch for err. Expected 'int', got 'bool'
+}

@@ -1,0 +1,5 @@
+run {
+    int a = 10;
+    bool b = true;
+    bool err = a > b; --- Error: relational operator '>' requires numeric operands. Got 'int' and 'bool'
+}
