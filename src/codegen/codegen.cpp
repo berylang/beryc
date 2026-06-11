@@ -206,7 +206,40 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
         }
     }
    }
+   if (node->type == NodeType::BETWEEN_EXPR) {
+    auto* bet = static_cast<BetweenExprNode*>(node);
 
+    std::string operatorLLVMtype = llvmType(bet->opType);
+    bool isFloatingPoint = (bet->opType == "float" || bet->opType == "double");
+
+    std::string tReg = genExpression(bet->value.get(), bet->opType, out);
+    std::string lReg = genExpression(bet->lower.get(), bet->opType, out);
+    std::string uReg = genExpression(bet->upper.get(), bet->opType, out);
+
+    std::string comparison1 = newReg();
+    if (isFloatingPoint) {
+        out << "    " << comparison1 << " = fcmp oge " << operatorLLVMtype << " "<< tReg << ", " << lReg << "\n";
+    } else {
+        out << "    " << comparison1 << " = icmp sge " << operatorLLVMtype << " "<< tReg << ", " << lReg << "\n";
+    }
+
+    std::string comparison2 = newReg();
+    if (isFloatingPoint) {
+        out << "    " << comparison1 << " = fcmp ole " << operatorLLVMtype << " "<< tReg << ", " << uReg << "\n";
+    } else {
+        out << "    " << comparison1 << " = icmp sle " << operatorLLVMtype << " "<< tReg << ", " << uReg << "\n";
+    }
+
+    std::string andReg = newReg();
+    out << "    " << andReg << " = and i1 " << comparison1 << ", " << comparison2 << "\n";
+
+    if (bet->isNegated) {
+        std::string notBetweenReg = newReg();
+        out << "    " << notBetweenReg << " = xor i1 " << andReg << ", 1\n";
+        return notBetweenReg; 
+    }
+    return andReg;
+   }
     if(node->type == NodeType::BINARY_EXPR){
         auto* binary = static_cast<BinaryExprNode*>(node);
 
@@ -261,7 +294,19 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
 
                 out << "    " << powReg << " = call double @llvm.pow.f64(double " << leftDouble << ", double " << rightDouble << ")\n";
                 out << "    " << resultReg << " = fptosi double " << powReg << " to " << lt << "\n";
-            }else{
+            } else if (binary->optr == "<<") {
+                out << "    " << resultReg << " = shl " << lt << " " << leftReg << ", " << rightReg << "\n"; 
+            } else if (binary->optr == ">>") {
+                out << "    " << resultReg << " = ashr "<< lt << " " << leftReg << ", " << rightReg << "\n";
+            } else if (binary->optr == "&") {
+                out << "    " << resultReg << " = and " << lt << " " << leftReg << ", " << rightReg << "\n";
+            } else if (binary->optr == "|") {
+                out << "    " << resultReg << " = or "  << lt << " " << leftReg << ", " << rightReg << "\n";
+            } else if (binary->optr == "^") {
+                out << "    " << resultReg << " = xor " << lt << " " << leftReg << ", " << rightReg << "\n";
+            }
+            
+            else{
                 return "0";
             }
         }
