@@ -275,7 +275,7 @@ std::unique_ptr<ASTNode> Parser::parseBitwise(){
 }
 
 std::unique_ptr<ASTNode> Parser::parseBetween(){
-    auto value = parseShift();
+    auto value = parseBitwise();
 
     if(check(TokenType::TOKEN_BETWEEN) || check(TokenType::TOKEN_NOT_BETWEEN)){
 
@@ -283,9 +283,9 @@ std::unique_ptr<ASTNode> Parser::parseBetween(){
 
         advance();
 
-        auto lower = parseShift();
+        auto lower = parseBitwise();
         consume(TokenType::TOKEN_COMMA, "Expected ',' after lower bound");
-        auto upper = parseShift();
+        auto upper = parseBitwise();
 
         return std::make_unique<BetweenExprNode>(
             std::move(value),

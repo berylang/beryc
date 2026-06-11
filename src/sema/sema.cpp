@@ -242,6 +242,13 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
                 errors = true;
                 return "unknown";
             }
+
+            std::string dominentType = "int";
+            if (valueType == "double" || lowerType=="double" || upperType=="double") dominentType= "double";
+            else if (valueType == "float" || lowerType=="float" || upperType=="float") dominentType = "float";
+            else if (valueType == "bigint" || lowerType=="bigint" || upperType=="bigint") dominentType = "bigint";
+
+            between->opType = dominentType;
             return "bool";
         }
         

@@ -45,6 +45,7 @@ struct BetweenExprNode : public ASTNode{
     std::unique_ptr<ASTNode> lower;
     std::unique_ptr<ASTNode> upper;
     bool isNegated;
+    std::string opType;
 
     BetweenExprNode(
         std::unique_ptr<ASTNode> val,
@@ -55,7 +56,8 @@ struct BetweenExprNode : public ASTNode{
         : value(std::move(val)),
           lower(std::move(low)),
           upper(std::move(up)),
-          isNegated(neg)
+          isNegated(neg),
+          opType("int")
     {
         type = NodeType::BETWEEN_EXPR;
     }
