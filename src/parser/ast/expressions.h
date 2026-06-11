@@ -39,3 +39,24 @@ struct BinaryExprNode : public ASTNode{
         }
 
 };
+
+struct BetweenExprNode : public ASTNode{
+    std::unique_ptr<ASTNode> value;
+    std::unique_ptr<ASTNode> lower;
+    std::unique_ptr<ASTNode> upper;
+    bool isNegated;
+
+    BetweenExprNode(
+        std::unique_ptr<ASTNode> val,
+        std::unique_ptr<ASTNode> low,
+        std::unique_ptr<ASTNode> up,
+        bool neg
+    )
+        : value(std::move(val)),
+          lower(std::move(low)),
+          upper(std::move(up)),
+          isNegated(neg)
+    {
+        type = NodeType::BETWEEN_EXPR;
+    }
+};

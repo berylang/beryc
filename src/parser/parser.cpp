@@ -122,7 +122,7 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
 
 std::unique_ptr<ASTNode> Parser::parseExpression(){
     //@change: When you implement top level expression change the call here
-    return parseBitwise();
+    return parseBetween();
 }
 
 std::unique_ptr<ASTNode> Parser::parsePrimary(){
@@ -272,6 +272,29 @@ std::unique_ptr<ASTNode> Parser::parseBitwise(){
         );
     }
     return left;
+}
+
+std::unique_ptr<ASTNode> Parser::parseBetween(){
+    auto value = parseShift();
+
+    if(check(TokenType::TOKEN_BETWEEN) || check(TokenType::TOKEN_NOT_BETWEEN)){
+
+        bool isNegated = check(TokenType::TOKEN_NOT_BETWEEN);
+
+        advance();
+
+        auto lower = parseShift();
+        consume(TokenType::TOKEN_COMMA, "Expected ',' after lower bound");
+        auto upper = parseShift();
+
+        return std::make_unique<BetweenExprNode>(
+            std::move(value),
+            std::move(lower),
+            std::move(upper),
+            isNegated
+        );
+    }
+    return value;
 }
 
 Token Parser::advance() {return tokens[current++];}

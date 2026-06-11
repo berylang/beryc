@@ -1,0 +1,20 @@
+run {
+
+    bool a = 5 >< 1,10;          
+    bool b = 15 >< 1,10;        
+
+    bool p = 5 !>< 1,10;         
+    bool q = 15 !>< 1,10;        
+
+    bool m = 1 >< 1,10;          
+    bool n = 10 >< 1,10;         
+
+    bool a0 = 'm' >< 'a','z';     
+    bool b0 = 'A' >< 'a','z';     
+
+    int min = 20;
+    int max = 30;
+
+    bool cc  = 25 >< min,max;     
+    bool dd = 35 >< min,max;     
+}
