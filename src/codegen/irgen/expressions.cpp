@@ -163,6 +163,34 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
     if(node->type == NodeType::BINARY_EXPR){
         auto* binary = static_cast<BinaryExprNode*>(node);
 
+        if (binary->optr == "&&" || binary->optr == "||") {
+            std::string resultAllocation = newReg();
+            out << "    " << resultAllocation << " = alloca i1\n";
+
+            std::string leftReg = genExpression(binary->left.get(), "bool", out);
+            out << "    store i1 " << leftReg << ", i1* " << resultAllocation << "\n";
+
+            int blockId = ++regCounter;
+            std::string rightBlock = "logic_right_" + std::to_string(blockId);
+            std::string endBlock = "logic_end_" + std::to_string(blockId);
+
+            if (binary->optr == "&&") {
+                out << "    br i1 " << leftReg << ", label %" << rightBlock << ", label %" << endBlock <<"\n";
+            } else  {
+                out << "    br i1 " << leftReg << ", label %" << endBlock << ", label %" << rightBlock <<"\n";
+            }
+
+            out << "\n" << rightBlock << ":\n";
+            std::string rightReg = genExpression(binary->right.get(), "bool", out);
+            out << "    store i1 " << rightReg << ", i1* " << resultAllocation << "\n";
+            out << "    br label %" << endBlock <<"\n";
+
+            out << "\n" << endBlock << ":\n";
+            std::string finalReg = newReg();
+            out << "    " << finalReg << " = load i1, i1* " << resultAllocation << "\n";
+
+            return finalReg;
+        }
         std::string opLT = llvmType(binary->opType);
         bool isOpFloat = (binary->opType == "float" || binary->opType == "double");
 

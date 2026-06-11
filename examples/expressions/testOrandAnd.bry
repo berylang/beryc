@@ -1,0 +1,10 @@
+run {
+    int a = 0;
+    int b = 0;
+    
+    bool test1 = false && (a++ > 0);
+
+    bool test2 = true || (b++ > 0);
+
+    bool test3 = (10 > 5) && (20 > 15);
+}

@@ -202,11 +202,12 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
             binary->opType = resolvedType;
 
             if(binary->optr== "&&" || binary->optr== "||"){
-                if(lType=="bool" || rType=="bool"){    
+                if(lType!="bool" || rType!="bool"){    
                     std::cerr<<"Bery:Error: Logical Operator '"<<binary->optr<<"' cannot be used on type '"<<lType<<"' and '"<<rType<<"'\n";
                     errors=true;
                     return "unknown";
                 }
+                binary->opType = "bool";
                 return "bool";
             }
             if( binary->optr=="==" || binary->optr=="!=" ||
