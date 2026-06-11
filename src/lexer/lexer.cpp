@@ -202,9 +202,19 @@ void Lexer::scanToken() {
             tokens.push_back({TokenType::TOKEN_CARET, "^", line});
             break;
         case '&':
+            if(peek()=='&'){
+                advance();
+                tokens.push_back({TokenType::TOKEN_AND, "&&", line});
+                return;
+            }
             tokens.push_back({TokenType::TOKEN_AMPERSAND, "&", line});
             break;
         case '|':
+            if(peek()=='|'){
+                advance();
+                tokens.push_back({TokenType::TOKEN_OR, "||", line});
+                return;
+            }
             tokens.push_back({TokenType::TOKEN_PIPE, "|", line});
             break;
         }

@@ -122,7 +122,7 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
 
 std::unique_ptr<ASTNode> Parser::parseExpression(){
     //@change: When you implement top level expression change the call here
-    return parseEquality();
+    return parseLogicalOr();
 }
 
 std::unique_ptr<ASTNode> Parser::parsePrimary(){
@@ -314,6 +314,29 @@ std::unique_ptr<ASTNode> Parser::parseEquality(){
     }
     return left;
 }
+
+std::unique_ptr<ASTNode> Parser::parseLogicalAnd(){
+    auto left = parseEquality();
+    while(check(TokenType::TOKEN_AND)){
+        std::string op=peek().lexeme;
+        advance();
+        auto right=parseEquality();
+        left=std::make_unique<BinaryExprNode>(op,std::move(left),std::move(right));
+    }
+    return left;
+}
+
+std::unique_ptr<ASTNode> Parser::parseLogicalOr(){
+    auto left = parseLogicalAnd();
+    while(check(TokenType::TOKEN_OR)){
+        std::string op=peek().lexeme;
+        advance();
+        auto right=parseLogicalAnd();
+        left=std::make_unique<BinaryExprNode>(op,std::move(left),std::move(right));
+    }
+    return left;
+}
+
 Token Parser::advance() {return tokens[current++];}
 
 Token Parser::peek() {return tokens[current];}
