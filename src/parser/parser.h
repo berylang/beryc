@@ -40,5 +40,7 @@ class Parser {
     std::unique_ptr<ASTNode> parseBetween();
     std::unique_ptr<ASTNode> parseRelational();
     std::unique_ptr<ASTNode> parseEquality();
+    std::unique_ptr<ASTNode> parseLogicalAnd();
+    std::unique_ptr<ASTNode> parseLogicalOr();
 };
 
