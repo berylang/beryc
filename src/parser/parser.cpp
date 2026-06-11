@@ -121,8 +121,7 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
 }
 
 std::unique_ptr<ASTNode> Parser::parseExpression(){
-    //@change: When you implement top level expression change the call here
-    return parseLogicalOr();
+    return parseTernary();
 }
 
 std::unique_ptr<ASTNode> Parser::parsePrimary(){
@@ -335,6 +334,20 @@ std::unique_ptr<ASTNode> Parser::parseLogicalOr(){
         left=std::make_unique<BinaryExprNode>(op,std::move(left),std::move(right));
     }
     return left;
+}
+
+std::unique_ptr<ASTNode> Parser::parseTernary() {
+    auto expr = parseLogicalOr();
+    if (check(TokenType::TOKEN_QUESTION)) {
+        advance();
+
+        auto trueExpr = parseExpression();
+        consume(TokenType::TOKEN_COLON, "Expected ':' in ternary operator");
+        auto falseExpr = parseTernary();
+
+        return std::make_unique<TernaryExprNode>(std::move(expr), std::move(trueExpr), std::move(falseExpr));
+    }
+    return expr;
 }
 
 Token Parser::advance() {return tokens[current++];}

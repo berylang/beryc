@@ -270,7 +270,34 @@ std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
             between->opType = dominentType;
             return "bool";
         }
-        
+        case NodeType::TERNARY_EXPR: {
+            auto* tern = static_cast<TernaryExprNode*>(node);
+            std::string condType = analyzeExpression(tern->condition.get());
+            if (condType != "bool") {
+                std::cerr << "Bery:Error: ternary condition must be 'bool', got '" << condType << "'\n";
+                errors = true;
+                return "unknown";
+            }
+            std::string tType = analyzeExpression(tern->trueExpr.get());
+            std::string fType = analyzeExpression(tern->falseExpr.get());
+
+            std::string finalType = tType;
+            if (tType != fType) {
+                if ((tType == "bigint" && fType == "int") || (tType == "int" && fType == "bigint")) finalType = "bigint";
+                else if ((tType == "float" && fType == "int") || (tType == "int" && fType == "float")) finalType = "float";
+                else if ((tType == "bigint" && fType == "float") || (tType == "float" && fType == "bigint")) finalType = "float";
+                else if ((tType == "bigint" && fType == "double") || (tType == "double" && fType == "bigint")) finalType = "double";
+                else if ((tType == "int" && fType == "double") || (tType == "double" && fType == "int")) finalType = "double";
+                else if ((tType == "float" && fType == "double") || (tType == "double" && fType == "float")) finalType = "double";
+                else {
+                    std::cerr << "Bery:Error: Ternary branch type mismatch ('" << tType << "' vs '" << fType << "')\n";
+                    errors = true;
+                    return "unknown";
+                }
+            }
+            tern->resolvedType = finalType;
+            return finalType;
+        }
         default:
             std::cerr<<"Bery:Error: Unknown expression \n";
             errors = true;

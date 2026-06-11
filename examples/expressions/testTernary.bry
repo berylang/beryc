@@ -1,0 +1,10 @@
+run {
+    int a = 0;
+    int b = 0;
+
+    int res1 = true ? a++ : b++; 
+
+    int res2 = false ? 100 : true ? 200 : 300; 
+
+    double res3 = (10 > 5) ? 10 : 5.5; 
+}

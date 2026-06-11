@@ -42,5 +42,6 @@ class Parser {
     std::unique_ptr<ASTNode> parseEquality();
     std::unique_ptr<ASTNode> parseLogicalAnd();
     std::unique_ptr<ASTNode> parseLogicalOr();
+    std::unique_ptr<ASTNode> parseTernary();
 };
 
