@@ -217,6 +217,12 @@ void Lexer::scanToken() {
             }
             tokens.push_back({TokenType::TOKEN_PIPE, "|", line});
             break;
+        case ':':
+            tokens.push_back({TokenType::TOKEN_COLON, ":", line});
+            break;
+        case '?':
+            tokens.push_back({TokenType::TOKEN_QUESTION, "?", line});
+            break;
         }
 }
 //@todo - add TOKEN_DECIMAL_LIT;

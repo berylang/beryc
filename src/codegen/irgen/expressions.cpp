@@ -297,6 +297,36 @@ std::string CodeGen::genExpression(ASTNode* node, const std::string& expectedTyp
 
         return finalReg;
     }
+    if (node->type == NodeType::TERNARY_EXPR) {
+       auto* tern = static_cast<TernaryExprNode*>(node);
+       std::string llvmResType = llvmType(tern->resolvedType);
+       std::string resultAlloc = newReg();
+       out << "    " << resultAlloc << " = alloca " << llvmResType << "\n";
+
+       std::string condReg = genExpression(tern->condition.get(), "bool", out);
+       int blockId = ++regCounter;
+       std::string trueBlock = "tern_true_" + std::to_string(blockId);
+       std::string falseBlock = "tern_false_" + std::to_string(blockId);
+       std::string endBlock = "tern_end_" + std::to_string(blockId);
+
+       out << "    br i1 " << condReg << ", label %" << trueBlock << ", label %" << falseBlock << "\n";
+
+       out << "\n" << trueBlock << ":\n";
+       std::string tReg = genExpression(tern->trueExpr.get(), tern->resolvedType, out);
+       out << "    store " << llvmResType << " " << tReg << ", " << llvmResType << "* " << resultAlloc << "\n";
+       out << "    br label %" << endBlock << "\n";
+
+
+       out << "\n" << falseBlock << ":\n";
+       std::string fReg = genExpression(tern->falseExpr.get(), tern->resolvedType, out);
+       out << "    store " << llvmResType << " " << fReg << ", " << llvmResType << "* " << resultAlloc << "\n";
+       out << "    br label %" << endBlock << "\n";
+
+       out << "\n" << endBlock << ":\n";
+       std::string finalReg = newReg();
+       out << "    " << finalReg << " = load " << llvmResType << ", " << llvmResType << "* " << resultAlloc << "\n";
+       return finalReg;
+   }
 
    return "0";
 }

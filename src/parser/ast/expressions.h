@@ -64,3 +64,15 @@ struct BetweenExprNode : public ASTNode{
         type = NodeType::BETWEEN_EXPR;
     }
 };
+
+struct TernaryExprNode : public ASTNode {
+    std::unique_ptr<ASTNode> condition;
+    std::unique_ptr<ASTNode> trueExpr;
+    std::unique_ptr<ASTNode> falseExpr;
+    std::string resolvedType;
+
+    TernaryExprNode(std::unique_ptr<ASTNode> c, std::unique_ptr<ASTNode> te, std::unique_ptr<ASTNode> fe) :
+    condition(std::move(c)), trueExpr(std::move(te)), falseExpr(std::move(fe)), resolvedType("int") {
+        type = NodeType::TERNARY_EXPR;
+    }
+};
