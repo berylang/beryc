@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 
 struct Symbol {
@@ -8,16 +9,22 @@ struct Symbol {
    bool isConst;
    bool isInitialized;
    int line;
+   std::string llvmRegister;
 };
 
 
 class SymbolTable {
 public:
+   SymbolTable();
+   void pushScope();
+   void popScope();
+
    void add(const std::string& name, Symbol sym);
    bool exists(const std::string& name);
-   Symbol get(const std::string& name);
+   bool existsInCurrentScope(const std::string& name);
+   Symbol& get(const std::string& name);
 
 
 private:
-   std::unordered_map<std::string, Symbol> table;
+   std::vector<std::unordered_map<std::string, Symbol>> scopes;
 };

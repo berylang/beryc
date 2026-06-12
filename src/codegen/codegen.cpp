@@ -13,62 +13,66 @@ CodeGen::CodeGen(ASTNode* root, SymbolTable& symTable)
 
 
 void CodeGen::generate(const std::string& outputPath) {
-   auto* program = static_cast<ProgramNode*>(root);
-   std::ostringstream body;
-   body << "define i32 @main() {\n";
-   body << "entry:\n";
+    auto* program = static_cast<ProgramNode*>(root);
+    std::ostringstream body;
+    body << "define i32 @main() {\n";
+    body << "entry:\n";
 
-      if (program->runBlock) {
-       for (auto& node : program->runBlock->statements) {
-           if (node->type == NodeType::VAR_DECL)
-               genVarDecl(node.get(), body);
-           else if (node->type == NodeType::ARRAY_DECL)
-               genArrayDecl(node.get(), body);
-       }
-   }
-   body << "    ret i32 0\n";
-   body << "}\n";
-   std::ofstream out(outputPath);
-   out << "declare double @llvm.pow.f64(double, double)\n";
+    if (program->runBlock) {
+        symTable.pushScope();
+        for (auto& node : program->runBlock->statements) {
+            if (node->type == NodeType::VAR_DECL)
+                genVarDecl(node.get(), body);
+            else if (node->type == NodeType::ARRAY_DECL)
+                genArrayDecl(node.get(), body);
+        }
+        symTable.popScope();
+    }
+    body << "    ret i32 0\n";
+    body << "}\n";
+    std::ofstream out(outputPath);
+    out << "declare double @llvm.pow.f64(double, double)\n";
 
-   for (auto& node : program->globals) {
-       if (node->type == NodeType::VAR_DECL) {
-           auto* decl = static_cast<VarDeclNode*>(node.get());
-           std::string lt = llvmType(decl->varType);
-           std::string initVal = extractConstant(decl->value.get());
-           out << "@" << decl->name << " = global " << lt << " " << initVal << "\n";
-       } 
-       else if (node->type == NodeType::ARRAY_DECL) {
-           auto* decl = static_cast<ArrayDeclNode*>(node.get());
-           std::string lt = llvmType(decl->elementType);
-           int resolvedSize = decl->size >= 0 ? decl->size : (int)decl->initializers.size();
-           std::string arrType = "[" + std::to_string(resolvedSize) + " x " + lt + "]";
-           
-           std::string initVal;
-           if (decl->initializers.empty()) {
-               initVal = "zeroinitializer";
-           } else {
-               initVal = "[";
-               for (size_t i = 0; i < decl->initializers.size(); ++i) {
-                   std::string elemVal = extractConstant(decl->initializers[i].get());
-                   initVal += lt + " " + elemVal;
-                   if (i + 1 < decl->initializers.size()) {
-                       initVal += ", ";
-                   }
-               }
-               if (decl->initializers.size() < (size_t)resolvedSize) {
-                   for (size_t i = decl->initializers.size(); i < (size_t)resolvedSize; ++i) {
-                       initVal += ", " + lt + " 0";
-                   }
-               }
-               initVal += "]";
-           }
-           out << "@" << decl->name << " = global " << arrType << " " << initVal << "\n";
-       }
-   }
+    for (auto& node : program->globals) {
+        if (node->type == NodeType::VAR_DECL) {
+            auto* decl = static_cast<VarDeclNode*>(node.get());
+            std::string lt = llvmType(decl->varType);
+            std::string initVal = extractConstant(decl->value.get());
+            symTable.get(decl->name).llvmRegister = "@" + decl->name;
+            out << "@" << decl->name << " = global " << lt << " " << initVal << "\n";
+        } 
+        else if (node->type == NodeType::ARRAY_DECL) {
+            auto* decl = static_cast<ArrayDeclNode*>(node.get());
+            symTable.get(decl->name).llvmRegister = "@" + decl->name;
+            std::string lt = llvmType(decl->elementType);
+            int resolvedSize = decl->size >= 0 ? decl->size : (int)decl->initializers.size();
+            std::string arrType = "[" + std::to_string(resolvedSize) + " x " + lt + "]";
+            
+            std::string initVal;
+            if (decl->initializers.empty()) {
+                initVal = "zeroinitializer";
+            } else {
+                initVal = "[";
+                for (size_t i = 0; i < decl->initializers.size(); ++i) {
+                    std::string elemVal = extractConstant(decl->initializers[i].get());
+                    initVal += lt + " " + elemVal;
+                    if (i + 1 < decl->initializers.size()) {
+                        initVal += ", ";
+                    }
+                }
+                if (decl->initializers.size() < (size_t)resolvedSize) {
+                    for (size_t i = decl->initializers.size(); i < (size_t)resolvedSize; ++i) {
+                        initVal += ", " + lt + " 0";
+                    }
+                }
+                initVal += "]";
+            }
+            out << "@" << decl->name << " = global " << arrType << " " << initVal << "\n";
+        }
+    }
 
-   out << globalStrings.str() << "\n";
-   out << body.str();
+    out << globalStrings.str() << "\n";
+    out << body.str();
 }
 
 
