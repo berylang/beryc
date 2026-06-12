@@ -454,7 +454,7 @@ TokenType Lexer::checkKeyword(const std::string& lexeme) {
     return TokenType::TOKEN_IDENT;
 }
 bool Lexer::isAlphaNumeric(char c) {return isAlpha(c) || isDigit(c);}
-bool Lexer::isAlpha(char c) {return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');}
+bool Lexer::isAlpha(char c) {return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';}
 bool Lexer::isDigit(char c) {return c >= '0' && c <= '9';}
 char Lexer::advance() {return source[current++];}
 char Lexer::peek() {return source[current];}
