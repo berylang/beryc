@@ -10,13 +10,16 @@ SemanticAnalyzer::SemanticAnalyzer(ASTNode* root)
    : root(root), errors(false) {}
 
 void SemanticAnalyzer::analyze() {
-   auto* program = static_cast<ProgramNode*>(root);
+    auto* program = static_cast<ProgramNode*>(root);
 
-   for (auto& node : program->globals)
-       analyzeNode(node.get());
-   if (program->runBlock)
-       for (auto& node : program->runBlock->statements)
-           analyzeNode(node.get());
+    for (auto& node : program->globals)
+        analyzeNode(node.get());
+    if (program->runBlock) {
+        symbolTable.pushScope();
+        for (auto& node : program->runBlock->statements)
+            analyzeNode(node.get());
+        symbolTable.popScope();
+    }
 }
 
 void SemanticAnalyzer::analyzeNode(ASTNode* node) {
@@ -29,8 +32,8 @@ void SemanticAnalyzer::analyzeNode(ASTNode* node) {
 
 void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
    auto* decl = static_cast<VarDeclNode*>(node);
-   if (symbolTable.exists(decl->name)) {
-       std::cerr << "Bery:Error [Line "<< decl->line<< "]: '" << decl->name << "' already declared.\n";
+   if (symbolTable.existsInCurrentScope(decl->name)) {
+       std::cerr << "Bery:Error [Line "<< decl->line<< "]: '" << decl->name << "' already declared in this scope.\n";
        errors = true;
        return;
    }
@@ -61,13 +64,13 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
             }
         }
     }
-   symbolTable.add(decl->name, {decl->varType, decl->isConst, decl->value != nullptr, 0});
+    symbolTable.add(decl->name, {decl->varType, decl->isConst, decl->value != nullptr, decl->line, ""});
 }
 void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
    auto* decl = static_cast<ArrayDeclNode*>(node);
 
-   if (symbolTable.exists(decl->name)) {
-       std::cerr << "Bery:Error [Line "<< decl->line <<"]: '" << decl->name << "' already declared.\n";
+   if (symbolTable.existsInCurrentScope(decl->name)) {
+       std::cerr << "Bery:Error [Line "<< decl->line <<"]: '" << decl->name << "' already declared in this scope.\n";
        errors = true;
        return;
    }
@@ -110,7 +113,7 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
         }
    }
 
-   symbolTable.add(decl->name, {decl->elementType + "[]", false, !decl->initializers.empty(), 0});
+    symbolTable.add(decl->name, {decl->elementType + "[]", false, !decl->initializers.empty(), decl->line, ""});
 }
 
 bool SemanticAnalyzer::typeMatchesLiteral(const std::string& type, NodeType litType) {
@@ -126,7 +129,6 @@ bool SemanticAnalyzer::typeMatchesLiteral(const std::string& type, NodeType litT
 }
 
 std::string SemanticAnalyzer::analyzeExpression(ASTNode* node){
-    //@change: When none datatype is supported change unknown to none
     if(!node) return "unknown";
     switch(node->type){
         case NodeType::INT_LIT: return "int";
