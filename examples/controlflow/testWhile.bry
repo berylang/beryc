@@ -1,0 +1,7 @@
+run{
+    int count = 0;
+    while(true){
+        count+=1;
+    }
+    int end = count;
+}

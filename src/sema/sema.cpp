@@ -31,6 +31,10 @@ void SemanticAnalyzer::analyzeNode(ASTNode* node) {
         analyzeArrayDecl(node);
     else if (node->type == NodeType::ASSIGNMENT_EXPR) 
        analyzeExpression(node);
+    else if(node->type == NodeType::IF_STMT)
+        analyzeIfStmt(node);
+    else if (node->type == NodeType::WHILE_STMT)
+        analyzeWhileStmt(node);
 } 
 
 
@@ -368,6 +372,18 @@ void SemanticAnalyzer::analyzeIfStmt(ASTNode* node) {
         }
     }
 
+}
+
+void SemanticAnalyzer::analyzeWhileStmt(ASTNode* node){
+    auto* whileStmt = static_cast<WhileStmtNode*>(node);
+    std::string conditionType = analyzeExpression(whileStmt->condition.get());
+
+    if(conditionType != "bool" && conditionType != "unknown"){
+        std::cerr << "Bery:Error [Line " << whileStmt->line << "]: 'while' condition must evaluate to 'bool' \n";
+        errors = true;
+    }
+
+    analyzeBlock(whileStmt->body.get());
 }
 
 bool SemanticAnalyzer::hasErrors() { return errors; }

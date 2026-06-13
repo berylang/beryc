@@ -25,3 +25,21 @@ struct IfStmtNode : public ASTNode
         line = ln;
     }
 };
+
+struct WhileStmtNode : public ASTNode{
+    std::unique_ptr<ASTNode> condition;
+    std::unique_ptr<BlockNode> body;
+
+    WhileStmtNode(
+        std::unique_ptr<ASTNode> c,
+        std::unique_ptr<BlockNode> b,
+        int ln
+    ):    condition(std::move(c)),
+          body(std::move(b))
+    {
+        type = NodeType::WHILE_STMT;
+        line = ln;
+
+    }
+          
+};

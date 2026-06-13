@@ -369,6 +369,9 @@ std::unique_ptr<ASTNode> Parser::parseStatement() {
         advance();
         return parseBlock();
     }
+    if(check(TokenType::TOKEN_WHILE)){
+        return parseWhileStmt();
+    }
     bool isConst = false;
     if(check(TokenType::TOKEN_CONST)){
         advance();
@@ -442,6 +445,17 @@ std::unique_ptr<ASTNode> Parser::parseIfStmt() {
         line
 ); 
 
+}
+
+std::unique_ptr<ASTNode> Parser::parseWhileStmt(){
+    advance();
+    int line = previous().line;
+    consume(TokenType::TOKEN_LPARAN,"Expected '(' after 'while'");
+    auto condition = parseExpression();
+    consume(TokenType::TOKEN_RPARAN, "Expected ')' after condition");
+    consume(TokenType::TOKEN_LBRACE, "Expected '{' before while-body");
+    auto body = parseBlock();
+    return std::make_unique<WhileStmtNode>(std::move(condition), std::move(body), line);
 }
 
 Token Parser::advance() {if (!isAtEnd()) current++;
