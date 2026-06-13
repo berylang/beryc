@@ -370,4 +370,30 @@ void SemanticAnalyzer::analyzeIfStmt(ASTNode* node) {
 
 }
 
+void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
+    auto* sw = static_cast<SwitchStmtNode*>(node);
+
+    std::string t = analyzeExpression(sw->condition.get());
+
+    if (t != "int" && t != "bigint" && t != "char") {
+        std::cerr << "Bery:Error [Line " << sw->line << "]: invalid switch type\n";
+        errors = true;
+    }
+
+    for (auto& c : sw->cases) {
+        if (c.value)
+            analyzeExpression(c.value.get());
+        for (auto& s : c.statements)
+            analyzeNode(s.get());
+    }
+}
+
+void SemanticAnalyzer::analyzeBreakStmt(ASTNode* node) {
+    auto* br = static_cast<BreakStmtNode*>(node);
+
+    std::cerr << "Bery:Error [Line " << br->line << "]: break outside switch \n";
+    errors = true;
+}
+
+
 bool SemanticAnalyzer::hasErrors() { return errors; }
