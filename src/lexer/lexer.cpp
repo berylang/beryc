@@ -18,6 +18,7 @@ static std::unordered_map<std::string, TokenType> keywords = {
     {"null", TokenType::TOKEN_NULL},
     {"if", TokenType::TOKEN_IF},
     {"else", TokenType::TOKEN_ELSE},
+    {"while", TokenType::TOKEN_WHILE}
 };
 
 Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), errors(false) {}
