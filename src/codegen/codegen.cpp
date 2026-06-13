@@ -71,6 +71,7 @@ void CodeGen::generate(const std::string& outputPath) {
             else if (node->type == NodeType::ASSIGNMENT_EXPR) genExpression(node.get(), "any", body);
             else if (node->type == NodeType::IF_STMT) genIfStmt(node.get(), body);
             else if (node->type == NodeType::BLOCK) genBlock(node.get(), body);
+            else if (node->type == NodeType::WHILE_STMT) genWhileStmt(node.get(), body);
         }
         symTable.popScope();
     }
@@ -122,10 +123,10 @@ std::string CodeGen::extractConstant(ASTNode* node) {
     if (node->type == NodeType::INT_LIT) {
         return std::to_string(static_cast<IntLitNode*>(node)->value);
     } else if (node->type == NodeType::DECIMAL_LIT) {
-    std::ostringstream ss;
-    ss << std::scientific << std::setprecision(17) << static_cast<DecimalLitNode*>(node)->value;
-    return ss.str();
-}
+        std::ostringstream ss;
+        ss << std::scientific << std::setprecision(17) << static_cast<DecimalLitNode*>(node)->value;
+        return ss.str();
+    }
     else if (node->type == NodeType::BOOL_LIT) {
         return static_cast<BoolLitNode*>(node)->value ? "1" : "0";
     } 
@@ -165,6 +166,7 @@ void CodeGen::genBlock(ASTNode* node, std::ostream& out) {
         else if (stmt->type == NodeType::ASSIGNMENT_EXPR) genExpression(stmt.get(), "any", out);
         else if (stmt->type == NodeType::IF_STMT) genIfStmt(stmt.get(), out);
         else if (stmt->type == NodeType::BLOCK) genBlock(stmt.get(), out);
+        else if (stmt->type == NodeType::WHILE_STMT) genWhileStmt(stmt.get(), out);
     }
     symTable.popScope();
 }
@@ -193,4 +195,23 @@ void CodeGen::genIfStmt(ASTNode* node, std::ostream& out) {
     }
 
     out << "\n" << endLbl << ":\n";
+}
+
+void CodeGen::genWhileStmt(ASTNode* node, std::ostream& out) {
+    auto* whilestmt = static_cast<WhileStmtNode*>(node);
+    int blockid = ++regCounter;
+    std::string conditionLabel = "while_cond_"+std::to_string(blockid);
+    std::string bodyLabel = "while_body_"+std::to_string(blockid);
+    std::string endLabel = "while_end_"+std::to_string(blockid);
+    
+
+    out << "    br label %" << conditionLabel << "\n";
+    out << "\n" << conditionLabel << ":\n";
+    std::string conditionReg = genExpression(whilestmt->condition.get(), "bool", out);
+    out << "    br i1 " << conditionReg << ", label %" << bodyLabel << ", label %" << endLabel << "\n";
+    //br i1 %13, label %while_body_15, label %while_end_18
+    out << "\n" << bodyLabel << ":\n";
+    genBlock(whilestmt->body.get(), out);
+    out << "    br label %" << conditionLabel << "\n";
+    out <<"\n" << endLabel << ":\n";
 }
