@@ -23,6 +23,7 @@ private:
    std::string newReg();
    std::string llvmType(const std::string& berryType);
    std::string escapeLLVMString(const std::string& str);
+   void genStatement(ASTNode* stmt, std::ostream& out);
 
    void genVarDecl(ASTNode* node, std::ostream& out);
    void genArrayDecl(ASTNode* node, std::ostream& out);
@@ -32,7 +33,7 @@ private:
    void genIfStmt(ASTNode* node, std::ostream& out);
    void genWhileStmt(ASTNode* node, std::ostream& out);
    void genBlock(ASTNode* node, std::ostream& out);
-
    void genSwitchStmt(ASTNode* node, std::ostream& out);
+   void genDoWhileStmt(ASTNode* node, std::ostream& out);
    void genBreakStmt(ASTNode* node, std::ostream& out);
 };

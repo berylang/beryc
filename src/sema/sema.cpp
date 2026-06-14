@@ -485,7 +485,9 @@ void SemanticAnalyzer::analyzeWhileStmt(ASTNode* node){
         errors = true;
     }
 
+    loopOrSwitchDepth++;
     analyzeBlock(whileStmt->body.get());
+    loopOrSwitchDepth--;
 }
 
 void SemanticAnalyzer::analyzeDoWhileStmt(ASTNode* node){
@@ -497,7 +499,9 @@ void SemanticAnalyzer::analyzeDoWhileStmt(ASTNode* node){
         errors = true;
     }
 
+    loopOrSwitchDepth++;
     analyzeBlock(dowhilestmt->body.get());
+    loopOrSwitchDepth--;
 
 }
 
