@@ -82,9 +82,6 @@ void CodeGen::genFuncDef(ASTNode* node, std::ostream& out) {
     
     out << "}\n";
     currentFuncReturn = "";
-    
-    out << "}\n";
-    currentFuncReturn = "";
 }
 
 void CodeGen::genReturnStmt(ASTNode* node, std::ostream& out) {

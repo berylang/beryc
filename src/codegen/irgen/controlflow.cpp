@@ -47,7 +47,8 @@ void CodeGen::genWhileStmt(ASTNode* node, std::ostream& out) {
     std::string bodyLabel = "while_body_"+std::to_string(blockid);
     std::string endLabel = "while_end_"+std::to_string(blockid);
     
-
+    breakTracker.push_back(endLabel);
+    continueTracker.push_back(conditionLabel);
     out << "    br label %" << conditionLabel << "\n";
     out << "\n" << conditionLabel << ":\n";
     std::string conditionReg = genExpression(whilestmt->condition.get(), "bool", out);
@@ -57,6 +58,8 @@ void CodeGen::genWhileStmt(ASTNode* node, std::ostream& out) {
     genBlock(whilestmt->body.get(), out);
     out << "    br label %" << conditionLabel << "\n";
     out <<"\n" << endLabel << ":\n";
+    continueTracker.pop_back();
+    breakTracker.pop_back();
 }
 
 void CodeGen::genDoWhileStmt(ASTNode* node, std::ostream& out) {
@@ -68,16 +71,18 @@ void CodeGen::genDoWhileStmt(ASTNode* node, std::ostream& out) {
     std::string endLbl = "dowhile_end_" + std::to_string(blockId);
 
     breakTracker.push_back(endLbl);
+    continueTracker.push_back(condLbl);
     out << "    br label %" << bodyLbl << "\n";
     out << "\n" << bodyLbl << ":\n";
     genBlock(dowhile->body.get(), out);
+    continueTracker.pop_back();
     out << "    br label %" << condLbl << "\n";
-
     out << "\n" << condLbl << ":\n";
     std::string condReg = genExpression(dowhile->condition.get(), "bool", out);
     
     out << "    br i1 " << condReg << ", label %" << bodyLbl << ", label %" << endLbl << "\n";
     out << "\n" << endLbl << ":\n";
+    
     breakTracker.pop_back();
 }
 
@@ -147,4 +152,9 @@ void CodeGen::genSwitchStmt(ASTNode* node, std::ostream& out) {
 void CodeGen::genBreakStmt(ASTNode* node, std::ostream& out) {
     if (breakTracker.empty()) return;
     out << "    br label %" << breakTracker.back() << "\n";
+}
+
+void CodeGen::genContinueStmt(ASTNode* node, std::ostream& out) {
+    if (continueTracker.empty()) return;
+    out << "    br label %" << continueTracker.back() << "\n";
 }
