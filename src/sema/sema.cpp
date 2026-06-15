@@ -19,10 +19,15 @@ void SemanticAnalyzer::analyze() {
             sig.returnType = func->returnType;
             for (auto& p : func->parameters) sig.paramTypes.push_back(p.first);
             functions[func->name] = sig;
+        } 
+        else if (node->type == NodeType::ENUM_DECL) {
+            analyzeEnumDecl(node.get());
         }
     }
     for (auto& node : program->globals)
-        analyzeNode(node.get());
+        if (node->type != NodeType::ENUM_DECL) {
+            analyzeNode(node.get());
+        }
     if (program->runBlock) {
         symbolTable.pushScope();
         for (auto& node : program->runBlock->statements)
@@ -49,6 +54,8 @@ void SemanticAnalyzer::analyzeNode(ASTNode* node) {
     else if (node->type == NodeType::CONTINUE_STMT)
         analyzeContinueStmt(node);
     else if (node->type == NodeType::PASS_STMT){}
+    else if (node->type == NodeType::ENUM_DECL) 
+        analyzeEnumDecl(node);
 } 
 
 void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
@@ -299,6 +306,19 @@ void SemanticAnalyzer::analyzeReturnStmt(ASTNode* node) {
                  std::cerr << "Bery:Error [Line " << ret->line << "]: Type mismatch in return. Expected '" << currentFunctionReturnType << "', got '" << valType << "'\n";
                  errors = true;
              }
+        }
+    }
+}
+
+void SemanticAnalyzer::analyzeEnumDecl(ASTNode* node) {
+    auto* enumDecl = static_cast<EnumDeclNode*>(node);
+    for (const auto& val : enumDecl->values) {
+        std::string mangledName = enumDecl->name + "." + val; 
+        if (symbolTable.existsInCurrentScope(mangledName)) {
+            std::cerr << "Bery:Error [Line " << enumDecl->line << "]: Enum value '" << mangledName << "' already declared.\n";
+            errors = true;
+        } else {
+            symbolTable.add(mangledName, {"int", true, true, enumDecl->line, "", ""});
         }
     }
 }

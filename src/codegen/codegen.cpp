@@ -43,6 +43,20 @@ void CodeGen::generate(const std::string& outputPath) {
             symTable.get(decl->name).llvmAllocType = lt;             
             globalsOut << "@" << decl->name << " = global " << lt << " " << initVal << "\n";
         }
+        else if (node->type == NodeType::ENUM_DECL) {
+            auto* enumDecl = static_cast<EnumDeclNode*>(node.get());
+            int currentValue = 0;
+            
+            for (const auto& val : enumDecl->values) {
+                std::string mangledName = enumDecl->name + "." + val;
+                std::string globalName = "@" + mangledName;
+                std::string lt = "i32";
+                
+                symTable.get(mangledName).llvmRegister = globalName;
+                symTable.get(mangledName).llvmAllocType = lt;
+                globalsOut << globalName << " = global " << lt << " " << currentValue++ << "\n";
+            }
+        }
         else if (node->type == NodeType::ARRAY_DECL) {
             auto* decl = static_cast<ArrayDeclNode*>(node.get());
             symTable.get(decl->name).llvmRegister = "@" + decl->name;
@@ -208,4 +222,19 @@ void CodeGen::genStatement(ASTNode* stmt, std::ostream& out) {
     else if (stmt->type == NodeType::PASS_STMT) {}
     else if (stmt->type == NodeType::CONTINUE_STMT) genContinueStmt(stmt, out);
     else if (stmt->type == NodeType::RETURN_STMT) genReturnStmt(stmt, out);
+    else if (stmt->type == NodeType::ENUM_DECL) {
+        auto* enumDecl = static_cast<EnumDeclNode*>(stmt);
+        int currentValue = 0;
+        
+        for (const auto& val : enumDecl->values) {
+            std::string mangledName = enumDecl->name + "." + val;
+            std::string lt = "i32";
+            std::string safeRegName = enumDecl->name + "_" + val; 
+            std::string memReg = "%" + safeRegName + "_" + std::to_string(++regCounter);
+            
+            symTable.add(mangledName, {"int", true, true, enumDecl->line, memReg, lt});
+            out << "    " << memReg << " = alloca " << lt << "\n";
+            out << "    store " << lt << " " << currentValue++ << ", " << lt << "* " << memReg << "\n";
+        }
+    }
 }

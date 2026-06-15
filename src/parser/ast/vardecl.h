@@ -17,3 +17,14 @@ struct VarDeclNode : public ASTNode {
     }
 
 };
+
+struct EnumDeclNode : public ASTNode {
+    std::string name;
+    std::vector<std::string> values;
+
+    EnumDeclNode(std::string name, std::vector<std::string> values, int ln)
+        : name(name), values(std::move(values)) {
+        type = NodeType::ENUM_DECL;
+        line = ln;
+    }
+};

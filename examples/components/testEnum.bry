@@ -1,0 +1,11 @@
+
+enum colors = {RED, BLUE, GREEN};
+
+run {
+    int a = colors.RED;
+    int b = colors.BLUE;
+
+    enum dept = {AIML, CSE, IT};
+
+    int d = dept.CSE;
+}

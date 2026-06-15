@@ -27,7 +27,8 @@ static std::unordered_map<std::string, TokenType> keywords = {
     {"func", TokenType::TOKEN_FUNC},
     {"return", TokenType::TOKEN_RETURN},
     {"continue", TokenType::TOKEN_CONTINUE},
-    {"pass", TokenType::TOKEN_PASS}
+    {"pass", TokenType::TOKEN_PASS},
+    {"enum", TokenType::TOKEN_ENUM}
 };
 
 Lexer::Lexer(const std::string& source) : source(source), current(0), line(1), errors(false) {}
@@ -108,13 +109,13 @@ void Lexer::scanToken() {
             }
             break;
         case '/':
-         if(peek()=='='){
-                advance();
-                tokens.push_back({TokenType::TOKEN_DIV_ASSIGN, "/=", line});
-        }else{
-            tokens.push_back({TokenType::TOKEN_FSLASH, "/", line});
-            }
-            break;
+            if(peek()=='='){
+                    advance();
+                    tokens.push_back({TokenType::TOKEN_DIV_ASSIGN, "/=", line});
+            }else{
+                tokens.push_back({TokenType::TOKEN_FSLASH, "/", line});
+                }
+                break;
         case '%':
             if(peek()=='='){
                 advance();
@@ -295,7 +296,11 @@ void Lexer::scanToken() {
         case '?':
             tokens.push_back({TokenType::TOKEN_QUESTION, "?", line});
             break;
+        case '.':
+            tokens.push_back({TokenType::TOKEN_DOT, ".", line});
+            break;
         }
+        
 }
 //@todo - add TOKEN_DECIMAL_LIT;
 void Lexer::scanNumber() {
