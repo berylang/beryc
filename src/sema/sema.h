@@ -37,4 +37,5 @@ private:
 
    void analyzeFuncDef(ASTNode* node);
    void analyzeReturnStmt(ASTNode* node);
+   void analyzeEnumDecl(ASTNode* node);
 };

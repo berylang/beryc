@@ -21,7 +21,10 @@ std::unique_ptr<ASTNode> Parser::parse() {
             if (check(TokenType::TOKEN_FUNC)) {
                 program->globals.push_back(parseFunctionDef());
                 continue;
-            } else {
+            } else if (check(TokenType::TOKEN_ENUM)) {
+                program->globals.push_back(parseEnumDecl());
+            } 
+            else {
                 bool isConst = false;
                 if (check(TokenType::TOKEN_CONST)) { advance(); isConst = true; }
                 if (isTypeToken(peek().type)) {
@@ -165,8 +168,16 @@ std::unique_ptr<ASTNode> Parser::parsePrimary(){
     Token t = peek();
     if (t.type == TokenType::TOKEN_IDENT) {
         advance();
+        std::string fullName = t.lexeme;
+        while (check(TokenType::TOKEN_DOT)) {
+            advance();
+            Token nextIdent = consume(TokenType::TOKEN_IDENT, "Expected identifier after '.'");
+            fullName += "." + nextIdent.lexeme;
+        }
         if (check(TokenType::TOKEN_LPARAN)) {
-            return parseCallExpr(t);
+            Token stitchedToken = t;
+            stitchedToken.lexeme = fullName;
+            return parseCallExpr(stitchedToken);
         }
         if (check(TokenType::TOKEN_LBRACKET)) {
             std::vector<std::unique_ptr<ASTNode>> indices;
@@ -175,10 +186,9 @@ std::unique_ptr<ASTNode> Parser::parsePrimary(){
                 indices.push_back(parseExpression());
                 consume(TokenType::TOKEN_RBRACKET, "Expected ']' after array index");
             }
-            return std::make_unique<IndexExprNode>(t.lexeme, std::move(indices), t.line);
+            return std::make_unique<IndexExprNode>(fullName, std::move(indices), t.line);
         }
-        
-        return std::make_unique<IdentNode>(t.lexeme, "", t.line);
+        return std::make_unique<IdentNode>(fullName, "", t.line);
     }
     if (t.type == TokenType::TOKEN_LPARAN) {
         advance();
@@ -429,6 +439,9 @@ std::unique_ptr<ASTNode> Parser::parseStatement() {
     }
     if(check(TokenType::TOKEN_RETURN)){
         return parseReturnStmt();
+    }
+    if (check(TokenType::TOKEN_ENUM)) {
+        return parseEnumDecl();
     }
 
     if(isTypeToken(peek().type)){
@@ -837,4 +850,26 @@ void Parser::synchronize() {
         }
         advance();
     }
+}
+
+std::unique_ptr<ASTNode> Parser::parseEnumDecl() {
+    advance();
+    int line = previous().line;
+    
+    Token nameTok = consume(TokenType::TOKEN_IDENT, "Expected enum name");
+    consume(TokenType::TOKEN_EQUAL, "Expected '=' after enum name");
+    consume(TokenType::TOKEN_LBRACE, "Expected '{' to start enum values");
+
+    std::vector<std::string> values;
+    if (!check(TokenType::TOKEN_RBRACE)) {
+        do {
+            Token valTok = consume(TokenType::TOKEN_IDENT, "Expected enum value");
+            values.push_back(valTok.lexeme);
+        } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
+    }
+    
+    consume(TokenType::TOKEN_RBRACE, "Expected '}' after enum values");
+    consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after enum declaration");
+
+    return std::make_unique<EnumDeclNode>(nameTok.lexeme, std::move(values), line);
 }
