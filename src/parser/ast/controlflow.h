@@ -106,3 +106,47 @@ struct DoWhileStmtNode : public ASTNode{
 
     }
 };
+
+struct ForStmtNode : public ASTNode {
+    std::unique_ptr<ASTNode> init;
+    std::unique_ptr<ASTNode> condition;
+    std::unique_ptr<ASTNode> increment;
+    std::unique_ptr<BlockNode> body;
+
+    ForStmtNode(
+        std::unique_ptr<ASTNode> i,
+        std::unique_ptr<ASTNode> c,
+        std::unique_ptr<ASTNode> inc,
+        std::unique_ptr<BlockNode> b,
+        int ln
+    ) : init(std::move(i)),
+        condition(std::move(c)),
+        increment(std::move(inc)),
+        body(std::move(b))
+    {
+        type = NodeType::FOR_STMT;
+        line = ln;
+    }
+};
+
+struct ForInStmtNode : public ASTNode {
+    std::string varType;
+    std::string varName;
+    std::unique_ptr<ASTNode> iterable;
+    std::unique_ptr<BlockNode> body;
+
+    ForInStmtNode(
+        std::string vType,
+        std::string name,
+        std::unique_ptr<ASTNode> iter,
+        std::unique_ptr<BlockNode> b,
+        int ln
+    ) : varType(std::move(vType)),
+        varName(std::move(name)),
+        iterable(std::move(iter)),
+        body(std::move(b))
+    {
+        type = NodeType::FORIN_STMT;
+        line = ln;
+    }
+};

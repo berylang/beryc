@@ -42,7 +42,13 @@ void SemanticAnalyzer::analyzeNode(ASTNode* node) {
         analyzeIfStmt(node);
     else if (node->type == NodeType::WHILE_STMT)
         analyzeWhileStmt(node);
-    else if (node->type == NodeType::FUNC_DEF) 
+    else if (node->type == NodeType::DOWHILE_STMT)
+        analyzeDoWhileStmt(node);
+    else if (node->type == NodeType::FOR_STMT)
+        analyzeForStmt(node);
+    else if (node->type == NodeType::FORIN_STMT)
+        analyzeForInStmt(node);
+    else if (node->type == NodeType::FUNC_DEF)
         analyzeFuncDef(node);
     else if (node->type == NodeType::RETURN_STMT) 
         analyzeReturnStmt(node);
@@ -255,6 +261,74 @@ void SemanticAnalyzer::analyzeDoWhileStmt(ASTNode* node){
     analyzeBlock(dowhilestmt->body.get());
     loopDepth--;
     loopOrSwitchDepth--;
+}
+
+void SemanticAnalyzer::analyzeForStmt(ASTNode* node) {
+    auto* forStmt = static_cast<ForStmtNode*>(node);
+
+    symbolTable.pushScope();
+
+    if (forStmt->init) {
+        if (forStmt->init->type == NodeType::VAR_DECL)
+            analyzeVarDecl(forStmt->init.get());
+        else
+            typeChecker.analyzeExpression(forStmt->init.get());
+    }
+
+    if (forStmt->condition) {
+        std::string conditionType = typeChecker.analyzeExpression(forStmt->condition.get());
+        if (conditionType != "bool" && conditionType != "unknown") {
+            std::cerr << "Bery:Error [Line " << forStmt->line << "]: 'for' condition must evaluate to 'bool'\n";
+            errors = true;
+        }
+    }
+
+    if (forStmt->increment)
+        typeChecker.analyzeExpression(forStmt->increment.get());
+
+    loopOrSwitchDepth++;
+    loopDepth++;
+    for (auto& stmt : forStmt->body->statements)
+        analyzeNode(stmt.get());
+    loopDepth--;
+    loopOrSwitchDepth--;
+
+    symbolTable.popScope();
+}
+
+void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
+    auto* forIn = static_cast<ForInStmtNode*>(node);
+
+    std::string iterableType = typeChecker.analyzeExpression(forIn->iterable.get());
+    if (iterableType == "unknown" || iterableType.find("[]") == std::string::npos) {
+        std::cerr << "Bery:Error [Line " << forIn->line << "]: 'for-in' requires an array iterable, got '" << iterableType << "'\n";
+        errors = true;
+        return;
+    }
+
+    std::string elementType = iterableType.substr(0, iterableType.find("[]"));
+    if (elementType != forIn->varType && elementType != "unknown" && forIn->varType != "unknown") {
+        if (!(forIn->varType == "float" && elementType == "int") &&
+            !(forIn->varType == "double" && elementType == "int") &&
+            !(forIn->varType == "double" && elementType == "float")) {
+            std::cerr << "Bery:Error [Line " << forIn->line << "]: Loop variable type '" << forIn->varType
+                      << "' does not match array element type '" << elementType << "'\n";
+            errors = true;
+            return;
+        }
+    }
+
+    symbolTable.pushScope();
+    symbolTable.add(forIn->varName, {forIn->varType, false, true, forIn->line, "", ""});
+
+    loopOrSwitchDepth++;
+    loopDepth++;
+    for (auto& stmt : forIn->body->statements)
+        analyzeNode(stmt.get());
+    loopDepth--;
+    loopOrSwitchDepth--;
+
+    symbolTable.popScope();
 }
 
 bool SemanticAnalyzer::hasErrors() { return errors; }
