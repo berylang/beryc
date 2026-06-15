@@ -24,6 +24,7 @@ private:
    SymbolTable& symTable;
    std::ostringstream globalStrings;
    std::vector<std::string> breakTracker;
+   std::vector<std::string> continueTracker;
    std::unordered_map<std::string, CodeGenFunctionSignature> functions;
    std::string currentFuncReturn;
    std::string extractConstant(ASTNode* node);
@@ -44,6 +45,7 @@ private:
    void genSwitchStmt(ASTNode* node, std::ostream& out);
    void genDoWhileStmt(ASTNode* node, std::ostream& out);
    void genBreakStmt(ASTNode* node, std::ostream& out);
+   void genContinueStmt(ASTNode* node, std::ostream& out);
 
    void genFuncDef(ASTNode* node, std::ostream& out);
    void genReturnStmt(ASTNode* node, std::ostream& out);

@@ -205,5 +205,7 @@ void CodeGen::genStatement(ASTNode* stmt, std::ostream& out) {
     else if (stmt->type == NodeType::SWITCH_STMT) genSwitchStmt(stmt, out);
     else if (stmt->type == NodeType::BREAK_STMT) genBreakStmt(stmt, out);
     else if (stmt->type == NodeType::BLOCK) genBlock(stmt, out);
+    else if (stmt->type == NodeType::PASS_STMT) {}
+    else if (stmt->type == NodeType::CONTINUE_STMT) genContinueStmt(stmt, out);
     else if (stmt->type == NodeType::RETURN_STMT) genReturnStmt(stmt, out);
 }
