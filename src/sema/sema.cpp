@@ -47,7 +47,11 @@ void SemanticAnalyzer::analyzeNode(ASTNode* node) {
         analyzeIfStmt(node);
     else if (node->type == NodeType::WHILE_STMT)
         analyzeWhileStmt(node);
-    else if (node->type == NodeType::FUNC_DEF) 
+    else if (node->type == NodeType::DOWHILE_STMT)
+        analyzeDoWhileStmt(node);
+    else if (node->type == NodeType::FOR_STMT)
+        analyzeForStmt(node);
+    else if (node->type == NodeType::FUNC_DEF)
         analyzeFuncDef(node);
     else if (node->type == NodeType::RETURN_STMT) 
         analyzeReturnStmt(node);
@@ -56,6 +60,10 @@ void SemanticAnalyzer::analyzeNode(ASTNode* node) {
     else if (node->type == NodeType::PASS_STMT){}
     else if (node->type == NodeType::ENUM_DECL) 
         analyzeEnumDecl(node);
+    else if (node->type == NodeType::FOR_STMT) 
+        analyzeForStmt(node);
+    else if (node->type == NodeType::FOR_IN_STMT) 
+        analyzeForInStmt(node);
 } 
 
 void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
@@ -92,7 +100,7 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
             }
         }
     }
-    symbolTable.add(decl->name, {decl->varType, decl->isConst, decl->value != nullptr, decl->line, "", ""});
+    symbolTable.add(decl->name, {decl->varType, decl->isConst, decl->value != nullptr, decl->line, "", "", 0});
 }
 
 void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
@@ -149,7 +157,7 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
     }
     std::string typeSignature = decl->elementType;
     for (size_t i = 0; i < decl->dimensions.size(); ++i) typeSignature += "[]";
-    symbolTable.add(decl->name, {typeSignature, false, !decl->initializers.empty(), decl->line, "", ""});
+    symbolTable.add(decl->name, {typeSignature, false, !decl->initializers.empty(), decl->line, "", "", totalSize});
 }
 
 void SemanticAnalyzer::analyzeBlock(ASTNode* node) { 
@@ -264,6 +272,72 @@ void SemanticAnalyzer::analyzeDoWhileStmt(ASTNode* node){
     loopOrSwitchDepth--;
 }
 
+void SemanticAnalyzer::analyzeForStmt(ASTNode* node) {
+    auto* forStmt = static_cast<ForStmtNode*>(node);
+    symbolTable.pushScope();
+    
+    if (forStmt->init) { 
+        analyzeNode(forStmt->init.get());
+    }
+    
+    if (forStmt->condition) {
+        std::string condType = typeChecker.analyzeExpression(forStmt->condition.get());
+        if (condType != "bool" && condType != "unknown") {
+            std::cerr << "Bery:Error [Line " << forStmt->line << "]: Loop condition must evaluate to 'bool'\n";
+            errors = true;
+        }
+    }
+    
+    if (forStmt->update) {
+        typeChecker.analyzeExpression(forStmt->update.get());
+    }
+    loopDepth++; loopOrSwitchDepth++;
+    analyzeBlock(forStmt->body.get()); 
+    loopDepth--; loopOrSwitchDepth--;
+    symbolTable.popScope();
+}
+
+void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
+    auto* forIn = static_cast<ForInNode*>(node);
+    symbolTable.pushScope();
+
+    std::string actualVarType = forIn->varType;
+    if (forIn->rangeEnd) {
+        std::string startType = typeChecker.analyzeExpression(forIn->iterableOrStart.get());
+        std::string endType = typeChecker.analyzeExpression(forIn->rangeEnd.get());
+        if (actualVarType == "unknown" || actualVarType == "") {
+            actualVarType = (startType != "unknown") ? startType : "int"; 
+        }
+    } else {
+        std::string iterType = typeChecker.analyzeExpression(forIn->iterableOrStart.get());
+        
+        if (actualVarType == "unknown" || actualVarType == "") {
+            if (iterType.find("[]") != std::string::npos) {
+                actualVarType = iterType.substr(0, iterType.find("[]"));
+            } else if (iterType == "string") {
+                actualVarType = "char";
+            } else {
+                std::cerr << "Bery:Error [Line " << forIn->line << "]: Cannot iterate over type '" << iterType << "'\n";
+                errors = true;
+                actualVarType = "unknown";
+            }
+        }
+    }
+
+    if (forIn->step) {
+        typeChecker.analyzeExpression(forIn->step.get());
+    }
+    symbolTable.add(forIn->varName, {actualVarType, false, true, forIn->line, "", "", 0});
+
+    loopDepth++; 
+    loopOrSwitchDepth++;
+    analyzeBlock(forIn->body.get());
+    loopDepth--; 
+    loopOrSwitchDepth--;
+
+    symbolTable.popScope();
+}
+
 bool SemanticAnalyzer::hasErrors() { return errors; }
 
 
@@ -273,7 +347,7 @@ void SemanticAnalyzer::analyzeFuncDef(ASTNode* node) {
     
     symbolTable.pushScope();
     for (auto& param : func->parameters) {
-        symbolTable.add(param.second, {param.first, false, true, func->line, "", ""});
+        symbolTable.add(param.second, {param.first, false, true, func->line, "", "", 0});
     }
     
     for (auto& stmt : func->body->statements) 

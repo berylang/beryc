@@ -106,3 +106,42 @@ struct DoWhileStmtNode : public ASTNode{
 
     }
 };
+
+struct ForStmtNode : public ASTNode {
+    std::unique_ptr<ASTNode> init;
+    std::unique_ptr<ASTNode> condition;
+    std::unique_ptr<ASTNode> update;
+    std::unique_ptr<BlockNode> body;
+
+    ForStmtNode(
+        std::unique_ptr<ASTNode> i,
+        std::unique_ptr<ASTNode> c,
+        std::unique_ptr<ASTNode> inc,
+        std::unique_ptr<BlockNode> b,
+        int ln
+    ) : init(std::move(i)),
+        condition(std::move(c)),
+        update(std::move(inc)),
+        body(std::move(b))
+    {
+        type = NodeType::FOR_STMT;
+        line = ln;
+    }
+};
+
+struct ForInNode : public ASTNode {
+    std::string varName;
+    std::string varType;
+    std::unique_ptr<ASTNode> iterableOrStart;
+    std::unique_ptr<ASTNode> rangeEnd;
+    std::unique_ptr<ASTNode> step;
+    std::unique_ptr<BlockNode> body;
+
+    ForInNode(std::string t, std::string var, std::unique_ptr<ASTNode> iterStart, std::unique_ptr<ASTNode> end, 
+        std::unique_ptr<ASTNode> stp, std::unique_ptr<BlockNode> b, int ln)
+        : varType(t), varName(var), iterableOrStart(std::move(iterStart)), 
+        rangeEnd(std::move(end)), step(std::move(stp)), body(std::move(b)) {
+        type = NodeType::FOR_IN_STMT;
+        line = ln;
+    }
+};

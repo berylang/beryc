@@ -237,4 +237,6 @@ void CodeGen::genStatement(ASTNode* stmt, std::ostream& out) {
             out << "    store " << lt << " " << currentValue++ << ", " << lt << "* " << memReg << "\n";
         }
     }
+    else if (stmt->type == NodeType::FOR_STMT) genForStmt(stmt, out);
+    else if (stmt->type == NodeType::FOR_IN_STMT) genForInStmt(stmt, out);
 }
