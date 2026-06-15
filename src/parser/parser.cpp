@@ -601,16 +601,6 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
         Token typeToken = advance();
         Token nameToken = consume(TokenType::TOKEN_IDENT, "Expected identifier in for-loop");
 
-        if (check(TokenType::TOKEN_FORIN)) {
-            advance();
-            auto iterable = parseExpression();
-            consume(TokenType::TOKEN_RPARAN, "Expected ')' after for-in iterable");
-            consume(TokenType::TOKEN_LBRACE, "Expected '{' before for-in body");
-            auto body = parseBlock();
-            return std::make_unique<ForInStmtNode>(
-                typeToken.lexeme, nameToken.lexeme, std::move(iterable), std::move(body), line);
-        }
-
         std::unique_ptr<ASTNode> init = nullptr;
         if (check(TokenType::TOKEN_EQUAL)) {
             advance();
@@ -819,9 +809,6 @@ void Parser::synchronize() {
             case TokenType::TOKEN_BOOL:
             case TokenType::TOKEN_CHAR:
             case TokenType::TOKEN_CONST:
-            case TokenType::TOKEN_WHILE:
-            case TokenType::TOKEN_FOR:
-            case TokenType::TOKEN_DOWHILE:
             case TokenType::TOKEN_RUN:
                 return;
             default:
