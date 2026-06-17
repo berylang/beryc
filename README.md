@@ -29,6 +29,5 @@ Project pipeline follows :
 - Yash Gajawani
 - Avinash Pawar
 - Pratyusha Nalavade
-- Hrishikesh Bhande
 - Soham Nangare
 
