@@ -1,10 +1,14 @@
 #include <cstdlib>
 #include "../include/bery_alloc.h"
+#include "../include/bery_gc.h"
 #include "../include/bery_runtime.h"
 
 
 
 void* bery_alloc(size_t size, uint32_t typeId) {
+    if (bery_gc_should_collect()) {
+        bery_gc_collect();
+    }
     size_t totalSize = sizeof(BeryObjectHeader) + size;
     BeryObjectHeader* header  = static_cast<BeryObjectHeader*>(malloc(totalSize));
     
