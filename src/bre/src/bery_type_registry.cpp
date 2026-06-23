@@ -18,10 +18,11 @@ static BeryTypeRegistry* registry() {
         reg->types = static_cast<BeryTypeInfo*>(malloc(sizeof(BeryTypeInfo) + reg->capacity));
         g_beryRuntime.typeRegistry = reg;
     }
+    return static_cast<BeryTypeRegistry*>(g_beryRuntime.typeRegistry);
 }
 
-uint32_t bery_type_register(const char* typeName, size_t instanceSize, BeryFieldInfo* pFields, size_t pfCount) {
-    BeryTypeInfo* reg = registry();
+uint32_t bery_type_register(const char* typeName, size_t instanceSize, BeryFieldInfo* pFields, size_t pfCount, BeryDestructorFn destructor) {
+    BeryTypeRegistry* reg = registry();
 
     if (reg->count == reg->capacity) {
         reg->capacity *= 2;
@@ -35,6 +36,7 @@ uint32_t bery_type_register(const char* typeName, size_t instanceSize, BeryField
     info->instanceSize = instanceSize;
     info->pointerFields = pFields;
     info->pointerFieldCount = pfCount;
+    info->destructor = destructor;
 
     reg->count += 1;
     return newId;
