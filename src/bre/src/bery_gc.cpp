@@ -42,14 +42,15 @@ static void markPhase() {
         char* payload = reinterpret_cast<char*>(header) + sizeof(BeryObjectHeader);
         for (size_t i = 0; i < type->pointerFieldCount; i++) {
             size_t offset = type->pointerFields[i].offset;
-            void* fieldValye = *reinterpret_cast<void**>(payload + offset);
-            if(fieldValye) {
-                BeryObjectHeader* fieldHeader = bery_header_from_payload(fieldValye);
+            void* fieldValue = *reinterpret_cast<void**>(payload + offset);
+            if (fieldValue) {
+                BeryObjectHeader* fieldHeader = bery_header_from_payload(fieldValue);
                 markObject(fieldHeader, list);
             }
         }
     }
 }
+
 
 static void sweepPhase() {
     BeryObjectHeader** current = &g_beryRuntime.heapHead;
@@ -60,6 +61,13 @@ static void sweepPhase() {
             current = &obj->next;
         } else {
             *current = obj->next;
+
+            BeryTypeInfo* type = bery_type_lookup(obj->typeId);
+            if (type && type->destructor) {
+                void* payload = reinterpret_cast<char*>(obj) + sizeof(BeryObjectHeader);
+                type->destructor(payload);
+            }
+
             g_beryRuntime.totalAllocated -= obj->size;
             g_beryRuntime.totalObjectsLive -= 1;
             free(obj);
