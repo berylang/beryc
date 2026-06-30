@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(BeryCompiler)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(BRE_SOURCES
     src/bre/src/bery_runtime.cpp
@@ -42,9 +43,13 @@ add_executable(bery
     src/codegen/irgen/gc.cpp
     src/importer/mangler.cpp
     src/importer/importer.cpp
+    cli/bery_cli.cpp
+    cli/commands/cmd_compile.cpp
+    cli/commands/cmd_run.cpp
+    cli/commands/cmd_version.cpp
 )
 
-target_include_directories(bery PRIVATE src)
+target_include_directories(bery PRIVATE src cli)
 target_link_libraries(bery PRIVATE bre)
 
 install(TARGETS bre ARCHIVE DESTINATION lib)

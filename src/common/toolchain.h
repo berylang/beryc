@@ -77,8 +77,8 @@ inline BeryToolChain detectToolchain() {
     tc.binaryExt = ".exe";
 
     //WINDOWS: clang++ is preferred since it handles MSVC ABI better than minGW g++
-    if      (commandExists("clang++")) tc.linker = "clang++";
-    else if (commandExists("g++"))     tc.linker = "g++";
+    if      (commandExists("g++")) tc.linker = "g++";
+    else if (commandExists("clang++"))     tc.linker = "clang++";
     else return tc;
 #elif defined(BERY_MACOS)
     // MACOS prefers clang++ as a linker
@@ -110,7 +110,7 @@ inline BeryToolChain detectToolchain() {
 // on cross-compile setups or multi-target LLVM ubuilds
 inline std::string buildCompileCmd(const BeryToolChain& tc,const std::string& irFile, const std::string& objFile) {
 #ifdef BERY_WINDOWS
-    return tc.llc + " -filetype=obj -mtriple=x86_64-pc-windows-msvc \""+ irFile + "\" -o \"" + objFile + "\"";
+    return tc.llc + " -filetype=obj -mtriple=x86_64-pc-windows-gnu \""+ irFile + "\" -o \"" + objFile + "\"";
 #elif defined(BERY_MACOS)
     return tc.llc + " -filetype=obj -mtriple=x86_64-apple-darwin \""+ irFile + "\" -o \"" + objFile + "\"";
 #elif defined(BERY_LINUX)
@@ -128,18 +128,7 @@ inline std::string buildCompileCmd(const BeryToolChain& tc,const std::string& ir
 //      -lbre  (lib name without "lib" prefix and ".a" extension)
 // becuase -l<name> is  how unix linkers resolves library names via -L paths.
 inline std::string buildLinkCmd(const BeryToolChain& tc, const std::string& objFile, const std::string& breLib, const std::string& outBinary) {
-    // split brelib path into directory and filename
-    // directory = "/path/"
-    // filename = "libbre.a"
-    size_t slash = breLib.find_last_of("/\\");
-    std::string libDir  = (slash == std::string::npos) ? "." : breLib.substr(0, slash);
-    std::string libFile = (slash == std::string::npos) ? breLib : breLib.substr(slash + 1);
 
-    // stripping the 'lib' prefix -> becomes "bre.a"
-    std::string libName = libFile;
-    if (libName.size() > 3 && libName.substr(0, 3) == "lib") libName = libName.substr(3);
-    // stripping the file extension  -> becomes "bre"
-    size_t dot = libName.find_last_of('.');
-    if (dot != std::string::npos) libName = libName.substr(0, dot);
-    return tc.linker + " \"" + objFile + "\""+ " -L\"" + libDir + "\"" + " -l" + libName+ " -o \"" + outBinary + "\"";
+    return tc.linker+" \""+objFile+"\" \""+breLib+"\" -o \""+outBinary+"\"";
+
 }
