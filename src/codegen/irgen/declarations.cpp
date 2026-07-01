@@ -4,7 +4,7 @@
 #include "../../parser/ast/classes.h"
 #include "../../parser/ast/functions.h"
 #include "../../parser/ast/classes.h"
-
+#include "../../sema/symboltable.h"
 void CodeGen::genClassDecl(ASTNode* node) {
     auto* cls = static_cast<ClassDefNode*>(node);
 
@@ -58,53 +58,52 @@ void CodeGen::genClassDecl(ASTNode* node) {
             methodOut << "    " << selfReg << " = alloca " << layout.llvmStructType << "*\n";
             methodOut << "    store " << layout.llvmStructType << "* %self_arg, "
                       << layout.llvmStructType << "** " << selfReg << "\n";
-            symTable.add(cls->attributes->selfRef,
-            Symbol{
-                .name = cls->attributes->selfRef,
-                .type = cls->name,
-                .isConst = false,
-                .isInitialized = true,
-                .llvmRegister = selfReg,
-                .llvmAllocType = layout.llvmStructType + "*",
-                .line = cls->line
-            });
+            Symbol sym;
+            sym.type = cls->name;
+            sym.isConst = false;
+            sym.isInitialized = true;
+            sym.llvmRegister = selfReg;
+            sym.llvmAllocType = layout.llvmStructType + "*";
+            sym.line = cls->line;
+            
+            symTable.add(cls->attributes->selfRef,sym);
 
             std::string loadedSelf = newReg();
             methodOut << "    " << loadedSelf << " = load " << layout.llvmStructType << "*, "
                       << layout.llvmStructType << "** " << selfReg << "\n";
 
-            for (auto& [berryT, fieldName] : layout.fields) {
-                std::string lt = llvmType(berryT);
+            for (auto& field : layout.fields) {
+                auto& beryT=field.first;
+                auto& fieldName=field.second;
+                std::string lt = llvmType(beryT);
                 int idx = layout.fieldIndex[fieldName];
                 std::string gepReg = "%" + fieldName + "_" + std::to_string(++regCounter);
                 methodOut << "    " << gepReg << " = getelementptr inbounds "
                           << layout.llvmStructType << ", " << layout.llvmStructType << "* "
                           << loadedSelf << ", i32 0, i32 " << idx << "\n";
-                symTable.add(fieldName,
-                Symbol{
-                    .name = fieldName,
-                    .type = berryT,
-                    .isConst = false,
-                    .isInitialized = true,
-                    .llvmRegister = gepReg,
-                    .llvmAllocType = lt,
-                    .line = cls->line
-                });
+                Symbol sym;
+                    sym.type = beryT;
+                    sym.isConst = false;
+                    sym.isInitialized = true;
+                    sym.llvmRegister = gepReg;
+                    sym.llvmAllocType = lt;
+                    sym.line = cls->line;
+                symTable.add(fieldName,sym);
+               
             }
 
             for (auto& p : func->parameters) {
                 std::string pLT  = llvmType(p.first);
                 std::string pReg = "%" + p.second + "_" + std::to_string(++regCounter);
-                symTable.add(p.second,
-                Symbol{
-                    .name = p.second,
-                    .type = p.first,
-                    .isConst = false,
-                    .isInitialized = true,
-                    .llvmRegister = pReg,
-                    .llvmAllocType = pLT,
-                    .line = func->line
-                });
+                Symbol sym;
+                sym.type = p.first;
+                sym.isConst = false;
+                sym.isInitialized = true;
+                sym.llvmRegister = pReg;
+                sym.llvmAllocType = pLT;
+                sym.line = func->line;
+                symTable.add(p.second,sym);
+                
                 methodOut << "    " << pReg << " = alloca " << pLT << "\n";
                 methodOut << "    store " << pLT << " %" << p.second << "_arg, "
                           << pLT << "* " << pReg << "\n";
