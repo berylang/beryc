@@ -77,8 +77,8 @@ inline BeryToolChain detectToolchain() {
     tc.binaryExt = ".exe";
 
     //WINDOWS: clang++ is preferred since it handles MSVC ABI better than minGW g++
-    if      (commandExists("g++")) tc.linker = "g++";
-    else if (commandExists("clang++"))     tc.linker = "clang++";
+    if      (commandExists("clang++")) tc.linker = "clang++";
+    else if (commandExists("g++"))     tc.linker = "g++";
     else return tc;
 #elif defined(BERY_MACOS)
     // MACOS prefers clang++ as a linker
@@ -99,6 +99,8 @@ inline BeryToolChain detectToolchain() {
     if      (commandExists("g++"))     tc.linker = "g++";
     else if (commandExists("clang++")) tc.linker = "clang++";
     else return tc;
+#else
+    return tc;
 #endif
     tc.valid = true;
     return tc;
@@ -110,7 +112,10 @@ inline BeryToolChain detectToolchain() {
 // on cross-compile setups or multi-target LLVM ubuilds
 inline std::string buildCompileCmd(const BeryToolChain& tc,const std::string& irFile, const std::string& objFile) {
 #ifdef BERY_WINDOWS
-    return tc.llc + " -filetype=obj -mtriple=x86_64-pc-windows-gnu \""+ irFile + "\" -o \"" + objFile + "\"";
+    std::string triple = (tc.linker == "g++")? "x86_64-pc-windows-gnu" : "x86_64-pc-windows-msvc";
+    return tc.llc + " -filetype=obj -mtriple="+triple+" \""+ irFile + "\" -o \"" + objFile + "\"";
+    //g++ -filetype=obj -mtriple=x86_64-pc-windows-gnu "bery_out.ll" -o "file" 
+    //clang -filetype=obj -mtriple=x86_64-pc-windows-msvc "bery_out.ll" -o "file" 
 #elif defined(BERY_MACOS)
     return tc.llc + " -filetype=obj -mtriple=x86_64-apple-darwin \""+ irFile + "\" -o \"" + objFile + "\"";
 #elif defined(BERY_LINUX)
