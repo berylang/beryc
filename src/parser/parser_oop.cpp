@@ -28,7 +28,7 @@ std::unique_ptr<AttributeSectionNode> Parser::parseAttributeSection() {
     consume(TokenType::TOKEN_DCOLON, "Exptected '::' after attributes seciton verbose");
 
     std::vector<std::unique_ptr<ASTNode>> attributes;
-    while(!isAtEnd()&& (isTypeToken(peek().type) || isClassVarDecl())) {
+    while(!isAtEnd()&& (isTypeToken(peek().type) || isClassVarDecl() || check(TokenType::TOKEN_PUBLIC) || check(TokenType::TOKEN_PRIVATE) || check(TokenType::TOKEN_PROTECTED))) {
 
         AccessSpecifier access = AccessSpecifier::PUBLIC;
         if(check(TokenType::TOKEN_PUBLIC)){
@@ -43,8 +43,7 @@ std::unique_ptr<AttributeSectionNode> Parser::parseAttributeSection() {
             advance();
             access=AccessSpecifier::PROTECTED;
         }
-        if(!isTypeToken(peek().type))
-            break;
+        if(!isTypeToken(peek().type) && !isClassVarDecl()) break;
         
         auto vars= parseVarDecl(access, false);
         for (auto& v : vars) {

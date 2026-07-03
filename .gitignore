@@ -1,2 +1,14 @@
 build/
+bin/
+
+*.o
+*.obj
+
+*.exe
+*.out
+
+
 *.ll
+
+.vscode/
+.DS_Store

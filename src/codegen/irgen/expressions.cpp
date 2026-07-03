@@ -600,6 +600,27 @@ std::string CodeGen::genCallExpr(ASTNode* node, std::ostream& out) {
         }
         return "0";
     }
+    if (!currentClassName.empty() && classLayouts.count(currentClassName)) {
+        std::string mangled = currentClassName + "_" + call->callee;
+        if (functions.count(mangled)) {
+            CodeGenFunctionSignature& sig = functions[mangled];
+            Symbol& selfSym = symTable.get(currentSelfRef);
+            std::string receiverReg = emitLoad(classLayouts.at(currentClassName).llvmStructType + "*", selfSym.llvmRegister, out);
+            std::string argsStr = classLayouts.at(currentClassName).llvmStructType + "* " + receiverReg;
+            for (size_t i = 0; i < call->arguments.size(); ++i) {
+                std::string argReg = genExpression(call->arguments[i].get(), sig.paramTypes[i + 1], out);
+                argsStr += ", " + llvmType(sig.paramTypes[i + 1]) + " " + argReg;
+            }
+
+            if (sig.returnType.empty() || sig.returnType == "void") {
+                out << "    call void @" << mangled << "(" << argsStr << ")\n";
+                return "0";
+            }
+            std::string resReg = newReg();
+            out << "    " << resReg << " = call " << llvmType(sig.returnType) << " @" << mangled << "(" << argsStr << ")\n";
+            return resReg;
+        }
+    }
     if (functions.find(call->callee) == functions.end()) return "0";
     CodeGenFunctionSignature& sig = functions[call->callee];
 

@@ -30,8 +30,8 @@ static std::vector<std::string> splitDots(const std::string& s) {
 }
 
 
-TypeChecker::TypeChecker(SymbolTable& symTable, std::unordered_map<std::string, FunctionSignature>& funcs, bool& errorsFlag, std::unordered_map<std::string, ClassDefNode*>& classesMap) 
-    : symbolTable(symTable), functions(funcs), errors(errorsFlag), classes(classesMap) {}
+TypeChecker::TypeChecker(SymbolTable& symTable, std::unordered_map<std::string, FunctionSignature>& funcs, bool& errorsFlag, std::unordered_map<std::string, ClassDefNode*>& classesMap, std::string& currentClassRef) 
+    : symbolTable(symTable), functions(funcs), classes(classesMap), currentClass(currentClassRef), errors(errorsFlag) {}
 
 bool TypeChecker::typeMatchesLiteral(const std::string& type, NodeType litType) {
    if (type == "int"    && litType == NodeType::INT_LIT)     return true;
@@ -320,9 +320,12 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
                 call->resolvedType = "unknown";
                 return call->resolvedType;
             }
+            if (!checkMemberAccess(methodDef->access, objType, method, "method", call->line)) {
+                call->resolvedType = "unknown";
+                return call->resolvedType;
+            }
             if (methodDef->parameters.size() != call->arguments.size()) {
-                std::cerr << "Bery:Error [Line " << call->line << "]: Method '" << method << "' expects "
-                        << methodDef->parameters.size() << " arguments, got " << call->arguments.size() << "\n";
+                std::cerr << "Bery:Error [Line " << call->line << "]: Method '" << method << "' expects "<< methodDef->parameters.size() << " arguments, got " << call->arguments.size() << "\n";
                 errors = true;
                 call->resolvedType = "unknown";
                 return call->resolvedType;
@@ -351,6 +354,34 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
         return call->resolvedType;
     }
 
+    if (!currentClass.empty()) {
+        auto selfClassIt =classes.find(currentClass);
+        if (selfClassIt != classes.end() && selfClassIt->second->methods) {
+            for (auto& m : selfClassIt->second->methods->methods) {
+                auto* f = static_cast<FunctionDefNode*>(m.get());
+                if (f->name != call->callee) continue;
+                if (f->parameters.size() != call->arguments.size()) {
+                    std::cerr << "Bery:Error [Line " << call->line << "]: Method '" << call->callee << "' expects "<< f->parameters.size() << " arguments, got " << call->arguments.size() << "\n";
+                    errors = true;
+                    call->resolvedType = "unknown";
+                    return call->resolvedType;
+                }
+                for (size_t i = 0; i < call->arguments.size(); ++i) {
+                    std::string argType   = analyzeExpression(call->arguments[i].get());
+                    std::string paramType = f->parameters[i].first;
+                    if (argType != "unknown" && argType != paramType) {
+                        if (!(paramType == "float"&& argType =="int") && !(paramType == "double" && argType == "float") &&
+                            !(paramType == "double"&& argType==  "int") && !(paramType == "bigint" && argType == "int")) {
+                            std::cerr << "Bery:Error [Line " << call->line << "]: Type mismatch in argument " << i+1<< " of '" << call->callee << "'. Expected '" << paramType << "', got '" << argType << "'\n";
+                            errors = true;
+                        }
+                    }
+                }
+                call->resolvedType = f->returnType.empty() ? "void" : f->returnType;
+                return call->resolvedType;
+            }
+        }
+    }
     if (functions.find(call->callee) == functions.end()) {
         std::cerr << "Bery:Error [Line " << call->line << "]: Undefined function '" << call->callee << "'\n";
         errors = true;
@@ -464,7 +495,12 @@ std::string TypeChecker::checkAssignmentExpr(ASTNode* node) {
                 assign->resolvedType = "unknown";
                 return assign->resolvedType;
             }
-            targetType = fieldType;
+            VarDeclNode* field = findField(classIt->second, fieldName);
+            if (!checkMemberAccess(field->access, containerType, fieldName, "field", assign->line)) {
+                assign->resolvedType = "unknown";
+                return assign->resolvedType;
+            }
+            targetType = fieldType; 
         } else {
 
 
@@ -626,12 +662,26 @@ std::string TypeChecker::checkNewExpr(ASTNode* node) {
 
 
 std::string TypeChecker::resolveFieldType(ClassDefNode* cls, const std::string& fieldName) {
-    if(!cls->attributes) {return "";}
+    VarDeclNode* field = findField(cls, fieldName);
+    return field ? field->varType : "";
+}
+
+VarDeclNode* TypeChecker::findField(ClassDefNode* cls, const std::string& fieldName) {
+    if(!cls->attributes) {return nullptr;}
     for(auto& attrNode :cls->attributes->attributes) {
         auto* field = static_cast<VarDeclNode*>(attrNode.get());
-        if (field->name == fieldName) return field->varType;
+        if (field->name == fieldName) return field;
     }
-    return "";
+    return nullptr;
+}
+
+bool TypeChecker::checkMemberAccess(AccessSpecifier access, const std::string& className, const std::string& memberName, const std::string& type, int line) {
+    if (access == AccessSpecifier::PUBLIC) return true;
+    if (currentClass == className) return true;
+    std::string levelName = (access == AccessSpecifier::PRIVATE) ? "private" : "protected";
+    std::cerr << "Bery:Error [Line " << line << "]: Cannot access " << levelName << " " << type << " '"<< memberName << "' of class '" << className << "' from outside the class\n";
+    errors = true;
+    return false;
 }
 
 std::string TypeChecker::resolveChainType(const std::vector<std::string>& parts, int line) {
@@ -648,13 +698,16 @@ std::string TypeChecker::resolveChainType(const std::vector<std::string>& parts,
             errors = true;
             return "unknown";
         }
-        std::string fieldType = resolveFieldType(classIt->second, parts[i]);
-        if (fieldType.empty()){
+        VarDeclNode* field = findField(classIt->second, parts[i]);
+        if (!field){
             std::cerr << "Bery:Error [Line " <<line << "]: Class '" << curType << "' has no member '" << parts[i] << "'\n";
             errors = true;
             return "unknown";
         }
-        curType = fieldType;
+        if (!checkMemberAccess(field->access, curType, parts[i], "field", line)) {
+            return "unknown";
+        }
+        curType = field->varType;
     }
     return curType;
 }

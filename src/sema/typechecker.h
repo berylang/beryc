@@ -22,6 +22,8 @@
 #include <vector>
 #include <unordered_map>
 #include "../parser/ast/classes.h"
+#include "../parser/ast/accessSpecifier.h"
+#include "../parser/ast/vardecl.h"
 
 
 struct FunctionSignature {
@@ -31,8 +33,7 @@ struct FunctionSignature {
 
 class TypeChecker {
 public:
-    TypeChecker(SymbolTable& symTable, std::unordered_map<std::string, FunctionSignature>& funcs, bool& errorsFlag, std::unordered_map<std::string, ClassDefNode*>& classesMap);    
-    std::string analyzeExpression(ASTNode* node);
+    TypeChecker(SymbolTable& symTable, std::unordered_map<std::string, FunctionSignature>& funcs, bool& errorsFlag, std::unordered_map<std::string, ClassDefNode*>& classesMap, std::string& currentClassRef);    std::string analyzeExpression(ASTNode* node);
     bool typeMatchesLiteral(const std::string& type, NodeType litType);
 
 private:
@@ -57,4 +58,9 @@ private:
     std::string resolveFieldType(ClassDefNode* cls, const std::string& fieldName);
     std::string resolveChainType(const std::vector<std::string>& parts, int line);
     std::string resolveNumericPromotion(const std::string& lType, const std::string& rType);
+
+    // @oop
+    std::string& currentClass;
+    VarDeclNode* findField(ClassDefNode* cls, const std::string& fieldName);
+    bool checkMemberAccess(AccessSpecifier access, const std::string& className, const std::string& memberName, const std::string& type, int line);
 };

@@ -194,6 +194,7 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
     }
 
     if (cls->methods) {
+        currentClassContext = cls->name;
         for (auto& m : cls->methods->methods) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
             FunctionSignature sig;
@@ -220,5 +221,6 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
             symbolTable.popScope();
             currentFunctionReturnType = "";
         }
+        currentClassContext = "";
     }
 }

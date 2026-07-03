@@ -74,5 +74,6 @@ private:
 
    // @oop
    std::unordered_map<std::string, ClassDefNode*> classes;
+   std::string currentClassContext = "";
    void analyzeClassDecl(ASTNode* node);
 };
