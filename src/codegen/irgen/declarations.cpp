@@ -42,6 +42,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
     globalStrings << "@.classname." << cls->name << " = private unnamed_addr constant ["<< classNameLen << " x i8] c\"" << classNameEscaped << "\"\n";
     globalStrings << "@" << cls->name << "_typeid = global i32 0\n";
     globalStrings << structDef.str() << "\n";
+    classLayouts[cls->name] = layout;
     if (cls->methods) {
         for (auto& m : cls->methods->methods) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
@@ -65,6 +66,8 @@ void CodeGen::genClassDecl(ASTNode* node) {
 
             symTable.pushScope();
             pushGCScope();
+            currentClassName = cls->name;
+            currentSelfRef= cls->attributes->selfRef;    
 
             std::string selfReg = "%self_" + std::to_string(++regCounter);
             methodOut << "    " << selfReg << " = alloca " << layout.llvmStructType << "*\n";
@@ -127,6 +130,8 @@ void CodeGen::genClassDecl(ASTNode* node) {
             int roots = popGCScope();
             emitGCPops(roots, methodOut);
             symTable.popScope();
+            currentClassName = "";
+            currentSelfRef= "";
 
             bool endsWithReturn = !func->body->statements.empty() &&
                 func->body->statements.back()->type == NodeType::RETURN_STMT;

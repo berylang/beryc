@@ -1,0 +1,19 @@
+class Car {
+    attributes[hello]::
+        public int a;
+        private string name = "Bery";
+    methods::
+        public func setA(int x) {
+            hello.a = x;
+        }
+        func getA() -> int {
+            return hello.a;
+        }
+        
+}
+
+run {
+    Car c = new Car();
+    c.setA(100);
+    println(c.getA());
+}
