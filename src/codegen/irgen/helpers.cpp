@@ -156,8 +156,3 @@ std::string CodeGen::emitBoxValue(const std::string& llvmT, const std::string& v
     out << "    " << castReg << " = bitcast " << llvmT << "* " << slotReg << " to i8*\n";
     return castReg;
 }
-
-vitthalhumbe@fedora:~/Projects/m34/m3407/build$ ./bery run ../examples/classes/constructors.bry
-Constructor Succesfull
-20
-Destructor Successfull
