@@ -74,7 +74,7 @@ std::string CodeGen::extractConstant(ASTNode* node) {
 }
 
 std::string CodeGen::newReg() {
-   return "%" + std::to_string(++regCounter);
+   return "%bery_" +std::to_string(++regCounter);
 }
 
 void CodeGen::genStatement(ASTNode* stmt, std::ostream& out) {
@@ -157,3 +157,7 @@ std::string CodeGen::emitBoxValue(const std::string& llvmT, const std::string& v
     return castReg;
 }
 
+vitthalhumbe@fedora:~/Projects/m34/m3407/build$ ./bery run ../examples/classes/constructors.bry
+Constructor Succesfull
+20
+Destructor Successfull

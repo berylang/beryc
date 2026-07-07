@@ -22,6 +22,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
             std::string lt = llvmType(field->varType);
             layout.fields.push_back({field->varType, field->name});
             layout.fieldIndex[field->name] = (int)i;
+            layout.fieldInitializers.push_back(field->value.get());
             structDef << lt;
             if (i + 1 < cls->attributes->attributes.size()) structDef << ", ";
         }
@@ -41,12 +42,20 @@ void CodeGen::genClassDecl(ASTNode* node) {
     int classNameLen = (int)cls->name.length() + 1;
     globalStrings << "@.classname." << cls->name << " = private unnamed_addr constant ["<< classNameLen << " x i8] c\"" << classNameEscaped << "\"\n";
     globalStrings << "@" << cls->name << "_typeid = global i32 0\n";
+    if (cls->methods) {
+        for (auto& m : cls->methods->methods) {
+            auto* f = static_cast<FunctionDefNode*>(m.get());
+            if (f->isConstructor) layout.hasConstructor = true;
+            if (f->isDestructor)layout.hasDestructor= true;
+        }
+    }
+
     globalStrings << structDef.str() << "\n";
     classLayouts[cls->name] = layout;
     if (cls->methods) {
         for (auto& m : cls->methods->methods) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
-            std::string mangledName = cls->name + "_" + func->name;
+            std::string mangledName = func->isConstructor ? (cls->name + "$ctor"): func->isDestructor  ? (cls->name + "$dtor"): (cls->name + "_" + func->name);
 
             CodeGenFunctionSignature sig;
             sig.returnType = func->returnType;
@@ -141,6 +150,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
                 else
                     methodOut << "    ret " << retLT << " 0\n";
             }
+            
             methodOut << "}\n";
             globalStrings << methodOut.str();
             currentFuncReturn = "";

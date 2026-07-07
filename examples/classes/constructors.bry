@@ -1,0 +1,24 @@
+
+
+class A {
+    attributes[this]::
+        private int a = 10;
+    
+    methods::
+        A(int x) {
+            this.a = x;
+            println("Constructor Succesfull");
+        }
+        ~A() {
+            println("Destructor Successfull");
+        }
+
+        public func getA() -> int {
+            return this.a;
+        }
+}
+
+run {
+    A a = new A(20);
+    println(a.getA());
+}

@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include "ast/classes.h"
+#include "ast/functions.h"
 
 std::unique_ptr<ASTNode> Parser::parseClassDecl() {
     advance();
@@ -14,7 +15,7 @@ std::unique_ptr<ASTNode> Parser::parseClassDecl() {
 
     std::unique_ptr<MethodSectionNode> methodSection = nullptr;
     if (check(TokenType::TOKEN_METHODS)) {
-        methodSection = parseMethodSection();
+        methodSection = parseMethodSection(className.lexeme);
     }
     consume(TokenType::TOKEN_RBRACE, "Expected '}' after class body");
     return std::make_unique<ClassDefNode>(className.lexeme, std::move(attrSection), std::move(methodSection), line);
@@ -53,7 +54,7 @@ std::unique_ptr<AttributeSectionNode> Parser::parseAttributeSection() {
     return std::make_unique<AttributeSectionNode>(selfToken.lexeme, std::move(attributes), selfToken.line);
 }
 
-std::unique_ptr<MethodSectionNode> Parser::parseMethodSection() {
+std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string& className) {
     int line = peek().line;
     consume(TokenType::TOKEN_METHODS, "Expected 'methods' section");
     consume(TokenType::TOKEN_DCOLON, "Exptected '::' after 'methods");
@@ -73,6 +74,50 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection() {
             advance();
             access=AccessSpecifier::PROTECTED;
         }
+
+        if (check(TokenType::TOKEN_TILDE)) {
+            advance();
+            Token nameToken =consume(TokenType::TOKEN_IDENT, "Expected class name after '~'");
+            if (nameToken.lexeme!= className) {
+                std::cerr << "Bery:Error [Line " << nameToken.line << "]: Destructor name '~" << nameToken.lexeme<< "' does not match class '" << className << "'\n";
+                errors = true;
+            }
+            int declLine = nameToken.line;
+            consume(TokenType::TOKEN_LPARAN, "Expected '(' after destructor name");
+            std::vector<std::pair<std::string, std::string>> params;
+            if (!check(TokenType::TOKEN_RPARAN)) {
+                do {
+                    Token typeToken = advance();
+                    Token pNameToken = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
+                    params.push_back({typeToken.lexeme, pNameToken.lexeme});
+                } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
+            }
+            consume(TokenType::TOKEN_RPARAN, "Expected ')' after parameters");
+            consume(TokenType::TOKEN_LBRACE, "Expected '{' before destructor body");
+            auto body = parseBlock();
+            methods.push_back(std::make_unique<FunctionDefNode>(className, std::move(params), "void", std::move(body), access, declLine, false, true));
+            continue;
+        }
+
+        if (check(TokenType::TOKEN_IDENT) && peek().lexeme == className &&
+            current + 1 < (int)tokens.size() && tokens[current + 1].type == TokenType::TOKEN_LPARAN) {
+            Token nameToken = advance();
+            int declLine = nameToken.line;
+            consume(TokenType::TOKEN_LPARAN, "Expected '(' after constructor name");
+            std::vector<std::pair<std::string, std::string>> params;
+            if (!check(TokenType::TOKEN_RPARAN)) {  do {
+                    Token typeToken = advance();
+                    Token pNameToken = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
+                    params.push_back({typeToken.lexeme, pNameToken.lexeme});
+                } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
+            }
+            consume(TokenType::TOKEN_RPARAN, "Expected ')' after parameters");
+            consume(TokenType::TOKEN_LBRACE, "Expected '{' before constructor body");
+            auto body =parseBlock();
+            methods.push_back(std::make_unique<FunctionDefNode>(className, std::move(params), "void", std::move(body), access, declLine, true, false));
+            continue;
+        }
+
         if(!check(TokenType::TOKEN_FUNC))
             break;
         methods.push_back(parseFunctionDef(access));
@@ -80,7 +125,6 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection() {
 
     return std::make_unique<MethodSectionNode>(std::move(methods), line);
 }
-
 bool Parser::isClassVarDecl() {
     return peek().type == TokenType::TOKEN_IDENT && current + 1 < (int)tokens.size() && tokens[current + 1].type == TokenType::TOKEN_IDENT;
 }

@@ -650,17 +650,35 @@ std::string CodeGen::genNewExpr(ASTNode* node, std::ostream& out) {
     std::string typeIdReg = emitLoad("i32", "@" + newExpr->className + "_typeid", out);
     std::string rawReg = newReg();
     out << "    " << rawReg << " = call i8* @bery_alloc(i64 " << layout.instanceSize<< ", i32 " << typeIdReg << ")\n";
+    
     std::string objReg = newReg();
     out << "    " << objReg << " = bitcast i8* " << rawReg << " to " << layout.llvmStructType << "*\n";
-
     for (size_t i = 0; i < layout.fields.size(); ++i) {
         std::string flt = llvmType(layout.fields[i].first);
         std::string gepReg = newReg();
         out << "    " << gepReg << " = getelementptr inbounds " << layout.llvmStructType << ", "<< layout.llvmStructType << "* " << objReg << ", i32 0, i32 " << i << "\n";
-        bool isPtr = !flt.empty() && flt.back() == '*';
-        std::string zeroVal = (flt == "float" || flt == "double") ? "0.0" : (isPtr ? "null" : "0");
-        out << "    store " << flt << " " << zeroVal << ", " << flt << "* " << gepReg << "\n";
+        if (layout.fieldInitializers[i]) {
+            std::string valReg = genExpression(layout.fieldInitializers[i], layout.fields[i].first, out);
+            out << "    store " << flt << " " << valReg << ", " << flt << "* " << gepReg << "\n";
+        } else {
+            bool isPtr = !flt.empty() && flt.back() == '*';
+            std::string zeroVal = (flt == "float" || flt == "double") ? "0.0" : (isPtr ? "null" : "0");
+            out << "    store " << flt << " " << zeroVal << ", " << flt << "* " << gepReg << "\n";
+        }
     }
+    
+
+    if (layout.hasConstructor) {
+        std::string mangled = newExpr->className + "$ctor";
+        CodeGenFunctionSignature& sig = functions[mangled];
+        std::string argsStr = layout.llvmStructType + "* " + objReg;
+        for (size_t i = 0; i < newExpr->arguments.size(); ++i) {
+            std::string argReg = genExpression(newExpr->arguments[i].get(), sig.paramTypes[i + 1], out);
+            argsStr += ", " + llvmType(sig.paramTypes[i + 1]) + " " + argReg;
+        }
+        out << "    call void @" << mangled << "(" << argsStr << ")\n";
+    }
+
     return objReg;
 }
 

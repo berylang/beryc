@@ -105,7 +105,7 @@ private:
     // @oops
     std::unique_ptr<ASTNode> parseClassDecl();
     std::unique_ptr<AttributeSectionNode> parseAttributeSection();
-    std::unique_ptr<MethodSectionNode> parseMethodSection();
+    std::unique_ptr<MethodSectionNode> parseMethodSection(const std::string& className);
     bool isClassVarDecl();
 };
 

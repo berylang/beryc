@@ -185,15 +185,54 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
         for (auto& attr : cls->attributes->attributes) {
             auto* field = static_cast<VarDeclNode*>(attr.get());
             if (seen.count(field->name)) {
-                std::cerr << "Bery:Error [Line " << field->line << "]: Duplicate field '"
-                          << field->name << "' in class '" << cls->name << "'\n";
+                std::cerr << "Bery:Error [Line " << field->line << "]: Duplicate field '"<< field->name << "' in class '" << cls->name << "'\n";
                 errors = true;
             }
             seen.insert(field->name);
-        }
-    }
+
+            if (field->value) {
+                std::string exprType = typeChecker.analyzeExpression(field->value.get());
+                if (exprType != "unknown" && exprType != field->varType) {
+                    if (exprType == "null") {
+                        if (field->varType != "string" && !classes.count(field->varType)) {
+                            std::cerr << "Bery:Error [Line " << field->line << "]: Cannot assign 'null' to non-reference field '"<< field->name << "'\n";
+                            errors = true;
+                        }
+                    } else if (!(field->varType == "float" && exprType == "int") &&!(field->varType == "double" && exprType == "int") &&
+                        !(field->varType == "bigint" && exprType == "int") && !(field->varType == "double" && exprType == "float") &&
+                        !(field->varType == "float" && exprType == "double")) {
+                        std::cerr << "Bery:Error [Line " << field->line << "]: Type mismatch for field '" << field->name<< "'. Expected '" << field->varType << "', got '" << exprType << "'\n";
+                        errors = true;
+                    }
+                }
+            }
+        }}
 
     if (cls->methods) {
+        int constructorCount = 0;
+        int destructorCount = 0;
+        for (auto& m : cls->methods->methods) {
+            auto* f = static_cast<FunctionDefNode*>(m.get());
+            if (f->isConstructor) {
+                constructorCount++;
+                if (constructorCount > 1) {
+                    std::cerr << "Bery:Error [Line " << f->line << "]: Class '" << cls->name<< "' already has a constructor - only one constructor is supported\n";
+                    errors = true;
+                }
+            }
+            if (f->isDestructor) {
+                destructorCount++;
+                if (destructorCount > 1) {
+                    std::cerr << "Bery:Error [Line " << f->line << "]: Class '" << cls->name<< "' already has a destructor, only one destructor is supported\n";
+                    errors = true;
+                }
+                if (!f->parameters.empty()) {
+                    std::cerr << "Bery:Error [Line " << f->line << "]: Destructor '~" << cls->name<< "' cannot take parameters (it is invoked automatically)\n";
+                    errors = true;
+                }
+            }
+        }
+
         currentClassContext = cls->name;
         for (auto& m : cls->methods->methods) {
             auto* func = static_cast<FunctionDefNode*>(m.get());

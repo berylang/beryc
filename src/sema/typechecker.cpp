@@ -231,7 +231,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
     static const std::unordered_map<std::string, std::string> inputTypes = {
         {"inputInt", "int"}, 
         {"inputBigInt", "bigint"}, {"inputFloat", "float"},
-        {"inputDouble", "double"}, {"inputBool", "bool"}, 
+        {"inputDouble", "double"}, {"inputBool", "bool"},   
         {"inputChar", "char"}, {"inputString", "string"}
     };
 
@@ -265,24 +265,12 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
         std::string objType = resolveChainType(headParts, call->line);
         if (objType == "unknown") { call->resolvedType = "unknown"; return call->resolvedType; }
 
-        std::string objName = call->callee.substr(0, dot);
-        method = call->callee.substr(dot + 1);
-
-        if (!symbolTable.exists(objName)) {
-            std::cerr << "Bery:Error [Line " << call->line << "]: Undefined variable '" << objName << "'\n";
-            errors = true;
-            call->resolvedType = "unknown";
-            return call->resolvedType;
-        }
-
-        objType = symbolTable.get(objName).type;
-
         if (objType == "string") {
             if (method == "substr" || method == "copy") { 
                 call->resolvedType = "string"; 
                 return call->resolvedType; 
             }
-            if (method == "len")                        { 
+            if (method == "len"){ 
                 call->resolvedType = "int";    
                 return call->resolvedType; 
             }
@@ -311,6 +299,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
             if (cls->methods) {
                 for (auto& m : cls->methods->methods) {
                     auto* f = static_cast<FunctionDefNode*>(m.get());
+                    if (f->isConstructor || f->isDestructor) continue;
                     if (f->name == method) { methodDef = f; break; }
                 }
             }
@@ -359,6 +348,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
         if (selfClassIt != classes.end() && selfClassIt->second->methods) {
             for (auto& m : selfClassIt->second->methods->methods) {
                 auto* f = static_cast<FunctionDefNode*>(m.get());
+                if (f->isConstructor || f->isDestructor) continue;
                 if (f->name != call->callee) continue;
                 if (f->parameters.size() != call->arguments.size()) {
                     std::cerr << "Bery:Error [Line " << call->line << "]: Method '" << call->callee << "' expects "<< f->parameters.size() << " arguments, got " << call->arguments.size() << "\n";
@@ -645,17 +635,50 @@ std::string TypeChecker::checkLiteral(ASTNode* node) {
 
 std::string TypeChecker::checkNewExpr(ASTNode* node) {
     auto* newExpr = static_cast<NewExprNode*>(node);
-    if (classes.find(newExpr->className) == classes.end()) {
+    auto classIt = classes.find(newExpr->className);
+    if (classIt == classes.end()) {
         std::cerr << "Bery:Error [Line " << newExpr->line << "]: Unknown class '" << newExpr->className << "'\n";
         errors = true;
         newExpr->resolvedType = "unknown";
         return newExpr->resolvedType;
     }
-    if (!newExpr->arguments.empty()) {
-        std::cerr << "Bery:Error [Line " << newExpr->line << "]: Class '" << newExpr->className << "' has no constructor accepting " << newExpr->arguments.size() << " argument(s)\n";
-        errors = true;
+
+    FunctionDefNode* ctor = nullptr;
+    if (classIt->second->methods) {
+        for (auto& m : classIt->second->methods->methods) {
+            auto* f = static_cast<FunctionDefNode*>(m.get());
+            if (f->isConstructor) { ctor = f; break; }
+        }
     }
-    for (auto& arg : newExpr->arguments) analyzeExpression(arg.get());
+
+    if (!ctor) {
+        if (!newExpr->arguments.empty()) {
+            std::cerr << "Bery:Error [Line " << newExpr->line << "]: Class '" << newExpr->className << "' has no constructor accepting " << newExpr->arguments.size() << " argument(s)\n";
+            errors = true;
+        }
+        for (auto& arg : newExpr->arguments) analyzeExpression(arg.get());
+        newExpr->resolvedType = newExpr->className;
+        return newExpr->resolvedType;
+    }
+
+    if (ctor->parameters.size() != newExpr->arguments.size()) {
+        std::cerr << "Bery:Error [Line " << newExpr->line << "]: Constructor for '" << newExpr->className << "' expects "<< ctor->parameters.size() << " arguments, got " << newExpr->arguments.size() << "\n";
+        errors = true;
+        newExpr->resolvedType = "unknown";
+        return newExpr->resolvedType;
+    }
+    for (size_t i = 0; i < newExpr->arguments.size(); ++i) {
+        std::string argType   = analyzeExpression(newExpr->arguments[i].get());
+        std::string paramType = ctor->parameters[i].first;
+        if (argType != "unknown" && argType != paramType) {
+            if (!(paramType == "float"  && argType == "int") && !(paramType == "double" && argType == "float") &&
+                !(paramType == "double" && argType == "int") && !(paramType == "bigint" && argType == "int")) {
+                std::cerr << "Bery:Error [Line " << newExpr->line << "]: Type mismatch in constructor argument " << i+1<< " of '" << newExpr->className << "'. Expected '" << paramType << "', got '" << argType << "'\n";
+                errors = true;
+            }
+        }
+    }
+
     newExpr->resolvedType = newExpr->className;
     return newExpr->resolvedType;
 }
