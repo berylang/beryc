@@ -13,9 +13,11 @@ struct FunctionDefNode : public ASTNode {
     std::string returnType;
     std::unique_ptr<BlockNode> body;
     AccessSpecifier access;
+    bool isConstructor;
+    bool isDestructor;
 
-    FunctionDefNode(const std::string& name, std::vector<std::pair<std::string, std::string>> params, const std::string& retType, std::unique_ptr<BlockNode> b,AccessSpecifier access, int ln)
-        : name(name), parameters(std::move(params)), returnType(retType), body(std::move(b)), access(access) {
+    FunctionDefNode(const std::string& name, std::vector<std::pair<std::string, std::string>> params, const std::string& retType, std::unique_ptr<BlockNode> b,AccessSpecifier access, int ln,bool isConstruct = false, bool isDestructor = false)
+        : name(name), parameters(std::move(params)), returnType(retType), body(std::move(b)), access(access), isConstructor(isConstruct), isDestructor(isDestructor){
         type = NodeType::FUNC_DEF;
         line = ln;
     }

@@ -74,7 +74,7 @@ std::string CodeGen::extractConstant(ASTNode* node) {
 }
 
 std::string CodeGen::newReg() {
-   return "%" + std::to_string(++regCounter);
+   return "%bery_" +std::to_string(++regCounter);
 }
 
 void CodeGen::genStatement(ASTNode* stmt, std::ostream& out) {
@@ -156,4 +156,3 @@ std::string CodeGen::emitBoxValue(const std::string& llvmT, const std::string& v
     out << "    " << castReg << " = bitcast " << llvmT << "* " << slotReg << " to i8*\n";
     return castReg;
 }
-
