@@ -1,0 +1,5 @@
+run {
+    string s = "Hello";
+    s += " World";
+    print(s);
+}

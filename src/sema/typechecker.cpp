@@ -454,12 +454,18 @@ std::string TypeChecker::checkAssignmentExpr(ASTNode* node) {
     std::string targetType = analyzeExpression(assign->target.get());
     std::string valueType = analyzeExpression(assign->value.get());
 
-    if (assign->op != "=") {
+    if (assign->op == "+=") {
+        if (targetType != "int" && targetType != "float" && targetType != "double" && targetType != "bigint" && targetType != "string") {
+            std::cerr << "Bery:Error [Line " << assign->line << "]: Cannot use compound assignment '" << assign->op << "' on type '" << targetType << "'\n";
+            errors = true;
+        }
+    }
+    else if (assign->op != "=") {
         if (targetType != "int" && targetType != "float" && targetType != "double" && targetType != "bigint") {
             std::cerr << "Bery:Error [Line " << assign->line << "]: Cannot use compound assignment '" << assign->op << "' on type '" << targetType << "'\n";
             errors = true;
         }
-    } 
+    }
     
     if (assign->target->type == NodeType::IDENT) {
         auto* ident = static_cast<IdentNode*>(assign->target.get());
