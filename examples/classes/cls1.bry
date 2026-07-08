@@ -1,0 +1,14 @@
+class Shape {
+    attributes[me]::
+        private int len;
+        int brd;
+
+    methods::
+        private func area() -> int {
+            return len;
+        }
+}
+
+run {
+    println("Class Created");
+}

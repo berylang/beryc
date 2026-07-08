@@ -117,6 +117,7 @@ int cmdCompile(const std::string& sourcePath, std::string& outBinaryPath, const 
     }
     
     std::string linkCmd = buildLinkCmd(tc, objFile, breLib, outBinaryPath);
+
     if (system(linkCmd.c_str()) != 0) {
         std::cerr << "Bery: Error: linker failed.\n";
         return 13;

@@ -385,6 +385,15 @@ std::string CodeGen::genAssignmentExpr(ASTNode* node, std::ostream& out) {
         emitStore(targetLT, valReg, memPtr, out);
         return valReg;
     }
+    else if(assign->op == "+=" && targetBerryType == "string"){
+        emitBREDecl("declare i8* @bery_string_concat(i8*, i8*)", "bery_string_concat");
+        std::string currVal = emitLoad("i8*",memPtr,out);
+        std:: string concatReg = newReg();
+        out << "    " << concatReg<< " = call i8* @bery_string_concat(i8* "<< currVal << ", i8* " << valReg << ")\n";
+        emitStore("i8*", concatReg, memPtr, out);
+        return concatReg;
+    }
+
     
     bool isFloat= (targetBerryType == "float" || targetBerryType == "double");
     std::string curVal  = emitLoad(targetLT, memPtr, out);
