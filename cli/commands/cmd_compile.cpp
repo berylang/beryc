@@ -111,14 +111,12 @@ int cmdCompile(const std::string& sourcePath, std::string& outBinaryPath, const 
     int fe = runFrontend(sourcePath, irFile);
     if (fe != 0) return fe;
     std::string compileCmd = buildCompileCmd(tc, irFile, objFile);
-    std::cout<<compileCmd<<"\n";
     if (system(compileCmd.c_str()) != 0) {
         std::cerr << "Bery: Error: llc failed.\n";
         return 12;
     }
     
     std::string linkCmd = buildLinkCmd(tc, objFile, breLib, outBinaryPath);
-    std::cout<<linkCmd<<"\n";
 
     if (system(linkCmd.c_str()) != 0) {
         std::cerr << "Bery: Error: linker failed.\n";

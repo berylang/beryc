@@ -112,7 +112,7 @@ inline BeryToolChain detectToolchain() {
 // on cross-compile setups or multi-target LLVM ubuilds
 inline std::string buildCompileCmd(const BeryToolChain& tc,const std::string& irFile, const std::string& objFile) {
 #ifdef BERY_WINDOWS
-    std::string triple =  "x86_64-pc-windows-gnu" ;
+    std::string triple = (tc.linker == "g++")? "x86_64-pc-windows-gnu" : "x86_64-pc-windows-msvc";
     return tc.llc + " -filetype=obj -mtriple="+triple+" \""+ irFile + "\" -o \"" + objFile + "\"";
     //g++ -filetype=obj -mtriple=x86_64-pc-windows-gnu "bery_out.ll" -o "file" 
     //clang -filetype=obj -mtriple=x86_64-pc-windows-msvc "bery_out.ll" -o "file" 
