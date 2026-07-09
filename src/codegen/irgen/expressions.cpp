@@ -5,6 +5,7 @@
 #include "../../parser/ast/functions.h"
 #include <iomanip>
 #include <sstream>
+#include <iostream>
 
 static std::vector<std::string> splitDots(const std::string& s) {
     std::vector<std::string> parts;
@@ -209,8 +210,30 @@ std::string CodeGen::genBetweenExpr(ASTNode* node, std::ostream& out) {
 
 std::string CodeGen::genBinaryExpr(ASTNode* node, const std::string& expectedType, std::ostream& out) {
     auto* binary     = static_cast<BinaryExprNode*>(node);
-    std::string opLT = llvmType(binary->resolvedType);
-    bool isOpFloat   = (binary->resolvedType == "float" || binary->resolvedType == "double");
+
+    std::string opType = binary->left->resolvedType;
+    if (opType.empty() ||opType == "unknown") {
+        opType = binary->resolvedType;
+    }
+    
+    if (binary->optr == "&&" || binary->optr == "||") {
+        std::string resAlloc = emitAlloca("i1", out);
+        std::string lReg = genExpression(binary->left.get(), "bool", out);
+        emitStore("i1", lReg, resAlloc, out);
+        int id = ++regCounter;
+        std::string rightBlk = "logic_right_" + std::to_string(id);
+        std::string endBlk   = "logic_end_"   + std::to_string(id);
+        if (binary->optr == "&&")
+            out << "    br i1 " << lReg << ", label %" << rightBlk << ", label %" << endBlk << "\n";
+        else
+            out << "    br i1 " << lReg << ", label %" << endBlk << ", label %" << rightBlk << "\n";
+        out << "\n" << rightBlk << ":\n";
+        std::string rReg = genExpression(binary->right.get(), "bool", out);
+        emitStore("i1", rReg, resAlloc, out);
+        out << "    br label %" << endBlk << "\n";
+        out << "\n" << endBlk << ":\n";
+        return emitLoad("i1", resAlloc, out);
+    }
     if (binary->resolvedType == "string") {
         std::string lReg = genExpression(binary->left.get(),  "string", out);
         std::string rReg = genExpression(binary->right.get(), "string", out);
@@ -230,24 +253,9 @@ std::string CodeGen::genBinaryExpr(ASTNode* node, const std::string& expectedTyp
         }
         return eqReg;
     }
-    if (binary->optr == "&&" || binary->optr == "||") {
-        std::string resAlloc = emitAlloca("i1", out);
-        std::string lReg     = genExpression(binary->left.get(), "bool", out);
-        emitStore("i1", lReg, resAlloc, out);
-        int id = ++regCounter;
-        std::string rightBlk = "logic_right_" + std::to_string(id);
-        std::string endBlk   = "logic_end_"   + std::to_string(id);
-        if (binary->optr == "&&")
-            out << "    br i1 " << lReg << ", label %" << rightBlk << ", label %" << endBlk << "\n";
-        else
-            out << "    br i1 " << lReg << ", label %" << endBlk << ", label %" << rightBlk << "\n";
-        out << "\n" << rightBlk << ":\n";
-        std::string rReg = genExpression(binary->right.get(), "bool", out);
-        emitStore("i1", rReg, resAlloc, out);
-        out << "    br label %" << endBlk << "\n";
-        out << "\n" << endBlk << ":\n";
-        return emitLoad("i1", resAlloc, out);
-    }
+    
+    std::string opLT = llvmType(opType);
+    bool isOpFloat   = (opType == "float" || opType == "double");
     if (binary->optr == "**") {
         std::string lReg = genExpression(binary->left.get(),  binary->resolvedType, out);
         std::string rReg = genExpression(binary->right.get(), binary->resolvedType, out);
@@ -271,8 +279,8 @@ std::string CodeGen::genBinaryExpr(ASTNode* node, const std::string& expectedTyp
         }
         return res;
     }
-    std::string lReg = genExpression(binary->left.get(),  binary->resolvedType, out);
-    std::string rReg = genExpression(binary->right.get(), binary->resolvedType, out);
+    std::string lReg = genExpression(binary->left.get(),opType, out);
+    std::string rReg = genExpression(binary->right.get(), opType, out);
     std::string resReg = emitBinaryOp(binary->optr, opLT, isOpFloat, lReg, rReg, out);
     if (resReg == "0") return "0";
     bool expectFloat = (expectedType == "float" || expectedType == "double");

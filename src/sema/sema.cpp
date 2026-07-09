@@ -67,6 +67,7 @@ void SemanticAnalyzer::analyzeNode(ASTNode* node) {
     else if (node->type == NodeType::FUNC_DEF)          analyzeFuncDef(node);
     else if (node->type == NodeType::RETURN_STMT)       analyzeReturnStmt(node);
     else if (node->type == NodeType::CONTINUE_STMT)     analyzeContinueStmt(node);
+    else if (node->type == NodeType::SWITCH_STMT)       analyzeSwitchStmt(node);
     else if (node->type == NodeType::ENUM_DECL)         analyzeEnumDecl(node);
     else if (node->type == NodeType::FOR_STMT)          analyzeForStmt(node);
     else if (node->type == NodeType::FOR_IN_STMT)       analyzeForInStmt(node);

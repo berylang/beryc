@@ -1,11 +1,12 @@
 run{
-    int count = 0;
+    int count = -1;
     do{
+
         count++;
         if(count==5){
-            continue;
+            break;
         }
-        count++;
+        println(count);
     }while(count<=10);
     int b = count;
 }
