@@ -94,7 +94,9 @@ void CodeGen::genSwitchStmt(ASTNode* node, std::ostream& out) {
     auto* sw = static_cast<SwitchStmtNode*>(node);
 
     std::string condReg = genExpression(sw->condition.get(), "any", out);
-    std::string llvmCondType = "i32";
+    std::string condType = sw->condition->resolvedType; 
+    if (condType.empty() || condType == "unknown") {condType = "int"; }
+    std::string llvmCondType = llvmType(condType);
     
     int blockId = ++regCounter;
     std::string endLbl = "switch_end_" + std::to_string(blockId);
