@@ -421,6 +421,19 @@ std::string TypeChecker::checkIndexExpr(ASTNode* node) {
         idxNode->resolvedType = elemType;
         return idxNode->resolvedType;
     }
+    if(sym.type == "string"){
+        for(auto& index : idxNode->indices){
+            std::string indexType = analyzeExpression(index.get());
+            if(indexType != "int" && indexType != "bigint"){
+                std::cerr<<"Bery:Error [Line "<<idxNode->line<<"]: String index must be an integer\n";
+                errors=true;
+                idxNode->resolvedType ="unknown";
+                return idxNode->resolvedType;
+            }
+        }
+        idxNode->resolvedType = "char";
+        return idxNode->resolvedType;
+    }
 
     int dimCount = 0;
     size_t pos = sym.type.find('[');
