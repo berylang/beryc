@@ -136,8 +136,8 @@ void SemanticAnalyzer::analyzeForStmt(ASTNode* node) {
     auto* forStmt = static_cast<ForStmtNode*>(node);
     symbolTable.pushScope();
     
-    if (forStmt->init) { 
-        analyzeNode(forStmt->init.get());
+    for (auto& initStmt : forStmt->init) { 
+        analyzeNode(initStmt.get());
     }
     
     if (forStmt->condition) {
@@ -148,8 +148,8 @@ void SemanticAnalyzer::analyzeForStmt(ASTNode* node) {
         }
     }
     
-    if (forStmt->update) {
-        typeChecker.analyzeExpression(forStmt->update.get());
+    for (auto& updateExpr : forStmt->update) {
+        typeChecker.analyzeExpression(updateExpr.get());
     }
     loopDepth++; loopOrSwitchDepth++;
     analyzeBlock(forStmt->body.get()); 

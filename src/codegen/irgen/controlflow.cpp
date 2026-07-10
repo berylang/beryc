@@ -176,8 +176,8 @@ void CodeGen::genForStmt(ASTNode* node, std::ostream& out) {
     
     symTable.pushScope();
     pushGCScope();
-    if (forStmt->init) {
-        genStatement(forStmt->init.get(), out);
+    for (auto& initStmt : forStmt->init) {
+        genStatement(initStmt.get(), out);
     }
     
     
@@ -207,8 +207,8 @@ void CodeGen::genForStmt(ASTNode* node, std::ostream& out) {
     
     out << "    br label %" << updateLbl << "\n";
     out << "\n" << updateLbl << ":\n";
-    if (forStmt->update) {
-        genExpression(forStmt->update.get(), "any", out);
+    for (auto& updateExpr : forStmt->update) {
+        genExpression(updateExpr.get(), "any", out);
     }
     out << "    br label %" << condLbl << "\n";
     out << "\n" << endLbl << ":\n";

@@ -120,9 +120,13 @@ void ASTNameMangler::mangle(ASTNode* node) {
         }
         case NodeType::FOR_STMT: {
             auto* n = static_cast<ForStmtNode*>(node);
-            if (n->init) mangle(n->init.get());
+            for(auto& stmt :n->init){
+                mangle(stmt.get());
+            }
             if (n->condition) mangle(n->condition.get());
-            if (n->update) mangle(n->update.get());
+            for(auto& stmt : n->update){
+                mangle(stmt.get());
+            }
             mangle(n->body.get());
             break;
         }
