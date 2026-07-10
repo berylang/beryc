@@ -185,8 +185,10 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
             }
         }
     }
-    if (actualVarType != array->elementType){
+
+    if (actualVarType != "unknown" && actualVarType != "" && actualVarType != array->elementType){
         std::cerr << "Bery:Error [Line " << forIn->line << "]: variable type and array type should be same \n";
+        errors = true;
     }
 
     if (forIn->step) {
