@@ -58,6 +58,7 @@ private:
    void analyzeForStmt(ASTNode* node);
 
    // @declarations
+   bool isKnownType(const std::string& t);
    void analyzeVarDecl(ASTNode* node);
    void analyzeArrayDecl(ASTNode* node);
    void analyzeEnumDecl(ASTNode* node);

@@ -89,7 +89,13 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
                 do {
                     Token typeToken = advance();
                     Token pNameToken = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
-                    params.push_back({typeToken.lexeme, pNameToken.lexeme});
+                    std::string paramType = typeToken.lexeme;
+                    if (check(TokenType::TOKEN_LBRACKET)) {
+                        advance();
+                        consume(TokenType::TOKEN_RBRACKET, "Expected ']' after '[' in array parameter type");
+                        paramType = "array<" + paramType + ">";
+                    }
+                    params.push_back({paramType, pNameToken.lexeme});
                 } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
             }
             consume(TokenType::TOKEN_RPARAN, "Expected ')' after parameters");
@@ -108,7 +114,13 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
             if (!check(TokenType::TOKEN_RPARAN)) {  do {
                     Token typeToken = advance();
                     Token pNameToken = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
-                    params.push_back({typeToken.lexeme, pNameToken.lexeme});
+                    std::string paramType = typeToken.lexeme;
+                    if (check(TokenType::TOKEN_LBRACKET)) {
+                        advance();
+                        consume(TokenType::TOKEN_RBRACKET, "Expected ']' after '[' in array parameter type");
+                        paramType = "array<" + paramType + ">";
+                    }
+                    params.push_back({paramType, pNameToken.lexeme});
                 } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
             }
             consume(TokenType::TOKEN_RPARAN, "Expected ')' after parameters");
@@ -125,6 +137,7 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
 
     return std::make_unique<MethodSectionNode>(std::move(methods), line);
 }
+
 bool Parser::isClassVarDecl() {
     return peek().type == TokenType::TOKEN_IDENT && current + 1 < (int)tokens.size() && tokens[current + 1].type == TokenType::TOKEN_IDENT;
 }

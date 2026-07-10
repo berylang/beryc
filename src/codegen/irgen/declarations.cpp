@@ -50,7 +50,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
         }
     }
 
-    globalStrings << structDef.str() << "\n";
+    structDecls << structDef.str() << "\n";
     classLayouts[cls->name] = layout;
     if (cls->methods) {
         for (auto& m : cls->methods->methods) {
@@ -129,8 +129,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
                 symTable.add(p.second,sym);
                 
                 methodOut << "    " << pReg << " = alloca " << pLT << "\n";
-                methodOut << "    store " << pLT << " %" << p.second << "_arg, "
-                          << pLT << "* " << pReg << "\n";
+                methodOut << "    store " << pLT << " %" << p.second << "_arg, "<< pLT << "* " << pReg << "\n";
             }
 
             for (auto& stmt : func->body->statements)
@@ -142,14 +141,10 @@ void CodeGen::genClassDecl(ASTNode* node) {
             currentClassName = "";
             currentSelfRef= "";
 
-            bool endsWithReturn = !func->body->statements.empty() &&
-                func->body->statements.back()->type == NodeType::RETURN_STMT;
-            if (!endsWithReturn) {
-                if (func->returnType == "void" || func->returnType.empty())
-                    methodOut << "    ret void\n";
-                else
-                    methodOut << "    ret " << retLT << " 0\n";
-            }
+            if (func->returnType == "void" || func->returnType.empty()) methodOut << "    ret void\n";
+            else if (func->returnType == "float" || func->returnType =="double") methodOut << "    ret " << retLT << " 0.0\n";
+            else if (retLT.back() == '*')   methodOut << "    ret " << retLT << " null\n";
+            else methodOut << "    ret " << retLT << " 0\n";
             
             methodOut << "}\n";
             globalStrings << methodOut.str();
@@ -183,9 +178,8 @@ void CodeGen::genVarDecl(ASTNode* node, std::ostream& out) {
 }
 
 void CodeGen::genArrayDecl(ASTNode* node, std::ostream& out) {
-   auto* decl = static_cast<ArrayDeclNode*>(node);
-   if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
-        emitBREDecl("declare i8* @bery_array_new(i64)", "bery_array_new");
+    auto* decl = static_cast<ArrayDeclNode*>(node);
+    if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
         std::string memReg = "%" + decl->name + "_" + std::to_string(++regCounter);
         Symbol sym;
         sym.symbolType = SymbolType::VARIABLE;
@@ -196,46 +190,52 @@ void CodeGen::genArrayDecl(ASTNode* node, std::ostream& out) {
         sym.llvmAllocType = "i8*";
         symTable.add(decl->name, sym);
         out << "    " << memReg << " = alloca i8*\n";
-        std::string arrReg = newReg();
-        out << "    " << arrReg << " = call i8* @bery_array_new(i64 4)\n";
-        out << "    store i8* " << arrReg << ", i8** " << memReg << "\n";
+        if (decl->valueExpr) {
+            std::string valReg = genExpression(decl->valueExpr.get(), sym.type, out);
+            out << "    store i8* " << valReg << ", i8** " << memReg << "\n";
+        } else {
+            emitBREDecl("declare i8* @bery_array_new(i64)", "bery_array_new");
+            std::string arrReg = newReg();
+            out << "    " << arrReg << " = call i8* @bery_array_new(i64 4)\n";
+            out << "    store i8* " << arrReg << ", i8** " << memReg << "\n";
+        }
         emitGCPush(memReg, "i8*", out);
         return;
     }
-   std::string lt = llvmType(decl->elementType);
+    std::string lt = llvmType(decl->elementType);
 
-   std::string arrType = lt;
-   for (int i = decl->dimensions.size() - 1; i >= 0; --i) {
-      arrType = "[" + std::to_string(decl->dimensions[i]) + " x " + arrType + "]";
-   }
-   
-   std::string memReg = "%" + decl->name + "_" + std::to_string(++regCounter);
-   std::string typeSig = decl->elementType;
-   for (size_t i = 0; i < decl->dimensions.size(); ++i) typeSig += "[]";
-   
-   Symbol sym;
-   sym.symbolType = SymbolType::VARIABLE;
-   sym.type = typeSig;
-   sym.isInitialized = !decl->initializers.empty();
-   sym.line = decl->line;
-   sym.llvmRegister = memReg;
-   sym.llvmAllocType = arrType;
-   sym.arrayDimensions = decl->dimensions;
-   sym.arraySize = 1;
-   for (int d : decl->dimensions) sym.arraySize *= d;
-   symTable.add(decl->name, sym);
+    std::string arrType = lt;
+    for (int i = decl->dimensions.size() - 1; i >= 0; --i) {
+        arrType = "[" + std::to_string(decl->dimensions[i]) + " x " + arrType + "]";
+    }
+    
+    std::string memReg = "%" + decl->name + "_" + std::to_string(++regCounter);
+    std::string typeSig = decl->elementType;
+    for (size_t i = 0; i < decl->dimensions.size(); ++i) typeSig += "[]";
+    
+    Symbol sym;
+    sym.symbolType = SymbolType::VARIABLE;
+    sym.type = typeSig;
+    sym.isInitialized = !decl->initializers.empty();
+    sym.line = decl->line;
+    sym.llvmRegister = memReg;
+    sym.llvmAllocType = arrType;
+    sym.arrayDimensions = decl->dimensions;
+    sym.arraySize = 1;
+    for (int d : decl->dimensions) sym.arraySize *= d;
+    symTable.add(decl->name, sym);
 
-   out << "    " << memReg << " = alloca " << arrType << "\n";
-   if (decl->initializers.empty()) return;
-   std::string flatPtr = newReg();
-   out << "    " << flatPtr << " = bitcast " << arrType << "* " << memReg << " to " << lt << "*\n";
+    out << "    " << memReg << " = alloca " << arrType << "\n";
+    if (decl->initializers.empty()) return;
+    std::string flatPtr = newReg();
+    out << "    " << flatPtr << " = bitcast " << arrType << "* " << memReg << " to " << lt << "*\n";
 
-   for (size_t i = 0; i < decl->initializers.size(); ++i) {
-      std::string valReg = genExpression(decl->initializers[i].get(), decl->elementType, out);
-      std::string ptrReg = newReg();
-      out << "    " << ptrReg << " = getelementptr " << lt << ", " << lt << "* " << flatPtr << ", i32 " << i << "\n";
-      out << "    store " << lt << " " << valReg << ", " << lt << "* " << ptrReg << "\n";
-   }
+    for (size_t i = 0; i < decl->initializers.size(); ++i) {
+        std::string valReg = genExpression(decl->initializers[i].get(), decl->elementType, out);
+        std::string ptrReg = newReg();
+        out << "    " << ptrReg << " = getelementptr " << lt << ", " << lt << "* " << flatPtr << ", i32 " << i << "\n";
+        out << "    store " << lt << " " << valReg << ", " << lt << "* " << ptrReg << "\n";
+    }
 }
 
 void CodeGen::genFuncDef(ASTNode* node, std::ostream& out) {
@@ -268,6 +268,8 @@ void CodeGen::genFuncDef(ASTNode* node, std::ostream& out) {
         
         out << "    " << memReg << " = alloca " << pType << "\n";
         out << "    store " << pType << " %" << pName << "_arg, " << pType << "* " << memReg << "\n";
+        bool isHeapTracked = param.first == "string" || classLayouts.count(param.first) || (param.first.size() > 6 && param.first.substr(0, 6) == "array<");
+        if (isHeapTracked) {emitGCPush(memReg, pType, out);}
     }
     
     for (auto& stmt : func->body->statements) genStatement(stmt.get(), out);
@@ -284,17 +286,27 @@ void CodeGen::genFuncDef(ASTNode* node, std::ostream& out) {
         if (func->returnType == "void") out << "    ret void\n";
         else out << "    ret " << retLT << " 0\n"; 
     }
-    
+    if (func->returnType == "void") out << "    ret void\n";
+    else if (func->returnType == "float" || func->returnType == "double") out << "    ret " << retLT << " 0.0\n";
+    else if (retLT.back() == '*') out << "    ret " << retLT << " null\n";
+    else out << "    ret " << retLT << " 0\n";
     out << "}\n";
     currentFuncReturn = "";
 }
 
 void CodeGen::genReturnStmt(ASTNode* node, std::ostream& out) {
     auto* retNode = static_cast<ReturnStmtNode*>(node);
-    if (!retNode->value) {
-        out << "    ret void\n";
-    } else {
-        std::string valReg = genExpression(retNode->value.get(), currentFuncReturn, out);
-        out << "    ret " << llvmType(currentFuncReturn) << " " << valReg << "\n";
+    
+    std::string valReg;
+    if (retNode->value) {valReg = genExpression(retNode->value.get(), currentFuncReturn, out); }
+    int totalRoots = 0;
+    std::stack<int> tempStack = gcRootScopeStack;
+    while (!tempStack.empty()) {
+        totalRoots += tempStack.top();
+        tempStack.pop();
     }
+    emitGCPops(totalRoots, out);
+    if (!retNode->value) {   out << "    ret void\n"; } 
+    else {  out << "    ret " << llvmType(currentFuncReturn) << " " << valReg << "\n"; }
+    out << "\ndead_code_" << ++regCounter << ":\n";
 }

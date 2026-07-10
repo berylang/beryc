@@ -51,6 +51,7 @@ private:
    // @strings handling in LLVM IR
    int strCounter = 0;
    std::ostringstream globalStrings;
+   std::ostringstream structDecls;
    std::string escapeLLVMString(const std::string& str);
    
    // @FFI 

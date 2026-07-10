@@ -1,0 +1,24 @@
+
+
+class Engine {
+    attributes[me]:: 
+        int horsepower;
+    methods:: 
+        func power() -> int {return horsepower; }
+}
+
+func makeEngine(int hp) -> Engine {
+    Engine e = new Engine();
+    e.horsepower = hp;
+    return e;
+}
+
+func upgrade(Engine e, int boost) -> void {
+    e.horsepower = e.horsepower + boost;
+}
+
+run {
+    Engine eng = makeEngine(200);
+    upgrade(eng, 50);
+    println(eng.power());
+}

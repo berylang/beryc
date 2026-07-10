@@ -14,6 +14,7 @@ std::string CodeGen::llvmType(const std::string& t) {
    if (t == "double") return "double";
    if (t == "char") return "i8";
    if (t == "string") return "i8*";
+   if (t.size() > 6 && t.substr(0, 6) == "array<") return "i8*";
    if (classLayouts.count(t)) return classLayouts.at(t).llvmStructType + "*";
    return "i32";
 }
@@ -150,9 +151,11 @@ std::string CodeGen::emitSext(const std::string& fromT, const std::string& val, 
 }
 
 std::string CodeGen::emitBoxValue(const std::string& llvmT, const std::string& valReg, std::ostream& out) {
-    std::string slotReg = emitAlloca(llvmT, out);
-    emitStore(llvmT, valReg, slotReg, out);
+    emitBREDecl("declare i8* @bery_alloc(i64, i32)", "bery_alloc");
+    std::string rawReg = newReg();
+    out << "    " << rawReg << " = call i8* @bery_alloc(i64 8, i32 0)\n";
     std::string castReg = newReg();
-    out << "    " << castReg << " = bitcast " << llvmT << "* " << slotReg << " to i8*\n";
-    return castReg;
+    out << "    " << castReg << " = bitcast i8* " << rawReg << " to " << llvmT << "*\n";
+    out << "    store " << llvmT << " " << valReg << ", " << llvmT << "* " << castReg << ", align " << alignOf(llvmT) << "\n";
+    return rawReg;
 }

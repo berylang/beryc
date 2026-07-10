@@ -20,15 +20,21 @@
 std::unique_ptr<ASTNode> Parser::parseFunctionDef(AccessSpecifier access) {
     advance(); 
     int line = previous().line;
-    Token nameToken = consume(TokenType::TOKEN_IDENT, "Expected function name");
+    Token nameTokenen = consume(TokenType::TOKEN_IDENT, "Expected function name");
     consume(TokenType::TOKEN_LPARAN, "Expected '(' after function name");
 
     std::vector<std::pair<std::string, std::string>> params;
     if (!check(TokenType::TOKEN_RPARAN)) {
         do {
-            Token typeTok = advance();
-            Token nameTok = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
-            params.push_back({typeTok.lexeme, nameTok.lexeme});
+            Token typeToken = advance();
+            Token nameToken = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
+            std::string paramType = typeToken.lexeme;
+            if (check(TokenType::TOKEN_LBRACKET)) {
+                advance();
+                consume(TokenType::TOKEN_RBRACKET, "Expected ']' after '[' in array parameter type");
+                paramType = "array<" + paramType + ">";
+            }
+            params.push_back({paramType, nameToken.lexeme});
         } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
     }
     consume(TokenType::TOKEN_RPARAN, "Expected ')' after parameters");
@@ -37,11 +43,16 @@ std::unique_ptr<ASTNode> Parser::parseFunctionDef(AccessSpecifier access) {
     if (check(TokenType::TOKEN_ARROW)) {
         advance();
         returnType = advance().lexeme;
+        if (check(TokenType::TOKEN_LBRACKET)) {
+            advance();
+            consume(TokenType::TOKEN_RBRACKET, "Expected ']' after '[' in array return type");
+            returnType = "array<" + returnType + ">";
+        }
     }
 
     consume(TokenType::TOKEN_LBRACE, "Expected '{' before function body");
     auto body = parseBlock();
-    return std::make_unique<FunctionDefNode>(nameToken.lexeme, std::move(params), returnType, std::move(body),access, line);
+    return std::make_unique<FunctionDefNode>(nameTokenen.lexeme, std::move(params), returnType, std::move(body),access, line);
 }
 
 std::unique_ptr<ASTNode> Parser::parseCallExpr(const Token& identifierToken) {
