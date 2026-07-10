@@ -473,7 +473,15 @@ std::string CodeGen::genCastExpr(ASTNode* node, std::ostream& out) {
 std::string CodeGen::genIndexExpr(ASTNode* node, std::ostream& out) {
     auto* idx           = static_cast<IndexExprNode*>(node);
     Symbol& sym         = symTable.get(idx->name);
-
+    if (sym.type == "string") {
+        emitBREDecl("declare i8 @bery_string_char_at(i8*, i64)","bery_string_char_at");
+        std::string str = emitLoad("i8*", sym.llvmRegister, out);
+        std::string index = genExpression(idx->indices[0].get(), "int", out);
+        std::string index64 = emitSext("i32", index, "i64", out);
+        std::string result = newReg();
+        out << "    " << result<< " = call i8 @bery_string_char_at(i8* "<< str<< ", i64 "<< index64<< ")\n";
+        return result;
+    }
     if (sym.type.size() > 6 && sym.type.substr(0, 6) == "array<") {
         std::string elemType = sym.type.substr(6, sym.type.size() - 7);
         std::string lt= llvmType(elemType);

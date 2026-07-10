@@ -64,3 +64,7 @@ BeryString* bery_string_substring(BeryString* str, size_t start, size_t end) {
     s->data[newLen] = '\0';
     return s;
 }
+
+extern "C" char bery_string_char_at(BeryString* str, size_t index) {
+    return str->data[index];
+}
