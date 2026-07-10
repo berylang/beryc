@@ -1,7 +1,6 @@
 
 #include "parser.h"
 #include "ast/controlflow.h"
-
 /*
 
     Bery Loops,
@@ -42,7 +41,6 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
     advance();
     int line = previous().line;
     consume(TokenType::TOKEN_LPARAN, "Expected '(' after 'for'");
-
     bool isForIn = false;
     bool hasExplicitType = false;
 
@@ -84,35 +82,37 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
         return std::make_unique<ForInNode>(varType, varTok.lexeme, std::move(iterableOrStart), std::move(rangeEnd), std::move(step), std::move(body), line);
     } 
     else {
-        std::unique_ptr<ASTNode> init = nullptr;
+        std::vector<std::unique_ptr<ASTNode>> init;
         
         if (!check(TokenType::TOKEN_SEMICOLON)) {
             if (isTypeToken(peek().type)) {
                 auto decls = parseVarDecl(AccessSpecifier::PUBLIC,false);
-                
-                if (decls.size() == 1) {
-                    init = std::move(decls[0]);
-                } else {
-                    auto initBlock = std::make_unique<BlockNode>(line);
-                    for (auto& d : decls) initBlock->statements.push_back(std::move(d));
-                    init = std::move(initBlock);
+                for(auto& d : decls){
+                    init.push_back(std::move(d));
                 }
-            } else {
-                init = parseExpression(); 
-                consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after loop initialization");
+            } 
+            else{
+                init.push_back(parseExpression());
             }
-        } else {
-            consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after loop initialization");
         }
 
         std::unique_ptr<ASTNode> cond = nullptr;
         if (!check(TokenType::TOKEN_SEMICOLON)) cond = parseExpression();
         consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after loop condition");
 
-        std::unique_ptr<ASTNode> update = nullptr;
-        if (!check(TokenType::TOKEN_RPARAN)) update = parseExpression();
-        consume(TokenType::TOKEN_RPARAN, "Expected ')' after loop update");
+        std::vector<std::unique_ptr<ASTNode>> update;
 
+        while(!check(TokenType::TOKEN_RPARAN)){
+            update.push_back(parseExpression());
+            if(check(TokenType::TOKEN_COMMA)){
+                advance();
+            }
+            else{
+                break;
+            }
+        }
+        consume(TokenType::TOKEN_RPARAN, "Expected ')' after loop update");
+        
         consume(TokenType::TOKEN_LBRACE, "Expected '{' before loop body");
         auto body = parseBlock();
 
