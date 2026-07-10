@@ -18,6 +18,7 @@
 #include <iostream>
 #include "../parser/ast/blocknode.h"
 #include "../parser/ast/controlflow.h"
+#include "../parser/ast/arraydeclare.h"
 
 
 void SemanticAnalyzer::analyzeBlock(ASTNode* node) { 
@@ -159,6 +160,7 @@ void SemanticAnalyzer::analyzeForStmt(ASTNode* node) {
 
 void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
     auto* forIn = static_cast<ForInNode*>(node);
+    auto* array = static_cast<ArrayDeclNode*>(node);
     symbolTable.pushScope();
 
     std::string actualVarType = forIn->varType;
@@ -182,6 +184,9 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
                 actualVarType = "unknown";
             }
         }
+    }
+    if (actualVarType != array->elementType){
+        std::cerr << "Bery:Error [Line " << forIn->line << "]: variable type and array type should be same \n";
     }
 
     if (forIn->step) {

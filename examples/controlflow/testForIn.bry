@@ -2,7 +2,7 @@
 
 run {
     int a[3] = {1, 2, 3};
-    for (int i in 0..2) {
+    for (float i in a) {
         a[i] += 1;
     }
 }
