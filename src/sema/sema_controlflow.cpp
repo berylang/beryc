@@ -170,20 +170,34 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
         }
     } else {
         std::string iterType = typeChecker.analyzeExpression(forIn->iterableOrStart.get());
+        std::string elementType = "unknown";
         
-        if (actualVarType == "unknown" || actualVarType == "") {
-            if (iterType.find("[]") != std::string::npos) {
-                actualVarType = iterType.substr(0, iterType.find("[]"));
-            } else if (iterType == "string") {
-                actualVarType = "char";
-            } else {
-                std::cerr << "Bery:Error [Line " << forIn->line << "]: Cannot iterate over type '" << iterType << "'\n";
+        //array<int> 
+        if (iterType.size() > 6 && iterType.substr(0,6)=="array<" && iterType.back()=='>'){
+            elementType = iterType.substr(6,iterType.size()-7);
+        } 
+        //int[] 
+        else if(iterType.find("[]") != std::string::npos){
+            elementType = iterType.substr(0,iterType.find("[]"));
+        } else if(iterType == "string"){
+            elementType = "char";
+        } else if(iterType != "unknown") {
+            std::cerr << "Bery:Error [" << forIn->line <<"]: Type '" << iterType << "' is not iterable \n" ;
+            errors = true;
+        }
+        if(actualVarType == "unknown" || actualVarType == ""){
+            actualVarType = elementType;
+        } else if(elementType!="unknown" && actualVarType!=elementType){
+            bool compatible = (actualVarType == "float" && elementType == "int") || (actualVarType == "double" && elementType == "int") || (actualVarType == "double" && elementType == "float") || (actualVarType == "bigint" && elementType == "int");
+            if(!compatible){
+                std::cerr << "Bery:Error [" << forIn->line <<"]: Type mismatched in for in loop. Variable '" << forIn->varName <<"' declared as '" << actualVarType << "' but iterable has element type '" << elementType << "' \n" ;
                 errors = true;
-                actualVarType = "unknown";
             }
         }
     }
 
+    forIn->varType = actualVarType;
+    
     if (forIn->step) {
         typeChecker.analyzeExpression(forIn->step.get());
     }

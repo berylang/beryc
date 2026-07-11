@@ -1,0 +1,24 @@
+func getArray() -> int[]{
+    
+    int b[];
+    for(int i=0; i<3; i++){
+        b[i] = inputInt("Enter Number: ");
+    }
+    return b;
+
+}
+class array{
+    attributes[me]::
+        string name = "vitthal";
+}
+run{
+    
+    for(int i in getArray()){
+        println(i);
+    }
+    array a = new array();
+    
+    for(char s in a.name){
+        println(s);
+    }
+}

@@ -1,0 +1,22 @@
+run{
+    ---Checking static array in for-in
+    int a[3] = {1,2,3};
+    for(int i in a){
+        println(i);
+    }
+
+    ---Checking dynamic array in for-in
+    int b[];
+    for(int i=0; i<3; i++){
+        b[i] = inputInt("Enter Number: ");
+    }
+    for(int j in b){
+        println(j);
+    }
+
+    ---Checking string in for-in
+    string l = "Bery";
+    for(char p in l){
+        println(p);
+    }
+}
