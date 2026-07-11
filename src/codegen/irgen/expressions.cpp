@@ -141,6 +141,10 @@ std::string CodeGen::genIdentExpr(ASTNode* node, const std::string& expectedType
         realType = realType.substr(0, realType.find('['));
 
     std::string realLT = llvmType(realType);
+
+    if(expectedType == "ptr"){
+        return sym.llvmRegister;
+    }
     std::string reg    = emitLoad(realLT, sym.llvmRegister, out);
 
     bool isParentFloat = (expectedType == "float" || expectedType == "double");
@@ -149,6 +153,7 @@ std::string CodeGen::genIdentExpr(ASTNode* node, const std::string& expectedType
         out << "    " << castReg << " = sitofp " << realLT << " " << reg << " to " << llvmType(expectedType) << "\n";
         return castReg;
     }
+    
     return reg;
 }
 
