@@ -1,0 +1,18 @@
+run {
+    int i =11;
+    bigint bi=6767676767;
+    char c ='k';
+    bool b = true;
+    string s ="Bery";
+    double d = 3.00100;
+    
+
+
+    print("\nHello "+i);
+    print("\nHello "+bi);
+    print("\nHello "+c);
+    print("\nHello "+b);
+    print("\nHello "+s);
+    print("\nHello "+d);
+    
+}

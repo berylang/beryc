@@ -445,6 +445,52 @@ std::string CodeGen::genCastExpr(ASTNode* node, std::ostream& out) {
     std::string sLLVM   = llvmType(sType);
     std::string tLLVM   = llvmType(tType);
     std::string resReg  = newReg();
+
+    if(tType == "string"){
+        emitBREDecl("declare i8* @bery_to_string_int(i32)", "bery_to_string_int");
+        emitBREDecl("declare i8* @bery_to_string_bigint(i64)", "bery_to_string_bigint");
+        emitBREDecl("declare i8* @bery_to_string_float(float)", "bery_to_string_float");
+        emitBREDecl("declare i8* @bery_to_string_double(double)", "bery_to_string_double");
+        emitBREDecl("declare i8* @bery_to_string_char(i8)", "bery_to_string_char");
+        emitBREDecl("declare i8* @bery_to_string_bool(i1)", "bery_to_string_bool");
+
+        if (sType == "int") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_int(i32 "<< srcReg << ")\n";
+            return r;
+        }
+        if (sType == "bigint") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_bigint(i64 "<< srcReg << ")\n";
+            return r;
+        }
+
+        if (sType == "float") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_float(float "<< srcReg << ")\n";
+            return r;
+        }
+
+        if (sType == "double") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_double(double "<< srcReg << ")\n";
+            return r;
+        }
+
+        if (sType == "char") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_char(i8 "<< srcReg << ")\n";
+            return r;
+        }
+
+        if (sType == "bool") {
+            std::string r = newReg();
+            out << "    " << r << " = call i8* @bery_to_string_bool(i1 "<< srcReg << ")\n";
+            return r;
+        }
+    }
+
+
     bool srcFloat       = (sType == "float" || sType == "double");
     bool tgtFloat       = (tType == "float" || tType == "double");
 
