@@ -4,6 +4,8 @@
 #include "../include/bery_object.h"
 #include <cstring>
 #include <cstdlib>
+#include <string>
+#include <cstdint>
 
 uint32_t g_beryStringTypeId = 0;
 
@@ -64,7 +66,34 @@ BeryString* bery_string_substring(BeryString* str, size_t start, size_t end) {
     s->data[newLen] = '\0';
     return s;
 }
+BeryString* bery_to_string_int(int32_t value) {
+    std::string s = std::to_string(value);
+    return bery_string_from_literal(s.c_str());
+}
 
+BeryString* bery_to_string_bigint(int64_t value) {
+    std::string s = std::to_string(value);
+    return bery_string_from_literal(s.c_str());
+}
+
+BeryString* bery_to_string_float(float value) {
+    std::string s = std::to_string(value);
+    return bery_string_from_literal(s.c_str());
+}
+
+BeryString* bery_to_string_double(double value) {
+    std::string s = std::to_string(value);
+    return bery_string_from_literal(s.c_str());
+}
+
+BeryString* bery_to_string_char(char value) {
+    char str[2] = { value, '\0' };
+    return bery_string_from_literal(str);
+}
+
+BeryString* bery_to_string_bool(bool value) {
+    return bery_string_from_literal(value ? "true" : "false");
+}
 char bery_string_char_at(BeryString* str, size_t index) {
     return str->data[index];
     

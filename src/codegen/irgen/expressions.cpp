@@ -6,6 +6,9 @@
 #include <iomanip>
 #include <sstream>
 #include <iostream>
+#include <memory>
+#include <cstdint>
+#include <cstring>
 
 static std::vector<std::string> splitDots(const std::string& s) {
     std::vector<std::string> parts;
@@ -65,7 +68,11 @@ std::string CodeGen::genLiteral(ASTNode* node, const std::string& expectedType, 
     if (node->type == NodeType::DECIMAL_LIT) {
         auto* lit = static_cast<DecimalLitNode*>(node);
         std::ostringstream ss;
-        ss << std::scientific << std::setprecision(17) << lit->value;
+        float f_val = static_cast<float>(lit->value);
+        double llvm_float_hack = static_cast<double>(f_val);
+        uint64_t hex_val;
+        std::memcpy(&hex_val, &llvm_float_hack, sizeof(double));
+        ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << std::uppercase << hex_val;
         return ss.str();
     }
 
@@ -450,6 +457,52 @@ std::string CodeGen::genCastExpr(ASTNode* node, std::ostream& out) {
     std::string sLLVM   = llvmType(sType);
     std::string tLLVM   = llvmType(tType);
     std::string resReg  = newReg();
+
+    if(tType == "string"){
+        emitBREDecl("declare i8* @bery_to_string_int(i32)", "bery_to_string_int");
+        emitBREDecl("declare i8* @bery_to_string_bigint(i64)", "bery_to_string_bigint");
+        emitBREDecl("declare i8* @bery_to_string_float(float)", "bery_to_string_float");
+        emitBREDecl("declare i8* @bery_to_string_double(double)", "bery_to_string_double");
+        emitBREDecl("declare i8* @bery_to_string_char(i8)", "bery_to_string_char");
+        emitBREDecl("declare i8* @bery_to_string_bool(i1)", "bery_to_string_bool");
+
+        if (sType == "int") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_int(i32 "<< srcReg << ")\n";
+            return r;
+        }
+        if (sType == "bigint") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_bigint(i64 "<< srcReg << ")\n";
+            return r;
+        }
+
+        if (sType == "float") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_float(float "<< srcReg << ")\n";
+            return r;
+        }
+
+        if (sType == "double") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_double(double "<< srcReg << ")\n";
+            return r;
+        }
+
+        if (sType == "char") {
+            std::string r = newReg();
+            out << "    " << r<< " = call i8* @bery_to_string_char(i8 "<< srcReg << ")\n";
+            return r;
+        }
+
+        if (sType == "bool") {
+            std::string r = newReg();
+            out << "    " << r << " = call i8* @bery_to_string_bool(i1 "<< srcReg << ")\n";
+            return r;
+        }
+    }
+
+
     bool srcFloat       = (sType == "float" || sType == "double");
     bool tgtFloat       = (tType == "float" || tType == "double");
 

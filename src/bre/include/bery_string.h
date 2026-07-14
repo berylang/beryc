@@ -16,6 +16,12 @@ extern "C" {
     bool bery_string_equals(BeryString* a, BeryString* b);
     size_t bery_string_length(BeryString* a);
     BeryString* bery_string_substring(BeryString* str, size_t start, size_t end);
+    BeryString* bery_to_string_int(int32_t value); 
+    BeryString* bery_to_string_bigint(int64_t value);
+    BeryString* bery_to_string_float(float value);
+    BeryString* bery_to_string_double(double value);
+    BeryString* bery_to_string_char(char value);
+    BeryString* bery_to_string_bool(bool value);
     char bery_string_char_at(BeryString* str, size_t index);
 
 

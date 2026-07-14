@@ -77,11 +77,33 @@ std::string TypeChecker::checkBinaryExpr(ASTNode* node) {
     std::string lType = analyzeExpression(binary->left.get());
     std::string rType = analyzeExpression(binary->right.get());
 
-    if (lType == "string" && rType == "string") {
-        if (binary->optr == "+") {
+    if (binary->optr == "+") {
+        if (lType == "string" || rType == "string") {
+            if((lType != "string" && lType != "int" && lType != "bigint" && lType != "float" && lType != "double" && lType != "char" && lType != "bool") 
+                ||  (rType != "string" && rType != "int" && rType != "bigint" && rType != "float" && rType != "double" && rType != "char" && rType != "bool")){
+               std::cerr << "Bery:Error [Line " << binary->line << "]: Invalid operand for string concatenation\n";
+                errors = true;
+                binary->resolvedType = "unknown";
+                return binary->resolvedType; 
+            }
+            if(lType != "string"){
+                auto cast = std::make_unique<CastExprNode>("string",std::move(binary->left), binary->line);
+                cast->srcType = lType;
+                binary->left = std::move(cast);
+
+            }
+            if(rType != "string"){
+                auto cast = std::make_unique<CastExprNode>("string",std::move(binary->right), binary->line);
+                cast->srcType = rType;
+                binary->right = std::move(cast);
+
+            }
             binary->resolvedType = "string";
             return binary->resolvedType;
         }
+        
+    }
+    if (lType == "string" && rType == "string") {
         if (binary->optr == "==" || binary->optr == "!=") {
             binary->resolvedType = "bool";
             return binary->resolvedType;

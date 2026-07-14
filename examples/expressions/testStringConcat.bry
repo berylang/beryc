@@ -2,4 +2,7 @@ run {
     string s = "Hello";
     s += " World";
     print(s);
+
+
+    println(s + 2.3);
 }
