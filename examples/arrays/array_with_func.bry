@@ -1,0 +1,15 @@
+func makeArray() -> int[] {
+    int r[];
+    r.push(10);
+    r.push(20);
+    r.push(30);
+    return r;
+}
+func sumArray(int arr[]) -> int {
+    return arr[0] + arr[1] + arr[2];
+}
+
+run {
+    int a[] = makeArray();
+    println(sumArray(a));
+}

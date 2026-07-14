@@ -66,31 +66,35 @@ BeryString* bery_string_substring(BeryString* str, size_t start, size_t end) {
     s->data[newLen] = '\0';
     return s;
 }
-extern "C" BeryString* bery_to_string_int(int32_t value) {
+BeryString* bery_to_string_int(int32_t value) {
     std::string s = std::to_string(value);
     return bery_string_from_literal(s.c_str());
 }
 
-extern "C" BeryString* bery_to_string_bigint(int64_t value) {
+BeryString* bery_to_string_bigint(int64_t value) {
     std::string s = std::to_string(value);
     return bery_string_from_literal(s.c_str());
 }
 
-extern "C" BeryString* bery_to_string_float(float value) {
+BeryString* bery_to_string_float(float value) {
     std::string s = std::to_string(value);
     return bery_string_from_literal(s.c_str());
 }
 
-extern "C" BeryString* bery_to_string_double(double value) {
+BeryString* bery_to_string_double(double value) {
     std::string s = std::to_string(value);
     return bery_string_from_literal(s.c_str());
 }
 
-extern "C" BeryString* bery_to_string_char(char value) {
+BeryString* bery_to_string_char(char value) {
     char str[2] = { value, '\0' };
     return bery_string_from_literal(str);
 }
 
-extern "C" BeryString* bery_to_string_bool(bool value) {
+BeryString* bery_to_string_bool(bool value) {
     return bery_string_from_literal(value ? "true" : "false");
+
+char bery_string_char_at(BeryString* str, size_t index) {
+    return str->data[index];
+    
 }

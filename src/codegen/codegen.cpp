@@ -201,6 +201,7 @@ void CodeGen::generate(const std::string& outputPath) {
     body << "}\n";
 
     std::ofstream out(outputPath);
+    out << structDecls.str();
     out << globalsOut.str();
     out << breDecls.str();
     out << globalStrings.str() << "\n";

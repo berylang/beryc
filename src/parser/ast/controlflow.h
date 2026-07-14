@@ -108,15 +108,15 @@ struct DoWhileStmtNode : public ASTNode{
 };
 
 struct ForStmtNode : public ASTNode {
-    std::unique_ptr<ASTNode> init;
+    std::vector<std::unique_ptr<ASTNode>> init;
     std::unique_ptr<ASTNode> condition;
-    std::unique_ptr<ASTNode> update;
+    std::vector<std::unique_ptr<ASTNode>> update;
     std::unique_ptr<BlockNode> body;
 
     ForStmtNode(
-        std::unique_ptr<ASTNode> i,
+        std::vector<std::unique_ptr<ASTNode>> i,
         std::unique_ptr<ASTNode> c,
-        std::unique_ptr<ASTNode> inc,
+        std::vector<std::unique_ptr<ASTNode>> inc,
         std::unique_ptr<BlockNode> b,
         int ln
     ) : init(std::move(i)),

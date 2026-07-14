@@ -22,6 +22,7 @@ extern "C" {
     BeryString* bery_to_string_double(double value);
     BeryString* bery_to_string_char(char value);
     BeryString* bery_to_string_bool(bool value);
+    char bery_string_char_at(BeryString* str, size_t index);
 
 
 }

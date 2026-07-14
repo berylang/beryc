@@ -105,18 +105,25 @@ std::unique_ptr<ASTNode> Parser::parseArrayDecl() {
     }
 
     std::vector<std::unique_ptr<ASTNode>> initializers;
+    std::unique_ptr<ASTNode> valueExpr = nullptr;
+    bool isDynamic = dimensions.size() ==1 && dimensions[0]==-1;
+
     if (check(TokenType::TOKEN_EQUAL)) {
         advance(); 
-        if (!check(TokenType::TOKEN_LBRACE)) {
+        if (check(TokenType::TOKEN_LBRACE)) {parseArrayInitializer(initializers);} 
+        else if(isDynamic) {
+            valueExpr = parseExpression();
+        } else {
             std::cerr << "Bery:Error: [Line " << peek().line << "]: Arrays must be initialized with list inside '{}'\n";
             errors = true;
             while (!isAtEnd() && !check(TokenType::TOKEN_SEMICOLON)) advance();
             return std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), nameToken.line);
         }
-        parseArrayInitializer(initializers);
     }
     consume(TokenType::TOKEN_SEMICOLON, "Expected ';'");
-    return std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), nameToken.line);
+    auto decl = std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), nameToken.line);
+    decl->valueExpr = std::move(valueExpr);
+    return decl;
 }
 
 void Parser::parseArrayInitializer(std::vector<std::unique_ptr<ASTNode>>& initializers) {

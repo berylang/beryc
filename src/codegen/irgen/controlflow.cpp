@@ -176,8 +176,8 @@ void CodeGen::genForStmt(ASTNode* node, std::ostream& out) {
     
     symTable.pushScope();
     pushGCScope();
-    if (forStmt->init) {
-        genStatement(forStmt->init.get(), out);
+    for (auto& initStmt : forStmt->init) {
+        genStatement(initStmt.get(), out);
     }
     
     
@@ -207,8 +207,8 @@ void CodeGen::genForStmt(ASTNode* node, std::ostream& out) {
     
     out << "    br label %" << updateLbl << "\n";
     out << "\n" << updateLbl << ":\n";
-    if (forStmt->update) {
-        genExpression(forStmt->update.get(), "any", out);
+    for (auto& updateExpr : forStmt->update) {
+        genExpression(updateExpr.get(), "any", out);
     }
     out << "    br label %" << condLbl << "\n";
     out << "\n" << endLbl << ":\n";
@@ -293,10 +293,8 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& out) {
         out << "\n" << endLbl << ":\n";
         
     } else {
-        std::string lt = "i32"; 
-        if (forIn->varType == "float" || forIn->varType == "double") lt = "double";
-        else if (forIn->varType == "char") lt = "i8";
-        else if (forIn->varType == "bool") lt = "i1";
+        std::string iterType = forIn->iterableOrStart->resolvedType;
+        std::string lt = llvmType(forIn->varType); 
         
         std::string idxType = "i32";
         std::string varReg = "%" + forIn->varName + "_" + std::to_string(++regCounter);
@@ -314,56 +312,174 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& out) {
         out << "    " << idxReg << " = alloca " << idxType << "\n";
         out << "    store " << idxType << " 0, " << idxType << "* " << idxReg << "\n";
 
-        auto* identNode = static_cast<IdentNode*>(forIn->iterableOrStart.get());
-        std::string arrName = identNode->name;
-        std::string arrPtr = genExpression(forIn->iterableOrStart.get(), "ptr", out);
-        
-        int arrSize = symTable.get(arrName).arraySize; 
-        std::string limitReg = std::to_string(arrSize);
-
         int blockid = ++regCounter;
         std::string condLbl = "forin_cond_" + std::to_string(blockid);
         std::string bodyLbl = "forin_body_" + std::to_string(blockid);
         std::string updateLbl = "forin_update_" + std::to_string(blockid);
         std::string endLbl = "forin_end_" + std::to_string(blockid);
 
-        out << "    br label %" << condLbl << "\n\n";
-        out << condLbl << ":\n";
-        std::string currIdxReg = "%load_idx_" + std::to_string(++regCounter);
-        out << "    " << currIdxReg << " = load " << idxType << ", " << idxType << "* " << idxReg << "\n";
-        
-        std::string condReg = "%cmp_" + std::to_string(++regCounter);
-        out << "    " << condReg << " = icmp slt " << idxType << " " << currIdxReg << ", " << limitReg << "\n";
-        out << "    br i1 " << condReg << ", label %" << bodyLbl << ", label %" << endLbl << "\n";
+        if(iterType.size() > 6 && iterType.substr(0,6)=="array<"){
+            std::string elementType = iterType.substr(6,iterType.size()-7);
+            std::string elementLlvmType = llvmType(elementType);
+            emitBREDecl("declare i64 @bery_array_length(i8*)","bery_array_length");
+            emitBREDecl("declare i8* @bery_array_get(i8*, i64*)","bery_array_get");
+            std::string arrReg = genExpression(forIn->iterableOrStart.get(), iterType, out); 
+            std::string arrHold = "%forin_arr_" + std::to_string(++regCounter); 
 
-        out << "\n" << bodyLbl << ":\n";
-        
-        std::string gepReg = "%gep_" + std::to_string(++regCounter);
-        out << "    " << gepReg << " = getelementptr inbounds " << lt << ", " << lt << "* " << arrPtr << ", i32 0, " << idxType << " " << currIdxReg << "\n";
- 
-        std::string valReg = "%load_val_" + std::to_string(++regCounter);
-        out << "    " << valReg << " = load " << lt << ", " << lt << "* " << gepReg << "\n";
-        out << "    store " << lt << " " << valReg << ", " << lt << "* " << varReg << "\n";
+            out << "    " << arrHold << " = alloca i8*\n"; 
+            out << "    store i8* " << arrReg << ", i8** " << arrHold << "\n"; 
+            emitGCPush(arrHold, "i8*", out);
 
-        breakTracker.push_back(endLbl);
-        continueTracker.push_back(updateLbl); 
+            std::string lenReg64 = newReg(); 
+            out << "    " << lenReg64 << " = call i64 @bery_array_length(i8* " << arrReg << ")\n"; 
+            std::string limitReg = newReg(); 
+            out << "    " << limitReg << " = trunc i64 " << lenReg64 << " to i32\n"; 
+            out << "    br label %" << condLbl << "\n\n"; 
+            out << condLbl << ":\n";
 
-        genBlock(forIn->body.get(), out);
+            std::string currIdxReg = "%load_idx_" + std::to_string(++regCounter); 
+            out << "    " << currIdxReg << " = load " << idxType << ", " << idxType << "* " << idxReg << "\n";
+            std::string condReg = "%cmp_" + std::to_string(++regCounter); 
+            out << "    " << condReg << " = icmp slt " << idxType << " " << currIdxReg << ", " << limitReg << "\n"; 
+            out << "    br i1 " << condReg << ", label %" << bodyLbl << ", label %" << endLbl << "\n"; 
+            out << "\n" << bodyLbl << ":\n";
+            
+            std::string arrLoadReg = newReg();
+            out << "    " << arrLoadReg << " = load i8*, i8** " << arrHold << "\n";
+            std::string indexExt = emitSext("i32",currIdxReg,"i64",out);
+            std::string rawReg = newReg();
+            out << "    " << rawReg << " = call i8* @bery_array_get(i8* " << arrLoadReg << ", i64 " << indexExt << ")\n";
+            std::string castReg = newReg();
+            out << "    " << castReg << " = bitcast i8* " << rawReg << " to " << elementLlvmType << "*\n";
+            std::string valReg = emitLoad(elementLlvmType, castReg, out);
+            std::string finalReg = valReg;
+            if (lt != elementLlvmType) {
+                std::string convReg = newReg();
+                if ((elementLlvmType == "i32" || elementLlvmType == "i64") && (lt == "float" || lt == "double")) {
+                    out << "    " << convReg << " = sitofp " << elementLlvmType << " " << valReg << " to " << lt << "\n";
+                    finalReg = convReg;
+                } else if (elementLlvmType == "i32" && lt == "i64") {
+                    out << "    " << convReg << " = sext i32 " << valReg << " to i64\n";
+                    finalReg = convReg;
+                } else if (elementLlvmType == "float" && lt == "double") {
+                    out << "    " << convReg << " = fpext float " << valReg << " to double\n";
+                    finalReg = convReg;
+                }
+            }
+            out << "    store " << lt << " " << finalReg << ", " << lt << "* " << varReg << "\n";
 
-        continueTracker.pop_back();
-        breakTracker.pop_back();
-        out << "    br label %" << updateLbl << "\n";
+            breakTracker.push_back(endLbl);
+            continueTracker.push_back(updateLbl);
+            genBlock(forIn->body.get(), out);
+            continueTracker.pop_back();
+            breakTracker.pop_back();
+            out << "    br label %" << updateLbl << "\n";
 
-        out << "\n" << updateLbl << ":\n";
-        std::string upLoadIdx = "%load_upd_idx_" + std::to_string(++regCounter);
-        out << "    " << upLoadIdx << " = load " << idxType << ", " << idxType << "* " << idxReg << "\n";
-        
-        std::string addIdx = "%add_idx_" + std::to_string(++regCounter);
-        out << "    " << addIdx << " = add " << idxType << " " << upLoadIdx << ", 1\n";
-        out << "    store " << idxType << " " << addIdx << ", " << idxType << "* " << idxReg << "\n";
-        
-        out << "    br label %" << condLbl << "\n";
-        out << "\n" << endLbl << ":\n";
+            out << "\n" << updateLbl << ":\n";
+            std::string upLoadIdx = "%load_upd_idx_" + std::to_string(++regCounter);
+            out << "    " << upLoadIdx << " = load " << idxType << ", " << idxType << "* " << idxReg << "\n";
+            std::string addIdx = "%add_idx_" + std::to_string(++regCounter);
+            out << "    " << addIdx << " = add " << idxType << " " << upLoadIdx << ", 1\n";
+            out << "    store " << idxType << " " << addIdx << ", " << idxType << "* " << idxReg << "\n";
+            out << "    br label %" << condLbl << "\n";
+            out << "\n" << endLbl << ":\n";
+
+        }else if(iterType == "string"){
+            emitBREDecl("declare i64 @bery_string_length(i8*)","bery_string_length");
+            emitBREDecl("declare i8* @bery_string_char_at(i8*, i64*)","bery_string_char_at");
+
+            std::string strReg = genExpression(forIn->iterableOrStart.get(), "string", out); 
+            std::string strHold = "%forin_str_" + std::to_string(++regCounter); 
+
+            out << "    " << strHold << " = alloca i8*\n"; 
+            out << "    store i8* " << strReg << ", i8** " << strHold << "\n"; 
+            emitGCPush(strHold, "i8*", out);
+            
+            std::string lenReg64 = newReg(); 
+            out << "    " << lenReg64 << " = call i64 @bery_string_length(i8* " << strReg << ")\n"; 
+            std::string limitReg = newReg(); 
+            out << "    " << limitReg << " = trunc i64 " << lenReg64 << " to i32\n"; 
+            out << "    br label %" << condLbl << "\n\n"; 
+            out << condLbl << ":\n";
+
+            std::string currIdxReg = "%load_idx_" + std::to_string(++regCounter); 
+            out << "    " << currIdxReg << " = load " << idxType << ", " << idxType << "* " << idxReg << "\n";
+            std::string condReg = "%cmp_" + std::to_string(++regCounter); 
+            out << "    " << condReg << " = icmp slt " << idxType << " " << currIdxReg << ", " << limitReg << "\n"; 
+            out << "    br i1 " << condReg << ", label %" << bodyLbl << ", label %" << endLbl << "\n"; 
+            out << "\n" << bodyLbl << ":\n";
+
+            std::string strLoadReg = newReg();
+            out << "    " << strLoadReg << " = load i8*, i8** " << strHold << "\n";
+            std::string indexExt = emitSext("i32",currIdxReg,"i64",out);
+
+            std::string charReg = newReg();
+            out << "    " << charReg << " = call i8 @bery_string_char_at(i8* " << strLoadReg << ", i64 " << indexExt << ")\n";
+            out << "    store i8 " << charReg << ", i8* " << varReg << "\n";
+
+            breakTracker.push_back(endLbl);
+            continueTracker.push_back(updateLbl);
+            genBlock(forIn->body.get(), out);
+            continueTracker.pop_back();
+            breakTracker.pop_back();
+            out << "    br label %" << updateLbl << "\n";
+
+            out << "\n" << updateLbl << ":\n";
+            std::string upLoadIdx = "%load_upd_idx_" + std::to_string(++regCounter);
+            out << "    " << upLoadIdx << " = load " << idxType << ", " << idxType << "* " << idxReg << "\n";
+            std::string addIdx = "%add_idx_" + std::to_string(++regCounter);
+            out << "    " << addIdx << " = add " << idxType << " " << upLoadIdx << ", 1\n";
+            out << "    store " << idxType << " " << addIdx << ", " << idxType << "* " << idxReg << "\n";
+            out << "    br label %" << condLbl << "\n";
+            out << "\n" << endLbl << ":\n";
+
+
+        }else{
+            auto* identNode = static_cast<IdentNode*>(forIn->iterableOrStart.get());
+            std::string arrName = identNode->name;
+            std::string arrPtr = genExpression(forIn->iterableOrStart.get(), "ptr", out);
+            
+            int arrSize = symTable.get(arrName).arraySize; 
+            std::string limitReg = std::to_string(arrSize);
+
+            out << "    br label %" << condLbl << "\n\n";
+            out << condLbl << ":\n";
+            std::string currIdxReg = "%load_idx_" + std::to_string(++regCounter);
+            out << "    " << currIdxReg << " = load " << idxType << ", " << idxType << "* " << idxReg << "\n";
+            
+            std::string condReg = "%cmp_" + std::to_string(++regCounter);
+            out << "    " << condReg << " = icmp slt " << idxType << " " << currIdxReg << ", " << limitReg << "\n";
+            out << "    br i1 " << condReg << ", label %" << bodyLbl << ", label %" << endLbl << "\n";
+
+            out << "\n" << bodyLbl << ":\n";
+            
+            std::string gepReg = "%gep_" + std::to_string(++regCounter);
+            out << "    " << gepReg << " = getelementptr inbounds " << lt << ", " << lt << "* " << arrPtr << ", " << idxType << " " << currIdxReg << "\n";
+    
+            std::string valReg = "%load_val_" + std::to_string(++regCounter);
+            out << "    " << valReg << " = load " << lt << ", " << lt << "* " << gepReg << "\n";
+            out << "    store " << lt << " " << valReg << ", " << lt << "* " << varReg << "\n";
+
+            breakTracker.push_back(endLbl);
+            continueTracker.push_back(updateLbl); 
+
+            genBlock(forIn->body.get(), out);
+
+            continueTracker.pop_back();
+            breakTracker.pop_back();
+            out << "    br label %" << updateLbl << "\n";
+
+            out << "\n" << updateLbl << ":\n";
+            std::string upLoadIdx = "%load_upd_idx_" + std::to_string(++regCounter);
+            out << "    " << upLoadIdx << " = load " << idxType << ", " << idxType << "* " << idxReg << "\n";
+            
+            std::string addIdx = "%add_idx_" + std::to_string(++regCounter);
+            out << "    " << addIdx << " = add " << idxType << " " << upLoadIdx << ", 1\n";
+            out << "    store " << idxType << " " << addIdx << ", " << idxType << "* " << idxReg << "\n";
+            
+            out << "    br label %" << condLbl << "\n";
+            out << "\n" << endLbl << ":\n";
+        }
     }
 
     symTable.popScope();

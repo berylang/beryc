@@ -1,0 +1,7 @@
+run {
+
+    string s = "Bery r";
+    char c = s[3];
+    print(c);
+
+}

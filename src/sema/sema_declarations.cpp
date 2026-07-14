@@ -61,16 +61,46 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
     symbolTable.addVariable(decl->name, decl->varType, decl->isConst, decl->value != nullptr, decl->line);
 }
 
+
+bool SemanticAnalyzer::isKnownType(const std::string& t) {
+    static const std::unordered_set<std::string> primitiveTypes = {"int","bigint", "bool", "float","double", "char", "string","void"};
+    if(primitiveTypes.count(t)) 
+        return true;
+    if(classes.count(t)) 
+        return true;
+    if(t.size() > 6 && t.substr(0, 6)== "array<"&& t.back()== '>') {
+        std::string inner = t.substr(6,t.size() - 7);
+        return primitiveTypes.count(inner) > 0;
+    }
+    return false;
+}
+
 void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
     auto* decl = static_cast<ArrayDeclNode*>(node);
-
+    if (!isKnownType(decl->elementType)) {
+        std::cerr << "Bery:Error [Line "<< decl->line <<"]: Unknown array element type '" << decl->elementType << "'\n";
+        errors = true; return;
+    }
     if (symbolTable.existsInCurrentScope(decl->name)) {
         std::cerr << "Bery:Error [Line "<< decl->line <<"]: '" << decl->name << "' already declared.\n";
         errors = true; return;
     }
-    if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1 && decl->initializers.empty()) {
-        symbolTable.addVariable(decl->name, "array<" + decl->elementType + ">", false, false, decl->line);
-        return;
+    if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
+        if (decl->valueExpr) {
+            std::string exprType = typeChecker.analyzeExpression(decl->valueExpr.get());
+            std::string expectedType = "array<" + decl->elementType + ">";
+            if (exprType != "unknown" && exprType != expectedType) {
+                std::cerr << "Bery:Error [Line " << decl->line << "]: Type mismatch for '" << decl->name
+                          << "'. Expected '" << expectedType << "', got '" << exprType << "'\n";
+                errors = true;
+            }
+            symbolTable.addVariable(decl->name, expectedType, false, true, decl->line);
+            return;
+        }
+        if (decl->initializers.empty()) {
+            symbolTable.addVariable(decl->name, "array<" + decl->elementType + ">", false, false, decl->line);
+            return;
+        }
     }
     int totalSize = 1;
     int inferredDim = -1;
@@ -123,8 +153,19 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
 
 void SemanticAnalyzer::analyzeFuncDef(ASTNode* node) {
     auto* func = static_cast<FunctionDefNode*>(node);
+
+    for (auto& param : func->parameters) {
+        if (!isKnownType(param.first)) {
+            std::cerr << "Bery:Error [Line " << func->line << "]: Unknown parameter type '" << param.first<< "' in function '" << func->name << "'\n";
+            errors = true;
+        }
+    }
+    if (!func->returnType.empty() && !isKnownType(func->returnType)) {
+        std::cerr << "Bery:Error [Line " << func->line << "]: Unknown return type '"   << func->returnType    << "' in function '" << func->name << "'\n";
+        errors = true;
+    }
+
     currentFunctionReturnType = func->returnType;
-    
     symbolTable.pushScope();
     for (auto& param : func->parameters) {
         symbolTable.addVariable(param.second, param.first, false, true, func->line);
@@ -236,6 +277,17 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
         currentClassContext = cls->name;
         for (auto& m : cls->methods->methods) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
+            for (auto& p : func->parameters) {
+                if (!isKnownType(p.first)) {
+                    std::cerr << "Bery:Error [Line " << func->line << "]: Unknown parameter type '" << p.first  << "' in method '" << func->name << "'\n";
+                    errors = true;
+                }
+            }
+            if (!func->isConstructor && !func->isDestructor && !func->returnType.empty() && !isKnownType(func->returnType)) {
+                std::cerr << "Bery:Error [Line " << func->line << "]: Unknown return type '" << func->returnType << "' in method '" << func->name << "'\n";
+                errors = true;
+            }
+
             FunctionSignature sig;
             sig.returnType = func->returnType;
             for (auto& p : func->parameters) sig.paramTypes.push_back(p.first);
