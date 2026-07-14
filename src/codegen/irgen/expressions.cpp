@@ -6,6 +6,9 @@
 #include <iomanip>
 #include <sstream>
 #include <iostream>
+#include <memory>
+#include <cstdint>
+#include <cstring>
 
 static std::vector<std::string> splitDots(const std::string& s) {
     std::vector<std::string> parts;
@@ -65,7 +68,11 @@ std::string CodeGen::genLiteral(ASTNode* node, const std::string& expectedType, 
     if (node->type == NodeType::DECIMAL_LIT) {
         auto* lit = static_cast<DecimalLitNode*>(node);
         std::ostringstream ss;
-        ss << std::scientific << std::setprecision(17) << lit->value;
+        float f_val = static_cast<float>(lit->value);
+        double llvm_float_hack = static_cast<double>(f_val);
+        uint64_t hex_val;
+        std::memcpy(&hex_val, &llvm_float_hack, sizeof(double));
+        ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << std::uppercase << hex_val;
         return ss.str();
     }
 

@@ -93,7 +93,7 @@ BeryString* bery_to_string_char(char value) {
 
 BeryString* bery_to_string_bool(bool value) {
     return bery_string_from_literal(value ? "true" : "false");
-
+}
 char bery_string_char_at(BeryString* str, size_t index) {
     return str->data[index];
     
