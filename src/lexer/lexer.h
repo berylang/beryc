@@ -14,6 +14,26 @@ it contains every helper functions which eventually helps the 'tokanize()' metho
 #include "token.h"
 
 class Lexer {
+
+    /*
+    
+    Remaining things:
+
+    1. Source location inside the token, which will eventually used by diagnostic to print the errors.
+    2. Diagnostic Intergration, it shouldn't print errors (std::cerr) itself.
+
+    3. Unicode support - Lexer only supports only ASCII for now, changed needed for UTF-8 Support.
+    
+    4. Support for Decimal, Octet, Hexadecimal and Binary Numbers
+    5. Numerical overflow detectin (such as 999999999999999)
+
+    6. Lexer test suite
+
+    7. Benchmark testting
+
+    
+    
+    */
 public:
     Lexer(const std::string& source);
     std::vector<Token> tokanize();
