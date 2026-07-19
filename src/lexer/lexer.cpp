@@ -584,6 +584,7 @@ char Lexer::peekNext() {
     // munch at the end of the file.
     if(source.size() > current + 1) 
         return source[current + 1];
+    return '\0';
 }
 
 // @todo : change it later for better Errors;
