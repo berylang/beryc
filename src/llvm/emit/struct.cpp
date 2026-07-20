@@ -40,7 +40,7 @@ std::string LLVMHelper::__emitClassNameGEP(const std::string& className, int nam
 
 std::string LLVMHelper::__emitDestructorBitcast(const std::string& structType, const std::string& className, std::ostream& outputStream) {
     std::string reg = __uniqueReg();
-    outputStream << "   "<< reg << " = bitcast void (" << structType << "*)* @" << className<<"     $dtor to i8*\n";
+    outputStream << "   "<< reg << " = bitcast void (" << structType << "*)* @" << className<<"$dtor to i8*\n";
     return reg;
 }
 

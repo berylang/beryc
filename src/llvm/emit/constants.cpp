@@ -40,7 +40,7 @@ std::string LLVMHelper::__emitGlobalStringConstant(const std::string& raw) {
     int len = (int) raw.length()+1;
 
     std::string globalName = "@.str." + std::to_string(__str_counter++);
-    __GLOBAL_STRINGS << globalName << " = private unamed_addr constant [" << len << 
+    __GLOBAL_STRINGS << globalName << " = private unnamed_addr constant [" << len << 
         " x i8] c\"" << escape <<"\"\n";
     
     return "getelementptr ([" + std::to_string(len)+ " x i8], [" +std::to_string(len) 

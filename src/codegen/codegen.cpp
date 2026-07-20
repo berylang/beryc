@@ -25,7 +25,7 @@
 #include <functional>
 
 CodeGen::CodeGen(ASTNode* root, SymbolTable& symTable)
-   : root(root), symTable(symTable),regCounter(0), strCounter(0) {}
+   : root(root), symTable(symTable){}
 
 void CodeGen::generate(const std::string& outputPath) {
     auto* program = static_cast<ProgramNode*>(root);
@@ -73,7 +73,7 @@ void CodeGen::generate(const std::string& outputPath) {
             
             symTable.get(decl->name).llvmRegister = "@" + decl->name;
             symTable.get(decl->name).llvmAllocType = lt;             
-            globalsOut << "@" << decl->name << " = global " << lt << " " << initVal << "\n";
+            llvm.__emitGlobalVar(decl->name, lt, initVal, globalsOut);
         }
         else if (node->type == NodeType::ENUM_DECL) {
             auto* enumDecl = static_cast<EnumDeclNode*>(node.get());
@@ -86,17 +86,17 @@ void CodeGen::generate(const std::string& outputPath) {
                 
                 symTable.get(mangledName).llvmRegister = globalName;
                 symTable.get(mangledName).llvmAllocType = lt;
-                globalsOut << globalName << " = global " << lt << " " << currentValue++ << "\n";
+                llvm.__emitGlobalVar(mangledName, lt, std::to_string(currentValue++), globalsOut);
             }
         }
         else if (node->type == NodeType::ARRAY_DECL) {
             auto* decl = static_cast<ArrayDeclNode*>(node.get());
             if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
-                emitBREDecl("declare i8* @bery_array_new(i64)", "bery_array_new");
+                llvm.__declareExtern("declare i8* @bery_array_new(i64)", "bery_array_new");
                 std::string memReg = "@" + decl->name + "_slot";
                 symTable.get(decl->name).llvmRegister = memReg;
                 symTable.get(decl->name).llvmAllocType = "i8*";
-                globalsOut << memReg << " = global i8* null\n";
+                llvm.__emitGlobalVar(decl->name + "_slot", "i8*", "null", globalsOut);
                 continue;
             }
             symTable.get(decl->name).llvmRegister = "@" + decl->name;
@@ -151,36 +151,30 @@ void CodeGen::generate(const std::string& outputPath) {
 
                 initVal = buildNestedInit(0, 0);
             }
-            globalsOut << "@" << decl->name << " = global " << arrType << " " << initVal << "\n";
+            llvm.__emitGlobalVar(decl->name, arrType, initVal, globalsOut);
         }
     }
 
     std::ostringstream body;
-    body << "\ndefine i32 @main() {\n";
-    body << "entry:\n";
+    llvm.__emitFunctionHeader("i32", "main", {}, body);
     body << "    call void @bery_runtime_startup()\n";
     for (auto& clPair : classLayouts) {
         ClassLayout& cl = clPair.second;
-        emitBREDecl("declare i32 @bery_type_register(i8*, i64, i8*, i64, i8*)", "bery_type_register");
         int nameLen = (int)cl.name.length() + 1;
-        std::string idReg = newReg();
         std::string destructorArg = "i8* null";
         if (cl.hasDestructor) {
-            std::string dtorReg = newReg();
-            body << "    " << dtorReg << " = bitcast void (" << cl.llvmStructType << "*)* @" << cl.name<< "$dtor to i8*\n";
+            std::string dtorReg = llvm.__emitDestructorBitcast(cl.llvmStructType, cl.name, body);
             destructorArg = "i8* " + dtorReg;
         }
-        body << "    " << idReg << " = call i32 @bery_type_register(i8* getelementptr (["<< nameLen << " x i8], [" << nameLen << " x i8]* @.classname." << cl.name<< ", i32 0, i32 0), i64 " << cl.instanceSize << ", i8* null, i64 0, " << destructorArg << ")\n";
-        body << "    store i32 " << idReg << ", i32* @" << cl.name << "_typeid\n";
+        llvm.__emitTypeRegisterCall(cl.name, nameLen, (long long)cl.instanceSize, destructorArg, body);
     }
     pushGCScope();
     for (auto& node : program->globals) {
         if (node->type == NodeType::ARRAY_DECL) {
             auto* decl = static_cast<ArrayDeclNode*>(node.get());
             if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
-                std::string arrReg = newReg();
-                body << "    " << arrReg << " = call i8* @bery_array_new(i64 4)\n";
-                body << "    store i8* " << arrReg << ", i8** @" << decl->name << "_slot\n";
+                std::string arrReg = llvm.__emitCall("i8*", "bery_array_new", {{"i64", "4"}}, body);
+                llvm.__emitStore("i8*", arrReg, "@" + decl->name + "_slot", body);
             }
         }
     }
@@ -194,16 +188,15 @@ void CodeGen::generate(const std::string& outputPath) {
     }
     int rootsInMain = popGCScope();
     emitGCPops(rootsInMain, body);
-    body << "    call void @bery_runtime_shutdown()\n";
-    body << "    br label %main_end\n";
-    body << "\nmain_end:\n";
-    body << "    ret i32 0\n";
-    body << "}\n";
+    llvm.__emitBr("main_end", body);
+    llvm.__emitLabel("main_end", body);
+    llvm.__emitReturn("i32", "0", body);
+    llvm.__emitFunctionFooter(body);
 
     std::ofstream out(outputPath);
-    out << structDecls.str();
+    out << llvm.__STRUCTURE_declares.str();
     out << globalsOut.str();
-    out << breDecls.str();
-    out << globalStrings.str() << "\n";
+    out << llvm.__BRE_declares.str();
+    out << llvm.__GLOBAL_STRINGS.str() << "\n";
     out << body.str();
 }

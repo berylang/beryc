@@ -12,10 +12,9 @@ void CodeGen::genClassDecl(ASTNode* node) {
 
     ClassLayout layout;
     layout.name = cls->name;
-    layout.llvmStructType = "%class." + cls->name;
-    std::ostringstream structDef;
-    structDef << layout.llvmStructType << " = type { ";
+    layout.llvmStructType = llvm.__structTypeName(cls->name);
 
+    std::vector<std::string> fieldTypes;
     if (cls->attributes) {
         for (size_t i = 0; i < cls->attributes->attributes.size(); ++i) {
             auto* field = static_cast<VarDeclNode*>(cls->attributes->attributes[i].get());
@@ -23,39 +22,32 @@ void CodeGen::genClassDecl(ASTNode* node) {
             layout.fields.push_back({field->varType, field->name});
             layout.fieldIndex[field->name] = (int)i;
             layout.fieldInitializers.push_back(field->value.get());
-            structDef << lt;
-            if (i + 1 < cls->attributes->attributes.size()) structDef << ", ";
+            fieldTypes.push_back(lt);
         }
     }
+    llvm.__emitStructType(layout.llvmStructType, fieldTypes);
 
-    if (layout.fields.empty()) structDef << "i8";
-    structDef << " }";
     layout.instanceSize = 0;
     for (auto& field : layout.fields) {
-        layout.instanceSize += (size_t)alignOf(llvmType(field.first));
+        layout.instanceSize += (size_t)llvm.__alignOf(llvmType(field.first));
     }
     if (layout.instanceSize == 0) {
         layout.instanceSize = 1;
     }
 
-    std::string classNameEscaped = escapeLLVMString(cls->name);
-    int classNameLen = (int)cls->name.length() + 1;
-    globalStrings << "@.classname." << cls->name << " = private unnamed_addr constant ["<< classNameLen << " x i8] c\"" << classNameEscaped << "\"\n";
-    globalStrings << "@" << cls->name << "_typeid = global i32 0\n";
+    llvm.__emitClassNameGlobal(cls->name);
     if (cls->methods) {
         for (auto& m : cls->methods->methods) {
             auto* f = static_cast<FunctionDefNode*>(m.get());
             if (f->isConstructor) layout.hasConstructor = true;
-            if (f->isDestructor)layout.hasDestructor= true;
+            if (f->isDestructor) layout.hasDestructor = true;
         }
     }
-
-    structDecls << structDef.str() << "\n";
     classLayouts[cls->name] = layout;
     if (cls->methods) {
         for (auto& m : cls->methods->methods) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
-            std::string mangledName = func->isConstructor ? (cls->name + "$ctor"): func->isDestructor  ? (cls->name + "$dtor"): (cls->name + "_" + func->name);
+            std::string mangledName = func->isConstructor ? (cls->name + "$ctor") : func->isDestructor ? (cls->name + "$dtor") : (cls->name + "_" + func->name);
 
             CodeGenFunctionSignature sig;
             sig.returnType = func->returnType;
@@ -68,68 +60,67 @@ void CodeGen::genClassDecl(ASTNode* node) {
                                  ? "void" : llvmType(func->returnType);
             currentFuncReturn = func->returnType;
 
-            methodOut << "\ndefine " << retLT << " @" << mangledName<< "(" << layout.llvmStructType << "* %self_arg";
+            std::vector<std::pair<std::string, std::string>> params;
+            params.push_back({layout.llvmStructType + "*", "%self_arg"});
             for (auto& p : func->parameters)
-                methodOut << ", " << llvmType(p.first) << " %" << p.second << "_arg";
-            methodOut << ") {\nentry:\n";
+                params.push_back({llvmType(p.first), "%" + p.second + "_arg"});
+            llvm.__emitFunctionHeader(retLT, mangledName, params, methodOut);
 
             symTable.pushScope();
             pushGCScope();
             currentClassName = cls->name;
-            currentSelfRef= cls->attributes->selfRef;    
+            currentSelfRef = cls->attributes->selfRef;
 
-            std::string selfReg = "%self_" + std::to_string(++regCounter);
+            std::string selfReg = "%self_" + std::to_string(llvm.__uniqueId());
             methodOut << "    " << selfReg << " = alloca " << layout.llvmStructType << "*\n";
-            methodOut << "    store " << layout.llvmStructType << "* %self_arg, "
-                      << layout.llvmStructType << "** " << selfReg << "\n";
-            Symbol sym;
-            sym.type = cls->name;
-            sym.isConst = false;
-            sym.isInitialized = true;
-            sym.llvmRegister = selfReg;
-            sym.llvmAllocType = layout.llvmStructType + "*";
-            sym.line = cls->line;
-            
-            symTable.add(cls->attributes->selfRef,sym);
+            llvm.__emitStore(layout.llvmStructType + "*", "%self_arg", selfReg, methodOut);
 
-            std::string loadedSelf = newReg();
-            methodOut << "    " << loadedSelf << " = load " << layout.llvmStructType << "*, "
-                      << layout.llvmStructType << "** " << selfReg << "\n";
+            Symbol selfSym;
+            selfSym.type = cls->name;
+            selfSym.isConst = false;
+            selfSym.isInitialized = true;
+            selfSym.llvmRegister = selfReg;
+            selfSym.llvmAllocType = layout.llvmStructType + "*";
+            selfSym.line = cls->line;
+            symTable.add(cls->attributes->selfRef, selfSym);
+
+            std::string loadedSelf = llvm.__emitLoad(layout.llvmStructType + "*", selfReg, methodOut);
 
             for (auto& field : layout.fields) {
-                auto& beryT=field.first;
-                auto& fieldName=field.second;
+                auto& beryT = field.first;
+                auto& fieldName = field.second;
                 std::string lt = llvmType(beryT);
                 int idx = layout.fieldIndex[fieldName];
-                std::string gepReg = "%" + fieldName + "_" + std::to_string(++regCounter);
+                std::string gepReg = "%" + fieldName + "_" + std::to_string(llvm.__uniqueId());
                 methodOut << "    " << gepReg << " = getelementptr inbounds "
                           << layout.llvmStructType << ", " << layout.llvmStructType << "* "
                           << loadedSelf << ", i32 0, i32 " << idx << "\n";
-                Symbol sym;
-                    sym.type = beryT;
-                    sym.isConst = false;
-                    sym.isInitialized = true;
-                    sym.llvmRegister = gepReg;
-                    sym.llvmAllocType = lt;
-                    sym.line = cls->line;
-                symTable.add(fieldName,sym);
-               
+
+                Symbol fieldSym;
+                fieldSym.type = beryT;
+                fieldSym.isConst = false;
+                fieldSym.isInitialized = true;
+                fieldSym.llvmRegister = gepReg;
+                fieldSym.llvmAllocType = lt;
+                fieldSym.line = cls->line;
+                symTable.add(fieldName, fieldSym);
             }
 
             for (auto& p : func->parameters) {
-                std::string pLT  = llvmType(p.first);
-                std::string pReg = "%" + p.second + "_" + std::to_string(++regCounter);
-                Symbol sym;
-                sym.type = p.first;
-                sym.isConst = false;
-                sym.isInitialized = true;
-                sym.llvmRegister = pReg;
-                sym.llvmAllocType = pLT;
-                sym.line = func->line;
-                symTable.add(p.second,sym);
-                
+                std::string pLT = llvmType(p.first);
+                std::string pReg = "%" + p.second + "_" + std::to_string(llvm.__uniqueId());
+
+                Symbol paramSym;
+                paramSym.type = p.first;
+                paramSym.isConst = false;
+                paramSym.isInitialized = true;
+                paramSym.llvmRegister = pReg;
+                paramSym.llvmAllocType = pLT;
+                paramSym.line = func->line;
+                symTable.add(p.second, paramSym);
+
                 methodOut << "    " << pReg << " = alloca " << pLT << "\n";
-                methodOut << "    store " << pLT << " %" << p.second << "_arg, "<< pLT << "* " << pReg << "\n";
+                llvm.__emitStore(pLT, "%" + p.second + "_arg", pReg, methodOut);
             }
 
             for (auto& stmt : func->body->statements)
@@ -139,15 +130,11 @@ void CodeGen::genClassDecl(ASTNode* node) {
             emitGCPops(roots, methodOut);
             symTable.popScope();
             currentClassName = "";
-            currentSelfRef= "";
+            currentSelfRef = "";
 
-            if (func->returnType == "void" || func->returnType.empty()) methodOut << "    ret void\n";
-            else if (func->returnType == "float" || func->returnType =="double") methodOut << "    ret " << retLT << " 0.0\n";
-            else if (retLT.back() == '*')   methodOut << "    ret " << retLT << " null\n";
-            else methodOut << "    ret " << retLT << " 0\n";
-            
-            methodOut << "}\n";
-            globalStrings << methodOut.str();
+            llvm.__emitDefaultReturn(retLT, methodOut);
+            llvm.__emitFunctionFooter(methodOut);
+            llvm.__GLOBAL_STRINGS << methodOut.str();
             currentFuncReturn = "";
         }
     }
@@ -155,10 +142,11 @@ void CodeGen::genClassDecl(ASTNode* node) {
     classLayouts[cls->name] = std::move(layout);
 }
 
+
 void CodeGen::genVarDecl(ASTNode* node, std::ostream& out) {
     auto* decl = static_cast<VarDeclNode*>(node);
     std::string lt = llvmType(decl->varType);
-    std::string memReg = "%" + decl->name + "_" + std::to_string(++regCounter);
+    std::string memReg = "%" + decl->name + "_" + std::to_string(llvm.__uniqueId());
     Symbol sym;
     sym.symbolType = SymbolType::VARIABLE;
     sym.type = decl->varType;
@@ -174,13 +162,13 @@ void CodeGen::genVarDecl(ASTNode* node, std::ostream& out) {
     }
     if (!decl->value) return;
     std::string valReg = genExpression(decl->value.get(), decl->varType, out);
-    out << "    store " << lt << " " << valReg << ", " << lt << "* " << memReg << "\n";
+    llvm.__emitStore(lt, valReg, memReg, out);
 }
 
 void CodeGen::genArrayDecl(ASTNode* node, std::ostream& out) {
     auto* decl = static_cast<ArrayDeclNode*>(node);
     if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
-        std::string memReg = "%" + decl->name + "_" + std::to_string(++regCounter);
+        std::string memReg = "%" + decl->name + "_" + std::to_string(llvm.__uniqueId());
         Symbol sym;
         sym.symbolType = SymbolType::VARIABLE;
         sym.type = "array<" + decl->elementType + ">";
@@ -192,12 +180,11 @@ void CodeGen::genArrayDecl(ASTNode* node, std::ostream& out) {
         out << "    " << memReg << " = alloca i8*\n";
         if (decl->valueExpr) {
             std::string valReg = genExpression(decl->valueExpr.get(), sym.type, out);
-            out << "    store i8* " << valReg << ", i8** " << memReg << "\n";
+            llvm.__emitStore("i8*", valReg, memReg, out);
         } else {
-            emitBREDecl("declare i8* @bery_array_new(i64)", "bery_array_new");
-            std::string arrReg = newReg();
-            out << "    " << arrReg << " = call i8* @bery_array_new(i64 4)\n";
-            out << "    store i8* " << arrReg << ", i8** " << memReg << "\n";
+            llvm.__declareExtern("declare i8* @bery_array_new(i64)", "bery_array_new");
+            std::string arrReg = llvm.__emitCall("i8*", "bery_array_new", {{"i64", "4"}}, out);
+            llvm.__emitStore("i8*", arrReg, memReg, out);
         }
         emitGCPush(memReg, "i8*", out);
         return;
@@ -209,7 +196,7 @@ void CodeGen::genArrayDecl(ASTNode* node, std::ostream& out) {
         arrType = "[" + std::to_string(decl->dimensions[i]) + " x " + arrType + "]";
     }
     
-    std::string memReg = "%" + decl->name + "_" + std::to_string(++regCounter);
+    std::string memReg = "%" + decl->name + "_" + std::to_string(llvm.__uniqueId());
     std::string typeSig = decl->elementType;
     for (size_t i = 0; i < decl->dimensions.size(); ++i) typeSig += "[]";
     
@@ -227,14 +214,13 @@ void CodeGen::genArrayDecl(ASTNode* node, std::ostream& out) {
 
     out << "    " << memReg << " = alloca " << arrType << "\n";
     if (decl->initializers.empty()) return;
-    std::string flatPtr = newReg();
-    out << "    " << flatPtr << " = bitcast " << arrType << "* " << memReg << " to " << lt << "*\n";
+    std::string flatPtr = llvm.__emitBitcast(arrType + "*", memReg, lt + "*", out);
+
 
     for (size_t i = 0; i < decl->initializers.size(); ++i) {
         std::string valReg = genExpression(decl->initializers[i].get(), decl->elementType, out);
-        std::string ptrReg = newReg();
-        out << "    " << ptrReg << " = getelementptr " << lt << ", " << lt << "* " << flatPtr << ", i32 " << i << "\n";
-        out << "    store " << lt << " " << valReg << ", " << lt << "* " << ptrReg << "\n";
+        std::string ptrReg = llvm.__emitGEP(lt, flatPtr, {"i32 " + std::to_string(i)}, false, out);
+        llvm.__emitStore(lt, valReg, ptrReg, out);
     }
 }
 
@@ -242,21 +228,20 @@ void CodeGen::genFuncDef(ASTNode* node, std::ostream& out) {
     auto* func = static_cast<FunctionDefNode*>(node);
     std::string retLT = (func->returnType == "void") ? "void" : llvmType(func->returnType);
     currentFuncReturn = func->returnType;
-    
-    out << "\ndefine " << retLT << " @" << func->name << "(";
-    for (size_t i = 0; i < func->parameters.size(); ++i) {
-        out << llvmType(func->parameters[i].first) << " %" << func->parameters[i].second << "_arg";
-        if (i + 1 < func->parameters.size()) out << ", ";
+
+    std::vector<std::pair<std::string, std::string>> params;
+    for (auto& p : func->parameters) {
+        params.push_back({llvmType(p.first), "%" + p.second + "_arg"});
     }
-    out << ") {\nentry:\n";
-    
+    llvm.__emitFunctionHeader(retLT, func->name, params, out);
+
     symTable.pushScope();
     pushGCScope();
     for (auto& param : func->parameters) {
         std::string pType = llvmType(param.first);
         std::string pName = param.second;
-        std::string memReg = "%" + pName + "_" + std::to_string(++regCounter);
-        
+        std::string memReg = "%" + pName + "_" + std::to_string(llvm.__uniqueId());
+
         Symbol sym;
         sym.symbolType = SymbolType::VARIABLE;
         sym.type = param.first;
@@ -265,34 +250,31 @@ void CodeGen::genFuncDef(ASTNode* node, std::ostream& out) {
         sym.llvmRegister = memReg;
         sym.llvmAllocType = pType;
         symTable.add(pName, sym);
-        
+
         out << "    " << memReg << " = alloca " << pType << "\n";
-        out << "    store " << pType << " %" << pName << "_arg, " << pType << "* " << memReg << "\n";
+        llvm.__emitStore(pType, "%" + pName + "_arg", memReg, out);
         bool isHeapTracked = param.first == "string" || classLayouts.count(param.first) || (param.first.size() > 6 && param.first.substr(0, 6) == "array<");
-        if (isHeapTracked) {emitGCPush(memReg, pType, out);}
+        if (isHeapTracked) { emitGCPush(memReg, pType, out); }
     }
-    
+
     for (auto& stmt : func->body->statements) genStatement(stmt.get(), out);
     int roots = popGCScope();
     emitGCPops(roots, out);
     symTable.popScope();
     bool endsWithReturn = false;
-    if (!func->body->statements.empty() && 
+    if (!func->body->statements.empty() &&
         func->body->statements.back()->type == NodeType::RETURN_STMT) {
         endsWithReturn = true;
     }
-    
+
     if (!endsWithReturn) {
-        if (func->returnType == "void") out << "    ret void\n";
-        else out << "    ret " << retLT << " 0\n"; 
+        llvm.__emitReturn(retLT, retLT == "void" ? "" : "0", out);
     }
-    if (func->returnType == "void") out << "    ret void\n";
-    else if (func->returnType == "float" || func->returnType == "double") out << "    ret " << retLT << " 0.0\n";
-    else if (retLT.back() == '*') out << "    ret " << retLT << " null\n";
-    else out << "    ret " << retLT << " 0\n";
-    out << "}\n";
+    llvm.__emitDefaultReturn(retLT, out);
+    llvm.__emitFunctionFooter(out);
     currentFuncReturn = "";
 }
+
 
 void CodeGen::genReturnStmt(ASTNode* node, std::ostream& out) {
     auto* retNode = static_cast<ReturnStmtNode*>(node);
@@ -306,7 +288,6 @@ void CodeGen::genReturnStmt(ASTNode* node, std::ostream& out) {
         tempStack.pop();
     }
     emitGCPops(totalRoots, out);
-    if (!retNode->value) {   out << "    ret void\n"; } 
-    else {  out << "    ret " << llvmType(currentFuncReturn) << " " << valReg << "\n"; }
-    out << "\ndead_code_" << ++regCounter << ":\n";
+    llvm.__emitReturn(llvmType(currentFuncReturn), retNode->value ? valReg : "", out);
+    llvm.__emitLabel("dead_code_" + std::to_string(llvm.__uniqueId()), out);
 }

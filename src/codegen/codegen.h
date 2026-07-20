@@ -20,6 +20,7 @@
 #include "../parser/ast/node.h"
 #include "../sema/symboltable.h"
 #include "../parser/ast/classes.h"
+#include "../llvm/LLVMHelper.h"
 
 
 // @function signature data
@@ -38,24 +39,13 @@ private:
    // @data - AST, SymbolTable
    ASTNode* root;
    SymbolTable& symTable;
+   LLVMHelper llvm;
    
-
-   // @register controllers, SSA rules
-   int regCounter;
-   std::string newReg();
 
    // @data, and literals
    std::string llvmType(const std::string& berryType);
    std::string extractConstant(ASTNode* node);
 
-   // @strings handling in LLVM IR
-   int strCounter = 0;
-   std::ostringstream globalStrings;
-   std::ostringstream structDecls;
-   std::string escapeLLVMString(const std::string& str);
-   
-   // @FFI 
-   std::unordered_set<std::string> declaredExterns;
 
    // @controlflow tracking
    std::vector<std::string> breakTracker;
@@ -76,8 +66,6 @@ private:
    int popGCScope();
    
    // @BRE
-   std::ostringstream breDecls;
-   void emitBREDecl(const std::string& decl, const std::string& key);
    std::string genBREPrintCall(ASTNode* node, std::ostream& out);
    
    // @controlflow
@@ -100,14 +88,6 @@ private:
    void genForStmt(ASTNode* node, std::ostream& out);
    void genForInStmt(ASTNode* node, std::ostream& out);
    
-   // @allocation helpers
-   int alignOf(const std::string& llvmT);
-   std::string emitAlloca(const std::string& llvmT, std::ostream& out);
-   void emitStore(const std::string& llvmT, const std::string& val, const std::string& ptr, std::ostream& out);
-   std::string emitLoad(const std::string& llvmT, const std::string& ptr, std::ostream& out);
-   std::string emitSext(const std::string& fromT, const std::string& val, const std::string& toT, std::ostream& out);
-   std::string emitBoxValue(const std::string& llvmT, const std::string& valReg, std::ostream& out);
-   
    // @expression helpers
    std::string genExpression(ASTNode* node, const std::string& expectedType, std::ostream& out);
    std::string genLiteral(ASTNode* node, const std::string& expectedType, std::ostream& out);
@@ -121,8 +101,6 @@ private:
    std::string genIndexExpr(ASTNode* node, std::ostream& out);
    std::string genCallExpr(ASTNode* node, std::ostream& out);
    
-
-   std::string emitBinaryOp(const std::string& op, const std::string& llvmT, bool isFloat, const std::string& lReg, const std::string& rReg, std::ostream& out);
 
    // @oop
    struct ClassLayout {

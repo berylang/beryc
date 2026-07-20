@@ -11,7 +11,7 @@ std::string LLVMHelper::__emitCall(const std::string& returnType, const std::str
         outputStream << "   " << reg<< " = call "<< returnType << " @"<< functionName << "("; 
     }
     else {
-        outputStream << "   call" << returnType << " @" << functionName<< "(";
+        outputStream << "   call " << returnType << " @" << functionName<< "(";
 
     }
     for (size_t i = 0; i < arguments.size(); ++i) {

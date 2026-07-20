@@ -12,7 +12,7 @@ std::string LLVMHelper::__emitLoad(const std::string& llvmType,
     const std::string& pointer, std::ostream& outputStream) {
 
         std::string reg = __uniqueReg();
-        outputStream << "   " <<reg << " = load" << llvmType<< ", "<< llvmType << "* " << pointer << ", align " << __alignOf(llvmType) <<"\n";
+        outputStream << "   " <<reg << " = load " << llvmType<< ", "<< llvmType << "* " << pointer << ", align " << __alignOf(llvmType) <<"\n";
         return reg;
     }
 
