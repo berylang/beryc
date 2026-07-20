@@ -47,6 +47,18 @@ add_executable(bery
     cli/commands/cmd_compile.cpp
     cli/commands/cmd_run.cpp
     cli/commands/cmd_version.cpp
+    src/llvm/emit/core.cpp
+    src/llvm/emit/constants.cpp
+    src/llvm/emit/controlflow.cpp
+    src/llvm/emit/functions.cpp
+    src/llvm/emit/memory.cpp
+    src/llvm/emit/operator.cpp
+    src/llvm/emit/types.cpp
+    src/llvm/emit/naming.cpp
+    src/llvm/emit/struct.cpp
+    src/llvm/emit/externs.cpp
+    src/llvm/emit/gc.cpp
+    src/llvm/emit/calls.cpp
 )
 
 target_include_directories(bery PRIVATE src cli)

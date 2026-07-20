@@ -1,0 +1,4 @@
+run {
+    int a,b=20,c;
+    println("sanika yewale");
+}

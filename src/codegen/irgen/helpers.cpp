@@ -7,46 +7,19 @@
 
 
 std::string CodeGen::llvmType(const std::string& t) {
-   if (t == "int") return "i32";
-   if (t == "bigint") return "i64";
-   if (t == "bool") return "i1";
-   if (t == "float") return "float";
-   if (t == "double") return "double";
-   if (t == "char") return "i8";
-   if (t == "string") return "i8*";
-   if (t.size() > 6 && t.substr(0, 6) == "array<") return "i8*";
-   if (classLayouts.count(t)) return classLayouts.at(t).llvmStructType + "*";
-   return "i32";
+    std::string base = llvm.__llvmType(t);
+    if (!base.empty()) return base;
+    if (classLayouts.count(t)) return classLayouts.at(t).llvmStructType + "*";
+    return "i32";
 }
 
-std::string CodeGen::escapeLLVMString(const std::string& str) {
-    std::ostringstream escaped;
-
-    for (char c : str) {
-        if (c == '\n') escaped << "\\0A";
-        else if (c == '\t') escaped << "\\09";
-        else if (c == '\r') escaped << "\\0D";
-        else if (c == '\\') escaped << "\\5C";
-        else if (c == '"') escaped << "\\22";
-        else if (c < 32 || c > 126) {
-            escaped << "\\" << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << (int)(unsigned char) c;
-        } else {
-            escaped << c;
-        }
-    }
-    
-    escaped << "\\00";
-    return escaped.str();
-}
 
 std::string CodeGen::extractConstant(ASTNode* node) {
     if (!node) return "0";
     if (node->type == NodeType::INT_LIT) {
         return std::to_string(static_cast<IntLitNode*>(node)->value);
     } else if (node->type == NodeType::DECIMAL_LIT) {
-        std::ostringstream ss;
-        ss << std::scientific << std::setprecision(17) << static_cast<DecimalLitNode*>(node)->value;
-        return ss.str();
+        return llvm.__formatDoubleConstant(static_cast<DecimalLitNode*>(node)->value);
     }
     else if (node->type == NodeType::BOOL_LIT) {
         return static_cast<BoolLitNode*>(node)->value ? "1" : "0";
@@ -54,13 +27,7 @@ std::string CodeGen::extractConstant(ASTNode* node) {
     else if (node->type == NodeType::CHAR_LIT) {
         return std::to_string(static_cast<CharLitNode*>(node)->value);
     }else if (node->type == NodeType::STRING_LIT) {
-        auto* lit = static_cast<StringLitNode*>(node);
-        std::string strVal = lit->value;
-        std::string escapedStr = escapeLLVMString(strVal);
-        int len = strVal.length() + 1;
-        std::string globalName = "@.str." + std::to_string(strCounter++);
-        globalStrings << globalName << " = private unnamed_addr constant [" << len << " x i8] c\"" << escapedStr << "\"\n";
-        return "getelementptr ([" + std::to_string(len) + " x i8], [" + std::to_string(len) + " x i8]* " + globalName + ", i32 0, i32 0)";
+        return llvm.__emitGlobalStringConstant(static_cast<StringLitNode*>(node)->value);
     }
     else if (node->type == NodeType::NULL_LIT) {
         return "null";
@@ -74,9 +41,6 @@ std::string CodeGen::extractConstant(ASTNode* node) {
     return "0";
 }
 
-std::string CodeGen::newReg() {
-   return "%bery_" +std::to_string(++regCounter);
-}
 
 void CodeGen::genStatement(ASTNode* stmt, std::ostream& out) {
     if (!stmt) return;
@@ -101,7 +65,7 @@ void CodeGen::genStatement(ASTNode* stmt, std::ostream& out) {
             std::string mangledName = enumDecl->name + "." + val;
             std::string lt = "i32";
             std::string safeRegName = enumDecl->name + "_" + val; 
-            std::string memReg = "%" + safeRegName + "_" + std::to_string(++regCounter);
+            std::string memReg = "%" + safeRegName + "_" + std::to_string(llvm.__uniqueId());
             
             Symbol sym;
             sym.symbolType = SymbolType::VARIABLE;
@@ -113,49 +77,9 @@ void CodeGen::genStatement(ASTNode* stmt, std::ostream& out) {
             sym.llvmAllocType = lt;
             symTable.add(mangledName, sym);
             out << "    " << memReg << " = alloca " << lt << "\n";
-            out << "    store " << lt << " " << currentValue++ << ", " << lt << "* " << memReg << "\n";
+            llvm.__emitStore(lt, std::to_string(currentValue++), memReg, out);
         }
     }
     else if (stmt->type == NodeType::FOR_STMT) genForStmt(stmt, out);
     else if (stmt->type == NodeType::FOR_IN_STMT) genForInStmt(stmt, out);
-}
-
-int CodeGen::alignOf(const std::string& llvmT) {
-    if (llvmT == "i1" || llvmT == "i8")return 1;
-    if (llvmT == "i32" || llvmT == "float") return 4;
-    if (llvmT == "i64" || llvmT == "double") return 8;
-    if (!llvmT.empty() && llvmT.back() == '*') return 8;
-    return 4;
-}
-
-std::string CodeGen::emitAlloca(const std::string& llvmT, std::ostream& out) {
-    std::string reg = newReg();
-    out << "    " << reg << " = alloca " << llvmT << ", align " << alignOf(llvmT) << "\n";
-    return reg;
-}
-
-void CodeGen::emitStore(const std::string& llvmT, const std::string& val, const std::string& ptr, std::ostream& out) {
-    out << "    store " << llvmT << " " << val << ", " << llvmT << "* " << ptr << ", align " << alignOf(llvmT) << "\n";
-}
-
-std::string CodeGen::emitLoad(const std::string& llvmT, const std::string& ptr, std::ostream& out) {
-    std::string reg = newReg();
-    out << "    " << reg << " = load " << llvmT << ", " << llvmT << "* " << ptr << ", align " << alignOf(llvmT) << "\n";
-    return reg;
-}
-
-std::string CodeGen::emitSext(const std::string& fromT, const std::string& val, const std::string& toT, std::ostream& out) {
-    std::string reg = newReg();
-    out << "    " << reg << " = sext " << fromT << " " << val << " to " << toT << "\n";
-    return reg;
-}
-
-std::string CodeGen::emitBoxValue(const std::string& llvmT, const std::string& valReg, std::ostream& out) {
-    emitBREDecl("declare i8* @bery_alloc(i64, i32)", "bery_alloc");
-    std::string rawReg = newReg();
-    out << "    " << rawReg << " = call i8* @bery_alloc(i64 8, i32 0)\n";
-    std::string castReg = newReg();
-    out << "    " << castReg << " = bitcast i8* " << rawReg << " to " << llvmT << "*\n";
-    out << "    store " << llvmT << " " << valReg << ", " << llvmT << "* " << castReg << ", align " << alignOf(llvmT) << "\n";
-    return rawReg;
 }

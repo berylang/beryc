@@ -3,11 +3,6 @@
 #include <iomanip>
 #include "../../parser/ast/functions.h"
 
-void CodeGen::emitBREDecl(const std::string& decl, const std::string& key) {
-    if (declaredExterns.count(key)) return;
-    declaredExterns.insert(key);
-    breDecls << decl << "\n";
-}
 
 std::string CodeGen::genBREPrintCall(ASTNode* node, std::ostream& out) {
     auto* call = static_cast<CallExprNode*>(node);
@@ -51,9 +46,9 @@ std::string CodeGen::genBREPrintCall(ASTNode* node, std::ostream& out) {
         }
         else { sym = "__bery_print_int";    llvmT = "i32"; }
 
-        emitBREDecl("declare void @" + sym + "(" + llvmT + ")", sym);
+        llvm.__declareExtern("declare void @" + sym + "(" + llvmT + ")", sym);
         std::string argReg = genExpression(arg, argType, out);
-        out << "    call void @" << sym << "(" << llvmT << " " << argReg << ")\n";
+        llvm.__emitCall("void", sym, {{llvmT, argReg}}, out);
     };
 
     if (callee == "print") {
@@ -65,8 +60,8 @@ std::string CodeGen::genBREPrintCall(ASTNode* node, std::ostream& out) {
         if (!call->arguments.empty()) {
             emitPrint(call->arguments[0].get());
         }
-        emitBREDecl("declare void @bery_println()", "bery_println");
-        out << "    call void @bery_println()\n";
+        llvm.__declareExtern("declare void @bery_println()", "bery_println");
+        llvm.__emitCall("void", "bery_println", {}, out);
         return "0";
     }
     struct InputMapping {
@@ -86,15 +81,12 @@ std::string CodeGen::genBREPrintCall(ASTNode* node, std::ostream& out) {
 
     for (auto& m : inputMap) {
         if (callee == m.callee) {
-            emitBREDecl(
+            llvm.__declareExtern(
                 std::string("declare ") + m.llvmRet + " @" + m.sym + "(i8*)",
                 m.sym
             );
             std::string promptReg = genExpression(call->arguments[0].get(), "string", out);
-            std::string resReg = newReg();
-            out << "    " << resReg << " = call " << m.llvmRet
-                << " @" << m.sym << "(i8* " << promptReg << ")\n";
-            return resReg;
+            return llvm.__emitCall(m.llvmRet, m.sym, {{"i8*", promptReg}}, out);
         }
     }
 

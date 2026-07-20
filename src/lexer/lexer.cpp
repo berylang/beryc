@@ -104,31 +104,31 @@ void Lexer::scanToken() {
                 return;
             }
             tokens.push_back({TokenType::TOKEN_EQUAL, "=", line});
-            break;
+            return;
         case ';': 
             tokens.push_back({TokenType::TOKEN_SEMICOLON, ";", line});
-            break;
+            return;
         case '{':
             tokens.push_back({TokenType::TOKEN_LBRACE, "{", line});
-            break;
+            return;
         case '}':
             tokens.push_back({TokenType::TOKEN_RBRACE, "}", line});
-            break;
+            return;
         case ',':
             tokens.push_back({TokenType::TOKEN_COMMA, ",", line});
-            break;
+            return;
         case '[':
             tokens.push_back({TokenType::TOKEN_LBRACKET, "[", line});
-            break;
+            return;
         case ']':
             tokens.push_back({TokenType::TOKEN_RBRACKET, "]", line});
-            break;
+            return;
         case '\'':
             scanCharLit();
-            break;
+            return;
         case '"':
             scanStringLit();
-            break;
+            return;
         case '*':
             if(peek()=='='){
                 advance();
@@ -149,7 +149,7 @@ void Lexer::scanToken() {
             else{
                 tokens.push_back({TokenType::TOKEN_STAR, "*", line});
             }
-            break;
+            return;
         case '/':
             if(peek()=='='){
                     advance();
@@ -157,7 +157,7 @@ void Lexer::scanToken() {
             }else{
                 tokens.push_back({TokenType::TOKEN_FSLASH, "/", line});
                 }
-                break;
+                return;
         case '%':
             if(peek()=='='){
                 advance();
@@ -165,7 +165,7 @@ void Lexer::scanToken() {
             }else{
             tokens.push_back({TokenType::TOKEN_PERCENT, "%", line});
             }
-            break;
+            return;
         
         case '-':
             if(peek()=='-'){
@@ -201,7 +201,7 @@ void Lexer::scanToken() {
                 tokens.push_back({TokenType::TOKEN_MINUS, "-", line});
                 return;
             }
-            break;
+            return;
         case '+':
            if(peek()=='+'){
                 advance();
@@ -217,7 +217,7 @@ void Lexer::scanToken() {
                 tokens.push_back({TokenType::TOKEN_PLUS, "+", line});
                 return;
             }
-            break;
+            return;
         case '~':
             tokens.push_back({TokenType::TOKEN_TILDE, "~", line});
             return;
@@ -237,7 +237,7 @@ void Lexer::scanToken() {
                 tokens.push_back({TokenType::TOKEN_BANG, "!", line});
                 return;
             }
-            break;
+            return;
         case '(':
             tokens.push_back({TokenType::TOKEN_LPARAN, "(", line});
             return;
@@ -266,7 +266,7 @@ void Lexer::scanToken() {
                tokens.push_back({TokenType::TOKEN_LTHAN, "<", line});
                 return;
             }
-            break;
+            return;
         case '>':
             if(peek()=='>'){
                 if(peekNext()=='='){
@@ -294,7 +294,7 @@ void Lexer::scanToken() {
                 tokens.push_back({TokenType::TOKEN_GTHAN, ">", line});
                 return;
             }
-            break;
+            return;
         case '^':
             if(peek()=='='){
                 advance();
@@ -303,7 +303,7 @@ void Lexer::scanToken() {
             }else{
             tokens.push_back({TokenType::TOKEN_CARET, "^", line});
             }
-            break;
+            return;
         case '&':
             if(peek()=='='){
                 advance();
@@ -317,7 +317,7 @@ void Lexer::scanToken() {
             }else{
             tokens.push_back({TokenType::TOKEN_AMPERSAND, "&", line});
             }
-            break;
+            return;
         case '|':
             if(peek()=='='){
                 advance();
@@ -331,7 +331,7 @@ void Lexer::scanToken() {
             }else{
             tokens.push_back({TokenType::TOKEN_PIPE, "|", line});
             }
-            break;
+            return;
         case ':':
             if(peek()==':'){
                 advance();
@@ -343,7 +343,7 @@ void Lexer::scanToken() {
             }
         case '?':
             tokens.push_back({TokenType::TOKEN_QUESTION, "?", line});
-            break;
+            return;
         case '.':
             if (peek() == '.') {
                 advance();
@@ -351,7 +351,7 @@ void Lexer::scanToken() {
                 return;
             }
             tokens.push_back({TokenType::TOKEN_DOT, ".", line});
-            break;
+            return;
         }
         
 }
@@ -367,6 +367,21 @@ scanNumber() scans both integers and floating point numbers.
 
 */
 void Lexer::scanNumber() {
+
+    /*
+    
+    Needed support for -
+
+    1. Decimal numbers 10, 10.2, etc. (currently supported )
+    2. Binary numbers 0b0100202
+    3. Hexadecimals   0x40FAA
+    4. Octet numbers  0o242
+
+    5. exponents      1e10, 3.5e-4
+
+    
+    */
+
     int start = current - 1;
     while (!isAtEnd() && isDigit(peek())) advance(); 
 
@@ -384,6 +399,15 @@ void Lexer::scanNumber() {
 
 // @todo : Enhance it later for Errors
 void Lexer::scanCharLit() {
+
+    /*
+    
+        Single character datatype currently only finds
+        ASCII values.
+
+        @todo : Changed it to the UTF-8 encoding.
+    
+    */
     if (errors) return; 
 
     if (peek() == '\'') { 
@@ -405,13 +429,16 @@ void Lexer::scanCharLit() {
 
         char es = advance();
         switch (es) {
-            case 'n':  value = '\n'; break;
-            case 't':  value = '\t'; break;
-            case 'r':  value = '\r'; break;
-            case '\\': value = '\\'; break;
-            case '0':  value = '\0'; break;
-            case '"':  value = '\"'; break;
-            case '\'': value = '\''; break;
+
+            // supported escape sequences - \n, \t, \r, \\, \0, \" and \'
+            // change it for UTF-8 encoding.
+            case 'n':  value = '\n'; return;
+            case 't':  value = '\t'; return;
+            case 'r':  value = '\r'; return;
+            case '\\': value = '\\'; return;
+            case '0':  value = '\0'; return;
+            case '"':  value = '\"'; return;
+            case '\'': value = '\''; return;
             default:
                 errors = true;
                 std::cerr << "Bery:Error [Line " << line <<"]: Invalid Escape Sequence\n";
@@ -457,22 +484,22 @@ void Lexer::scanStringLit() {
         if (peek() == '\n') line++;
         if (peek() == '\\') {
             advance();
-            if (isAtEnd()) break;
+            if (isAtEnd()) return;
             
             char es = advance();
             switch (es) {
-                case 'n':  value += '\n'; break;
-                case 't':  value += '\t'; break;
-                case 'r':  value += '\r'; break;
-                case '\\': value += '\\'; break;
-                case '0':  value += '\0'; break;
-                case '"':  value += '\"'; break;
-                case '\'': value += '\''; break;
+                case 'n':  value += '\n'; return;
+                case 't':  value += '\t'; return;
+                case 'r':  value += '\r'; return;
+                case '\\': value += '\\'; return;
+                case '0':  value += '\0'; return;
+                case '"':  value += '\"'; return;
+                case '\'': value += '\''; return;
                 default:
                     errors = true;
                     std::cerr << "Bery:Error [Line " << line <<"]: Invalid escape sequence in string\n";
                     value += es; 
-                    break;
+                    return;
             }
         } else {
             value += advance();
@@ -515,7 +542,7 @@ void Lexer::skipComments(bool isMLC){
                 advance();
                 if(peek()=='-'){
                     advance();
-                    return;
+                    break;
                 }
             }
             if(peek()=='\n'){line++;}
@@ -532,6 +559,8 @@ void Lexer::skipComments(bool isMLC){
 }
 
 TokenType Lexer::checkKeyword(const std::string& lexeme) {
+
+    // O(1) lookup in the hashmap to check keyword;
     auto it = keywords.find(lexeme); 
     if (it != keywords.end()) return it->second;
     return TokenType::TOKEN_IDENT;
@@ -540,11 +569,23 @@ TokenType Lexer::checkKeyword(const std::string& lexeme) {
 // @helpers
 bool Lexer::isAtEnd() { return current >= (int) source.size(); }
 bool Lexer::isAlphaNumeric(char c) {return isAlpha(c) || isDigit(c);}
-bool Lexer::isAlpha(char c) {return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';}
+bool Lexer::isAlpha(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+    // it makes identifiers to follow -
+    // [a-zA-Z_][a-zA-Z0-9_]
+
+}
 bool Lexer::isDigit(char c) {return c >= '0' && c <= '9';}
 char Lexer::advance() {return source[current++];}
 char Lexer::peek() {return source[current];}
-char Lexer::peekNext() {return source[current + 1];}
+char Lexer::peekNext() {
+
+    // Bound check added if lexer try to perform maximal 
+    // munch at the end of the file.
+    if(source.size() > current + 1) 
+        return source[current + 1];
+    return '\0';
+}
 
 // @todo : change it later for better Errors;
 bool Lexer::hasErrors() {return errors;}

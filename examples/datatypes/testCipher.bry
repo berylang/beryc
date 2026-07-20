@@ -1,0 +1,18 @@
+
+
+run {
+    string msg = inputString("Enter message : ");
+
+    int key = inputInt("Enter key: ");  
+
+    string cipher = "";
+    for (char ch in msg) {
+        int ascii = (int) ch;
+        int val = 26;
+        int mod = ascii - 97 + key % val + 97;
+        print((char) mod);
+
+    }
+
+    println("");
+}
