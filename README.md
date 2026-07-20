@@ -2,7 +2,7 @@
 
 Bery is a compiled, statically typed, object-oriented programming language designed for performance and clarity. Built completely from scratch with a custom C++ frontend and an LLVM backend, Berry compiles directly to highly optimized native machine code.
 
-This project is a **Learning Project** by team of six undergraduate engineers.
+This project is a **Learning Project** by team of four undergraduate engineers.
 
 ## Proof of Our Philosophy
 Bery is a learning project, that's why it is a proof of our CONCEPT CLEARANCE. The team operates under strict constraints:
@@ -27,7 +27,6 @@ Project pipeline follows :
 ## Bery Team
 - Vitthal Humbe (Project Lead)
 - Yash Gajawani
-- Avinash Pawar
 - Pratyusha Nalavade
 - Soham Nangare
 
