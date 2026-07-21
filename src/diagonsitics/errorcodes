@@ -1,0 +1,114 @@
+BL0001 - Empty Char Literal
+BL0002 - Incomplete Escape Sequence
+BL0003 - Invalid Escape Sequence
+BL0004 - Newline in char literal
+BL0005 - Multi-character Char Literal
+BL0006 - Unclosed Char Literal
+BL0007 - Invalid escape sequence in string
+BL0008 - Unclosed string literal
+BL0009 - Unclosed Comments
+
+
+BP0001 - Expected 'case' or 'default
+BP0002 - Expected ')' after condition
+BP0003 - Expected '{' before if Body
+BP0004 - Expected '{' before if else Body
+BP0005 - Expected '(' after switch
+BP0006 - Expected ')' after condition
+BP0007 - Expected '{' before switch-body
+BP0008 - expected ':' after case
+BP0009 - Expected ':'
+BP0010 - Expected '}' after switch body
+BP0011 - Expected ';' after 'break'
+BP0012 - Expected ';' after 'continue
+BP0013 - Expected ';' after 'pass'
+BP0014 - Invalid Assignment Target
+BP0015 - Expected ':' in ternary operator
+BP0016 - Expected ',' after lower bound
+BP0017 - Expected class name after 'new'
+BP0018 - Expected '(' after class name
+BP0019 - Expected ')' after constructor arguments
+BP0020 - Expected identifier after '.'
+BP0021 - Expected ']' after array index
+BP0022 - Expected ')'
+BP0023 - Expected function name
+BP0024 - Expected '(' after function name
+BP0025 - Expected parameter name
+BP0026 - Expected ']' after '[' in array parameter type
+BP0027 - Expected ')' after parameters
+BP0028 - Expected ']' after '[' in array return type
+BP0029 - Expected '{' before function body
+BP0030 - Expected '(' in function call
+BP0031 - Expected ')' after arguments
+BP0032 - Expected ';' after return statement
+BP0033 - Expected '(' after 'while'
+BP0034 - Expected ')' after condition
+BP0035 - Expected '{' before while-body
+BP0036 - Expected '{' before do-while-body
+BP0037 - Expected 'while' condition after do-while-body
+BP0038 - Expected '(' after 'while
+BP0039 - Expected ')' after condition
+BP0040 - Expected ';' after condition-end
+BP0041 - Expected '(' after 'for'
+BP0042 - Expected identifier
+BP0043 - Expected ')' after for-in declaration
+BP0044 - Expected '{' before loop body
+BP0045 - Expected ';' after loop condition
+BP0046 - Expected ')' after loop update
+BP0047 - Expected '{' before loop body
+BP0048 - "Bery:Error [Line " << nameToken.line << "]: Destructor name '~" << nameToken.lexeme<< "' does not match class '" --parser_oop.cpp | 82
+BP0049 - Expected class name
+BP0050 - Expected '{' after class name
+BP0051 - Expected '}' after class body
+BP0052 - Exptected 'attributes' section
+BP0053 - Expected '[' after 'attributes'
+BP0054 - Expected self-reference identifier
+BP0055 - Expected ']' after self-reference
+BP0056 - Exptected '::' after attributes seciton verbose
+BP0057 - Expected 'methods' section
+BP0058 - Exptected '::' after 'methods
+BP0059 - Expected class name after '~'
+BP0060 - Expected '(' after destructor name
+BP0061 - Expected parameter name
+BP0062 - Expected ']' after '[' in array parameter type
+BP0063 - Expected ')' after parameters
+BP0064 - Expected '{' before destructor body
+BP0065 - Expected '(' after constructor name
+BP0066 - Expected parameter name
+BP0067 - Expected ']' after '[' in array parameter type
+BP0068 - Expected '{' before constructor body
+BP0069 - Expected valid expression or literal
+BP0070 - Arrays must be initialized with list inside '{}'
+BP0071 - Expected identifier
+BP0072 - Expected ';'
+BP0073 - Expected type
+BP0074 - Expected identifier
+BP0075 - Expected ']'
+BP0076 - Expected ';'
+BP0077 - Expected '{'
+BP0078 - Expected '}'
+BP0079 - Expected enum name
+BP0080 - Expected '=' after enum name
+BP0081 - Expected '{' to start enum values
+BP0082 - Expected enum value
+BP0083 - Expected '}' after enum values
+BP0084 - Expected ';' after enum declaration
+BP0085 - Expected module name after 'import'
+BP0086 - Expected identifier after '.'
+BP0087 - Expected ';' after import statement
+BP0088 - Expected 'func' after 'extern'.
+BP0089 - Expected function name after 'func'.
+BP0090 - Expected '(' after function name.
+BP0091 - Expected parameter name
+BP0092 - Expected ')' after extern parameters
+BP0093 - Expected ';' after extern declaration
+BP0094 - Unexpected token '
+BP0095 - no run{} block found
+BP0096 - "Bery:Error [Line " << peek().line << "]: " << msg << "\n" --parser.cpp | 111
+BP0097 - Expected '{' after run
+BP0098 - Expected '}' after run block
+BP0099 - consume(msg) --parser.cpp | 108
+BP0100 - Expected '}' after block
+BP0111 - Expected ';' after expression
+BP0112 - Expected '(' after function name.
+BP0113 - Expected '(' after function name.
