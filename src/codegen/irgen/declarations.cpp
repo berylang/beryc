@@ -47,7 +47,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
     if (cls->methods) {
         for (auto& m : cls->methods->methods) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
-            std::string mangledName = func->isConstructor ? (cls->name + "$ctor") : func->isDestructor ? (cls->name + "$dtor") : (cls->name + "_" + func->name);
+            std::string mangledName = func->isConstructor ? (cls->name + "$constructor") : func->isDestructor ? (cls->name + "$destructor") : (cls->name + "_" + func->name);
 
             CodeGenFunctionSignature sig;
             sig.returnType = func->returnType;

@@ -29,3 +29,7 @@ void LLVMHelper::__emitDefaultReturn(const std::string& llvmType, std::ostream& 
         outputStream<< "    ret " << llvmType << " null\n";
     else outputStream <<"   ret " << llvmType << " 0\n";
 }
+
+std::string LLVMHelper::__arguementRegName(const std::string& paramName) {
+    return "%" + paramName + "_arg";
+}

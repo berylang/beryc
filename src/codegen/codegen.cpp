@@ -188,6 +188,7 @@ void CodeGen::generate(const std::string& outputPath) {
     }
     int rootsInMain = popGCScope();
     emitGCPops(rootsInMain, body);
+    body << "    call void @bery_runtime_shutdown()\n";
     llvm.__emitBr("main_end", body);
     llvm.__emitLabel("main_end", body);
     llvm.__emitReturn("i32", "0", body);

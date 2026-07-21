@@ -70,3 +70,10 @@ void LLVMHelper::__emitGlobalVar(const std::string& name,
         outputStream << "@"<<name<< " = global "<<llvmType<< " "<< initVal <<"\n";
 
     }
+
+std::string LLVMHelper::__globalRef(const std::string& name) 
+
+    {return "@" + name;}
+
+std::string LLVMHelper::__globalRef(const std::string& name, const std::string& suffix) 
+    {return "@" + name + suffix;}

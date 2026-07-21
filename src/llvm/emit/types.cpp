@@ -40,3 +40,25 @@ int LLVMHelper::__alignOf(const std::string& llvmType) {
     return 4;
 }
 
+
+std::string LLVMHelper::__pointerType(const std::string& baseType) {
+    return baseType + "*";
+}
+
+std::string LLVMHelper::__arrayBeryType(const std::string& elementType) {
+    return "array<" + elementType + ">";
+}
+
+std::string LLVMHelper::__arrayTypeSignature(const std::string& elementBeryType, int dimensions) {
+    std::string sig = elementBeryType;
+    for (int i = 0; i < dimensions; ++i) sig += "[]";
+    return sig;
+}
+
+std::string LLVMHelper::__nestedArrayType(const std::string& elementLLVMType, const std::vector<int>& dimensions) {
+    std::string t = elementLLVMType;
+    for (int i =(int)dimensions.size() - 1;i =0;--i) {
+        t = "[" + std::to_string(dimensions[i]) + " x " + t + "]";
+    }
+    return t;
+}

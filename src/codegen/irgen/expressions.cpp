@@ -579,7 +579,7 @@ std::string CodeGen::genNewExpr(ASTNode* node, std::ostream& out) {
     }
 
     if (layout.hasConstructor) {
-        std::string mangled = newExpr->className + "$ctor";
+        std::string mangled = newExpr->className + "$constructor";
         CodeGenFunctionSignature& sig = functions[mangled];
         std::vector<std::pair<std::string, std::string>> args;
         args.push_back({layout.llvmStructType + "*", objReg});

@@ -40,7 +40,7 @@ std::string LLVMHelper::__emitClassNameGEP(const std::string& className, int nam
 
 std::string LLVMHelper::__emitDestructorBitcast(const std::string& structType, const std::string& className, std::ostream& outputStream) {
     std::string reg = __uniqueReg();
-    outputStream << "   "<< reg << " = bitcast void (" << structType << "*)* @" << className<<"$dtor to i8*\n";
+    outputStream << "   "<< reg << " = bitcast void (" << structType << "*)* @" << className<<"$destructor to i8*\n";
     return reg;
 }
 
@@ -53,4 +53,16 @@ std::string LLVMHelper::__emitTypeRegisterCall(const std::string& className, int
     << ", i64 " << instanceSize << ", i8* null, i64 0, " << destructorArg << ")\n";
     outputStream << "   store i32 " << idRegister << ", i32* @" << className << "_typeid\n";
     return idRegister;
+}
+
+std::string LLVMHelper::__mangleMethod(const std::string& className, const std::string& methodName) {
+    return className + "_" + methodName;
+}
+
+std::string LLVMHelper::__mangleConstructor(const std::string& className) {
+    return className + "$constructor";
+}
+
+std::string LLVMHelper::__mangleDestructor(const std::string& className) {
+    return className + "$destructor";
 }
