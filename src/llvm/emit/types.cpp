@@ -57,8 +57,9 @@ std::string LLVMHelper::__arrayTypeSignature(const std::string& elementBeryType,
 
 std::string LLVMHelper::__nestedArrayType(const std::string& elementLLVMType, const std::vector<int>& dimensions) {
     std::string t = elementLLVMType;
-    for (int i =(int)dimensions.size() - 1;i =0;--i) {
-        t = "[" + std::to_string(dimensions[i]) + " x " + t + "]";
+    for (auto it = dimensions.rbegin(); it != dimensions.rend(); ++it) {
+        t = "[" + std::to_string(*it) + " x " + t + "]";
     }
+
     return t;
 }

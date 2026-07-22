@@ -47,23 +47,23 @@ void CodeGen::genClassDecl(ASTNode* node) {
     if (cls->methods) {
         for (auto& m : cls->methods->methods) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
-            std::string mangledName = func->isConstructor ? (cls->name + "$constructor") : func->isDestructor ? (cls->name + "$destructor") : (cls->name + "_" + func->name);
+            std::string mangledName = func->isConstructor ? llvm.__mangleConstructor(cls->name)
+                         : func->isDestructor ? llvm.__mangleDestructor(cls->name) : llvm.__mangleMethod(cls->name, func->name);
 
-            CodeGenFunctionSignature sig;
-            sig.returnType = func->returnType;
-            sig.paramTypes.push_back(cls->name + "*");
-            for (auto& p : func->parameters) sig.paramTypes.push_back(p.first);
-            functions[mangledName] = sig;
+            CodeGenFunctionSignature signature;
+            signature.returnType = func->returnType;
+            signature.paramTypes.push_back(llvm.__pointerType(cls->name));
+            for (auto& p : func->parameters) signature.paramTypes.push_back(p.first);
+            functions[mangledName] = signature;
 
             std::ostringstream methodOut;
-            std::string retLT = (func->returnType == "void" || func->returnType.empty())
-                                 ? "void" : llvmType(func->returnType);
+            std::string retLT = (func->returnType == "void" || func->returnType.empty())? "void" : llvmType(func->returnType);
             currentFuncReturn = func->returnType;
 
             std::vector<std::pair<std::string, std::string>> params;
-            params.push_back({layout.llvmStructType + "*", "%self_arg"});
-            for (auto& p : func->parameters)
-                params.push_back({llvmType(p.first), "%" + p.second + "_arg"});
+            std::string selfPtrType = llvm.__pointerType(layout.llvmStructType);
+            params.push_back({selfPtrType, llvm.__arguementRegName("self")});
+            for (auto& p : func->parameters) params.push_back({llvmType(p.first), llvm.__arguementRegName(p.second)});
             llvm.__emitFunctionHeader(retLT, mangledName, params, methodOut);
 
             symTable.pushScope();
@@ -71,9 +71,8 @@ void CodeGen::genClassDecl(ASTNode* node) {
             currentClassName = cls->name;
             currentSelfRef = cls->attributes->selfRef;
 
-            std::string selfReg = "%self_" + std::to_string(llvm.__uniqueId());
-            methodOut << "    " << selfReg << " = alloca " << layout.llvmStructType << "*\n";
-            llvm.__emitStore(layout.llvmStructType + "*", "%self_arg", selfReg, methodOut);
+            std::string selfReg = llvm.__emitNamedAlloca("self", selfPtrType, methodOut);
+            llvm.__emitStore(selfPtrType, llvm.__arguementRegName("self"), selfReg, methodOut);
 
             Symbol selfSym;
             selfSym.type = cls->name;
@@ -91,10 +90,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
                 auto& fieldName = field.second;
                 std::string lt = llvmType(beryT);
                 int idx = layout.fieldIndex[fieldName];
-                std::string gepReg = "%" + fieldName + "_" + std::to_string(llvm.__uniqueId());
-                methodOut << "    " << gepReg << " = getelementptr inbounds "
-                          << layout.llvmStructType << ", " << layout.llvmStructType << "* "
-                          << loadedSelf << ", i32 0, i32 " << idx << "\n";
+                std::string gepReg = llvm.__emitFieldGEP(layout.llvmStructType, loadedSelf, idx, methodOut);
 
                 Symbol fieldSym;
                 fieldSym.type = beryT;
@@ -108,7 +104,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
 
             for (auto& p : func->parameters) {
                 std::string pLT = llvmType(p.first);
-                std::string pReg = "%" + p.second + "_" + std::to_string(llvm.__uniqueId());
+                std::string pReg = llvm.__emitNamedAlloca(p.second, pLT, methodOut);
 
                 Symbol paramSym;
                 paramSym.type = p.first;
@@ -119,8 +115,7 @@ void CodeGen::genClassDecl(ASTNode* node) {
                 paramSym.line = func->line;
                 symTable.add(p.second, paramSym);
 
-                methodOut << "    " << pReg << " = alloca " << pLT << "\n";
-                llvm.__emitStore(pLT, "%" + p.second + "_arg", pReg, methodOut);
+                llvm.__emitStore(pLT, llvm.__arguementRegName(p.second), pReg, methodOut);
             }
 
             for (auto& stmt : func->body->statements)
@@ -146,60 +141,53 @@ void CodeGen::genClassDecl(ASTNode* node) {
 void CodeGen::genVarDecl(ASTNode* node, std::ostream& out) {
     auto* decl = static_cast<VarDeclNode*>(node);
     std::string lt = llvmType(decl->varType);
-    std::string memReg = "%" + decl->name + "_" + std::to_string(llvm.__uniqueId());
+    std::string memoryReg = llvm.__emitNamedAlloca(decl->name, lt, out);
     Symbol sym;
     sym.symbolType = SymbolType::VARIABLE;
     sym.type = decl->varType;
     sym.isConst = decl->isConst;
     sym.isInitialized = decl->value != nullptr;
     sym.line = decl->line;
-    sym.llvmRegister = memReg;
+    sym.llvmRegister = memoryReg;
     sym.llvmAllocType = lt;
     symTable.add(decl->name, sym);
-    out << "    " << memReg << " = alloca " << lt << "\n";
     if (decl->varType == "string" || classLayouts.count(decl->varType)) {
-        emitGCPush(memReg, lt, out);
+        emitGCPush(memoryReg, lt, out);
     }
     if (!decl->value) return;
-    std::string valReg = genExpression(decl->value.get(), decl->varType, out);
-    llvm.__emitStore(lt, valReg, memReg, out);
+    std::string valueReg = genExpression(decl->value.get(), decl->varType, out);
+    llvm.__emitStore(lt, valueReg, memoryReg, out);
 }
 
 void CodeGen::genArrayDecl(ASTNode* node, std::ostream& out) {
     auto* decl = static_cast<ArrayDeclNode*>(node);
     if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
-        std::string memReg = "%" + decl->name + "_" + std::to_string(llvm.__uniqueId());
+        std::string memoryReg = llvm.__emitNamedAlloca(decl->name, "i8*", out);
         Symbol sym;
         sym.symbolType = SymbolType::VARIABLE;
-        sym.type = "array<" + decl->elementType + ">";
+        sym.type = llvm.__arrayBeryType(decl->elementType);
         sym.isInitialized = true;
         sym.line = decl->line;
-        sym.llvmRegister = memReg;
+        sym.llvmRegister = memoryReg;
         sym.llvmAllocType = "i8*";
         symTable.add(decl->name, sym);
-        out << "    " << memReg << " = alloca i8*\n";
         if (decl->valueExpr) {
-            std::string valReg = genExpression(decl->valueExpr.get(), sym.type, out);
-            llvm.__emitStore("i8*", valReg, memReg, out);
+            std::string valueReg = genExpression(decl->valueExpr.get(), sym.type, out);
+            llvm.__emitStore("i8*", valueReg, memoryReg, out);
         } else {
-            llvm.__declareExtern("declare i8* @bery_array_new(i64)", "bery_array_new");
+            llvm.__declareExternFn("i8*", "bery_array_new", {"i64"});
             std::string arrReg = llvm.__emitCall("i8*", "bery_array_new", {{"i64", "4"}}, out);
-            llvm.__emitStore("i8*", arrReg, memReg, out);
+            llvm.__emitStore("i8*", arrReg, memoryReg, out);
         }
-        emitGCPush(memReg, "i8*", out);
+        emitGCPush(memoryReg, "i8*", out);
         return;
     }
     std::string lt = llvmType(decl->elementType);
+    std::string arrType = llvm.__nestedArrayType(lt, decl->dimensions);
 
-    std::string arrType = lt;
-    for (int i = decl->dimensions.size() - 1; i >= 0; --i) {
-        arrType = "[" + std::to_string(decl->dimensions[i]) + " x " + arrType + "]";
-    }
-    
-    std::string memReg = "%" + decl->name + "_" + std::to_string(llvm.__uniqueId());
-    std::string typeSig = decl->elementType;
-    for (size_t i = 0; i < decl->dimensions.size(); ++i) typeSig += "[]";
-    
+    std::string memReg = llvm.__namedReg(decl->name);
+    std::string typeSig = llvm.__arrayTypeSignature(decl->elementType, (int)decl->dimensions.size());
+
     Symbol sym;
     sym.symbolType = SymbolType::VARIABLE;
     sym.type = typeSig;
@@ -214,12 +202,11 @@ void CodeGen::genArrayDecl(ASTNode* node, std::ostream& out) {
 
     out << "    " << memReg << " = alloca " << arrType << "\n";
     if (decl->initializers.empty()) return;
-    std::string flatPtr = llvm.__emitBitcast(arrType + "*", memReg, lt + "*", out);
 
-
+    std::string flatPtr = llvm.__emitBitcast(llvm.__pointerType(arrType), memReg, llvm.__pointerType(lt), out);
     for (size_t i = 0; i < decl->initializers.size(); ++i) {
         std::string valReg = genExpression(decl->initializers[i].get(), decl->elementType, out);
-        std::string ptrReg = llvm.__emitGEP(lt, flatPtr, {"i32 " + std::to_string(i)}, false, out);
+        std::string ptrReg = llvm.__emitTypedGEP(lt, flatPtr, {{"i32", std::to_string(i)}}, false, out);
         llvm.__emitStore(lt, valReg, ptrReg, out);
     }
 }
@@ -231,30 +218,28 @@ void CodeGen::genFuncDef(ASTNode* node, std::ostream& out) {
 
     std::vector<std::pair<std::string, std::string>> params;
     for (auto& p : func->parameters) {
-        params.push_back({llvmType(p.first), "%" + p.second + "_arg"});
+        params.push_back({llvmType(p.first), llvm.__arguementRegName(p.second)});
     }
     llvm.__emitFunctionHeader(retLT, func->name, params, out);
 
     symTable.pushScope();
     pushGCScope();
     for (auto& param : func->parameters) {
-        std::string pType = llvmType(param.first);
-        std::string pName = param.second;
-        std::string memReg = "%" + pName + "_" + std::to_string(llvm.__uniqueId());
-
+        std::string parameterType = llvmType(param.first);
+        std::string parameterName = param.second;
+        std::string memoryReg = llvm.__emitNamedAlloca(parameterName, parameterType, out);
         Symbol sym;
         sym.symbolType = SymbolType::VARIABLE;
         sym.type = param.first;
         sym.isInitialized = true;
         sym.line = func->line;
-        sym.llvmRegister = memReg;
-        sym.llvmAllocType = pType;
-        symTable.add(pName, sym);
+        sym.llvmRegister = memoryReg;
+        sym.llvmAllocType = parameterType;
+        symTable.add(parameterName, sym);
 
-        out << "    " << memReg << " = alloca " << pType << "\n";
-        llvm.__emitStore(pType, "%" + pName + "_arg", memReg, out);
-        bool isHeapTracked = param.first == "string" || classLayouts.count(param.first) || (param.first.size() > 6 && param.first.substr(0, 6) == "array<");
-        if (isHeapTracked) { emitGCPush(memReg, pType, out); }
+        llvm.__emitStore(parameterType, llvm.__arguementRegName(parameterName), memoryReg, out);
+        bool isHeapTracked = param.first == "string"||classLayouts.count(param.first) || (param.first.size() > 6 && param.first.substr(0, 6) == "array<");
+        if (isHeapTracked) { emitGCPush(memoryReg, parameterType, out); }
     }
 
     for (auto& stmt : func->body->statements) genStatement(stmt.get(), out);
@@ -279,8 +264,8 @@ void CodeGen::genFuncDef(ASTNode* node, std::ostream& out) {
 void CodeGen::genReturnStmt(ASTNode* node, std::ostream& out) {
     auto* retNode = static_cast<ReturnStmtNode*>(node);
     
-    std::string valReg;
-    if (retNode->value) {valReg = genExpression(retNode->value.get(), currentFuncReturn, out); }
+    std::string valueReg;
+    if (retNode->value) {valueReg = genExpression(retNode->value.get(), currentFuncReturn, out); }
     int totalRoots = 0;
     std::stack<int> tempStack = gcRootScopeStack;
     while (!tempStack.empty()) {
@@ -288,6 +273,6 @@ void CodeGen::genReturnStmt(ASTNode* node, std::ostream& out) {
         tempStack.pop();
     }
     emitGCPops(totalRoots, out);
-    llvm.__emitReturn(llvmType(currentFuncReturn), retNode->value ? valReg : "", out);
-    llvm.__emitLabel("dead_code_" + std::to_string(llvm.__uniqueId()), out);
+    llvm.__emitReturn(llvmType(currentFuncReturn), retNode->value ? valueReg : "", out);
+    llvm.__emitLabel(llvm.__uniqueLabel("dead_code"), out);
 }

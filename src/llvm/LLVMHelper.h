@@ -30,6 +30,7 @@ public:
     // @naming
     std::string __uniqueReg();
     int __uniqueId();
+    std::string __uniqueLabel(const std::string& prefix);
     std::string __namedReg(const std::string& prefix);
     std::string __labelWithId(const std::string& prefix, int id);
     std::string __indexedLabel(const std::string& prefix, int index, int id);
@@ -49,7 +50,7 @@ public:
     std::string __emitBitcast(const std::string& fromType, const std::string& value, const std::string& toType, std::ostream& outputStream);
     std::string __emitSext(const std::string& fromType, const std::string& value, const std::string& toType, std::ostream& outputStream);
     std::string __emitGEP(const std::string& baseType, const std::string& pointer, const std::vector<std::string>& indices,bool inbounds, std::ostream& outputStream);
-    std::string __emitGEP(const std::string& baseType, const std::string& pointer, const std::vector<std::pair<std::string, std::string>>& typedIndices, bool inbounds, std::ostream& outputStream);
+    std::string __emitTypedGEP(const std::string& baseType, const std::string& pointer, const std::vector<std::pair<std::string, std::string>>& typedIndices, bool inbounds, std::ostream& outputStream);
     std::string __emitFieldGEP(const std::string& structType, const std::string& pointer, int fieldIndex, std::ostream& outputStream);
     std::string __emitBoxValue(const std::string& llvmType, const std::string& valueRegister,   std::ostream& outputStream);
     std::string __emitConvert(const std::string& instr, const std::string& fromType, const std::string& value, const std::string& toType, std::ostream& outputStream);

@@ -8,6 +8,9 @@ std::string LLVMHelper::__uniqueReg() {
 int LLVMHelper::__uniqueId() {
     return ++__reg_counter;
 }
+std::string LLVMHelper::__uniqueLabel(const std::string& prefix) {
+    return prefix + "_" +std::to_string(__uniqueId());
+}
 
 std::string LLVMHelper::__namedReg(const std::string& prefix) {
     return "%" + prefix + "_" + std::to_string(__uniqueId());

@@ -59,7 +59,7 @@ void LLVMHelper::__emitStore(const std::string& llvmType, const std::string& val
     outputStream << "   store " << llvmType << " " << value<< ", "<<llvmType<< "* "<<pointer<< ", align "<< __alignOf(llvmType) <<"\n";
 }
 
-std::string LLVMHelper::__emitGEP(const std::string& baseType, const std::string& pointer,const std::vector<std::pair<std::string, std::string>>& typedIndices,
+std::string LLVMHelper::__emitTypedGEP(const std::string& baseType, const std::string& pointer,const std::vector<std::pair<std::string, std::string>>& typedIndices,
     bool inbounds,std::ostream& outputStream){
     std::vector<std::string> indices;
     for (auto& idx:typedIndices) indices.push_back(idx.first + " " +idx.second);
@@ -67,7 +67,7 @@ std::string LLVMHelper::__emitGEP(const std::string& baseType, const std::string
 }
 
 std::string LLVMHelper::__emitFieldGEP(const std::string& structType, const std::string& pointer, int fieldIndex, std::ostream& outputStream) {
-    return __emitGEP(structType, pointer, {{"i32", "0"}, {"i32", std::to_string(fieldIndex)}},true, outputStream);
+    return __emitTypedGEP(structType, pointer, {{"i32", "0"}, {"i32", std::to_string(fieldIndex)}},true, outputStream);
 }
 
 std::string LLVMHelper::__emitNamedAlloca(const std::string& prefix, const std::string& llvmType,std::ostream& outputStream) {
