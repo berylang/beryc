@@ -6,7 +6,7 @@
 
    it tranverse the AST and emits LLVM IR text directly into an output stream.
    it operates in three passes:
-      @global pass - emtting global variables, arrays, functions signatures,extern declarations,
+      @global pass - emtting global variables, arrays, functions signaturenatures,extern declarations,
       @functions pass - emits each func body as an LLVM functions.
       @run{} pass - emits @main() which calls 'bery_runtime_startup()', runs the run block statement, and then calss 'bery_runtime_shutdown()'
 
@@ -38,28 +38,25 @@ void CodeGen::generate(const std::string& outputPath) {
     for (auto& node : program->globals) {
         if (node->type == NodeType::FUNC_DEF) {
             auto* func = static_cast<FunctionDefNode*>(node.get());
-            CodeGenFunctionSignature sig;
-            sig.returnType = func->returnType;
-            for (auto& p : func->parameters) sig.paramTypes.push_back(p.first);
-            functions[func->name] = sig;
+            CodeGenFunctionSignature signature;
+            signature.returnType = func->returnType;
+            for (auto& p : func->parameters) signature.paramTypes.push_back(p.first);
+            functions[func->name] = signature;
             
             genFuncDef(node.get(), globalsOut);
         }
         else if (node->type == NodeType::EXTERN_DECL) {
             auto* ext = static_cast<ExternDeclNode*>(node.get());
-            CodeGenFunctionSignature sig;
-            sig.returnType = ext->returnType;
+            CodeGenFunctionSignature signature;
+            signature.returnType = ext->returnType;
 
-            std::string decl = "declare " + llvmType(ext->returnType) + " @" + ext->name + "(";
-            for (size_t i = 0; i < ext->parameters.size(); ++i) {
-                sig.paramTypes.push_back(ext->parameters[i].first);
-                decl += llvmType(ext->parameters[i].first);
-                if (i + 1 < ext->parameters.size()) decl += ", ";
+            std::vector<std::string> parameterLLVMTypes;
+            for (auto& p : ext->parameters) {
+                signature.paramTypes.push_back(p.first);
+                parameterLLVMTypes.push_back(llvmType(p.first));
             }
-            decl += ")";
-
-            functions[ext->name] = sig;
-            globalsOut << decl << "\n";
+            functions[ext->name] = signature;
+            globalsOut << llvm.__formatDeclare(llvmType(ext->returnType), ext->name, parameterLLVMTypes) << "\n";
         }else if (node->type == NodeType::CLASS_DEF) {
             genClassDecl(node.get());
         }
@@ -71,7 +68,7 @@ void CodeGen::generate(const std::string& outputPath) {
             std::string lt = llvmType(decl->varType);
             std::string initVal = extractConstant(decl->value.get());
             
-            symTable.get(decl->name).llvmRegister = "@" + decl->name;
+            symTable.get(decl->name).llvmRegister = llvm.__globalRef(decl->name);
             symTable.get(decl->name).llvmAllocType = lt;             
             llvm.__emitGlobalVar(decl->name, lt, initVal, globalsOut);
         }
@@ -81,10 +78,9 @@ void CodeGen::generate(const std::string& outputPath) {
             
             for (const auto& val : enumDecl->values) {
                 std::string mangledName = enumDecl->name + "." + val;
-                std::string globalName = "@" + mangledName;
                 std::string lt = "i32";
                 
-                symTable.get(mangledName).llvmRegister = globalName;
+                symTable.get(mangledName).llvmRegister = llvm.__globalRef(mangledName);
                 symTable.get(mangledName).llvmAllocType = lt;
                 llvm.__emitGlobalVar(mangledName, lt, std::to_string(currentValue++), globalsOut);
             }
@@ -92,24 +88,16 @@ void CodeGen::generate(const std::string& outputPath) {
         else if (node->type == NodeType::ARRAY_DECL) {
             auto* decl = static_cast<ArrayDeclNode*>(node.get());
             if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
-                llvm.__declareExtern("declare i8* @bery_array_new(i64)", "bery_array_new");
-                std::string memReg = "@" + decl->name + "_slot";
-                symTable.get(decl->name).llvmRegister = memReg;
+                llvm.__declareExternFn("i8*", "bery_array_new", {"i64"});
+                std::string memoryReg = llvm.__globalRef(decl->name, "_slot");
+                symTable.get(decl->name).llvmRegister = memoryReg;
                 symTable.get(decl->name).llvmAllocType = "i8*";
                 llvm.__emitGlobalVar(decl->name + "_slot", "i8*", "null", globalsOut);
                 continue;
             }
-            symTable.get(decl->name).llvmRegister = "@" + decl->name;
-            std::string lt = llvmType(decl->elementType);
-            
-            int totalSize = 1;
-            for (size_t i = 0; i < decl->dimensions.size(); ++i) {
-                totalSize *= decl->dimensions[i];
-            }
-            std::string arrType = lt;
-            for (int i = decl->dimensions.size() - 1; i >= 0; --i) {
-                arrType = "[" + std::to_string(decl->dimensions[i]) + " x " + arrType + "]";
-            }
+            symTable.get(decl->name).llvmRegister = llvm.__globalRef(decl->name);
+            std::string lt= llvmType(decl->elementType);
+            std::string arrType =llvm.__nestedArrayType(lt, decl->dimensions);
             symTable.get(decl->name).llvmAllocType = arrType;
             std::string initVal;
             if (decl->initializers.empty()) {
@@ -174,7 +162,7 @@ void CodeGen::generate(const std::string& outputPath) {
             auto* decl = static_cast<ArrayDeclNode*>(node.get());
             if (decl->dimensions.size() == 1 && decl->dimensions[0] == -1) {
                 std::string arrReg = llvm.__emitCall("i8*", "bery_array_new", {{"i64", "4"}}, body);
-                llvm.__emitStore("i8*", arrReg, "@" + decl->name + "_slot", body);
+                llvm.__emitStore("i8*", arrReg, llvm.__globalRef(decl->name, "_slot"),body);
             }
         }
     }
@@ -188,6 +176,7 @@ void CodeGen::generate(const std::string& outputPath) {
     }
     int rootsInMain = popGCScope();
     emitGCPops(rootsInMain, body);
+    body << "    call void @bery_runtime_shutdown()\n";
     llvm.__emitBr("main_end", body);
     llvm.__emitLabel("main_end", body);
     llvm.__emitReturn("i32", "0", body);
