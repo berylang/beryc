@@ -42,4 +42,5 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR003", { Severity::ERROR, "Undefined variable '{}'", "declare '{}' before using it" } },
     { "ERROR004", { Severity::ERROR, "'{}' already declared in this scope", "rename this or remove the earlier declaration" } },
     { "ERROR005", { Severity::ERROR, "'{}' used outside of a loop or switch", "use {} only inside a loop/switch body" } },
+    { "ERROR305", { Severity::ERROR, "function '{}' is already defined with same parameters.", "try using different parameters, or use different function name"}}
 };

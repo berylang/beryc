@@ -83,7 +83,7 @@ static int runFrontend(const std::string& sourcePath,   const std::string& irPat
     Importer importer;
     importer.resolveImports(static_cast<ProgramNode*>(ast.get()), basePath, diag);
 
-    SemanticAnalyzer sema(ast.get());
+    SemanticAnalyzer sema(ast.get(), diag);
     sema.analyze();
 
     if (sema.hasErrors()) {

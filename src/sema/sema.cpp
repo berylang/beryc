@@ -15,8 +15,8 @@
 #include "../parser/ast/classes.h"
 #include <iostream>
 
-SemanticAnalyzer::SemanticAnalyzer(ASTNode* root)
-   : root(root), errors(false), typeChecker(symbolTable, functions, errors, classes, currentClassContext, currentFunctionIsConstructor) {}
+SemanticAnalyzer::SemanticAnalyzer(ASTNode* root, DiagnosticEngine& diag)
+   : root(root), errors(false), typeChecker(symbolTable, functions, errors, classes, currentClassContext, currentFunctionIsConstructor), diag(diag) {}
 
 void SemanticAnalyzer::analyze() {
     auto* program = static_cast<ProgramNode*>(root);
@@ -27,10 +27,9 @@ void SemanticAnalyzer::analyze() {
             sig.returnType = func->returnType;
             for (auto& p : func->parameters) sig.parameterTypes.push_back(p.first);
             std::vector<FunctionSignature>& overload = functions[func->name];
-            for(auto& existing : overload){
+            for(auto& existing : overload) {
                 if(existing.parameterTypes == sig.parameterTypes){
-                    std::cerr << "Bery:Error [Line " << func->line << "]: Function '" << func->name <<"' is already defined with same parameter types.\n";
-                    errors = true;
+                    diag.report("ERROR305", func->line, 1, "", func->name);
                     break; 
                 }
             } 
