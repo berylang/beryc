@@ -15,8 +15,8 @@
 #include <stdexcept>
 #include <iostream>
 
-Parser::Parser(const std::vector<Token>& tokens)
-    : tokens(tokens), current(0), errors(false) {}
+Parser::Parser(const std::vector<Token>& tokens, DiagnosticEngine& diag)
+    : tokens(tokens), current(0), errors(false), diag(diag) {}
 
 std::unique_ptr<ASTNode> Parser::parse() {
     auto program = std::make_unique<ProgramNode>(); 
@@ -26,7 +26,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
             if (check(TokenType::TOKEN_RUN)) {
                 advance();
                 int runline = previous().line;
-                consume(TokenType::TOKEN_LBRACE, "Expected '{' after run");
+                consume(TokenType::TOKEN_LBRACE, "ERROR276");
                 auto runBlock = std::make_unique<RunBlockNode>(runline);
                 while (!isAtEnd() && !check(TokenType::TOKEN_RBRACE)) {
                     try {
@@ -35,7 +35,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
                         synchronize();
                     }
                 }
-                consume(TokenType::TOKEN_RBRACE, "Expected '}' after run block");
+                consume(TokenType::TOKEN_RBRACE, "ERROR277");
                 program->runBlock = std::move(runBlock);
             } 
             else if (check(TokenType::TOKEN_FUNC)) {
@@ -55,8 +55,8 @@ std::unique_ptr<ASTNode> Parser::parse() {
                     auto decls = parseVarDecl(AccessSpecifier::PUBLIC, isConst);
                     for (auto& d : decls) program->globals.push_back(std::move(d));
                 } else {
-                    std::cerr <<"Bery:Error [Line " << peek().line <<"]: Unexpected token '" << peek().lexeme <<"'\n";
-                    
+                    diag.report("ERROR274", peek().line, 1, peek().lexeme);
+                    errors = true;
                     throw ParseError();
                 }
             }
@@ -66,8 +66,8 @@ std::unique_ptr<ASTNode> Parser::parse() {
     }
 
     if (!program->runBlock) {
-        std::cerr <<"Bery:Error: no run{} block found\n";
-        
+        diag.report("ERROR275", peek().line,1,peek().lexeme);
+        errors = true;
     }
     
     return program;
@@ -97,10 +97,10 @@ bool Parser::check(TokenType type) {
     return peek().type == type;
 }
 
-Token Parser::consume(TokenType type, const std::string& msg) {
+Token Parser::consume(TokenType type, const std::string& code, const std::string& context) {
     if (check(type)) return advance();
-    
-    std::cerr<<"Bery:Error [Line " << peek().line <<"]: " << msg <<"\n";
+    errors = true;
+    diag.report(code, peek().line, 1, peek().lexeme, context);
     throw ParseError();
 }
 
@@ -130,7 +130,7 @@ std::unique_ptr<BlockNode> Parser::parseBlock() {
             synchronize();
         }
     }
-    consume(TokenType::TOKEN_RBRACE, "Expected '}' after block");
+    consume(TokenType::TOKEN_RBRACE, "ERROR278");
     return block;
     
 }
@@ -180,6 +180,6 @@ std::vector<std::unique_ptr<ASTNode>> Parser::parseStatement() {
         return parseVarDecl(AccessSpecifier::PUBLIC, isConst);
     }
     auto expr = parseExpression();
-    consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after expression");
+    consume(TokenType::TOKEN_SEMICOLON, "ERROR201");
     return single(std::move(expr));
 }
