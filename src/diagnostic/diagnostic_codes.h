@@ -23,15 +23,15 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
 
 
     // @LEXER ERRORS and WARNINGS
-    { "ERROR009", { Severity::ERROR, "Empty char literal", "put a character between the quotes" } },
-    { "ERROR012", { Severity::ERROR, "Newline in char literal", "char literals cannot span multiple lines" } },
-    { "ERROR010", { Severity::ERROR, "Incomplete escape sequence", "finish the escape sequence, e.g. '\\\\n'" } },
-    { "ERROR011", { Severity::ERROR, "Invalid escape sequence '\\{}'", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\'" } },
-    { "ERROR013", { Severity::ERROR, "Multi-character char literal", "char literals must hold exactly one character" } },
-    { "ERROR014", { Severity::ERROR, "Unclosed char literal", "add a closing '" } },
-    { "ERROR015", { Severity::ERROR, "Invalid escape sequence '\\{}' in string", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\'" } },
-    { "ERROR016", { Severity::ERROR, "Unclosed string literal", "add a closing \"" } },
-    { "ERROR017", { Severity::ERROR, "Unclosed comment", "add '!--' to close the comment block" } },
+    { "ERROR100", { Severity::ERROR, "Empty char literal", "put a character between the quotes" } },
+    { "ERROR101", { Severity::ERROR, "Newline in char literal", "char literals cannot span multiple lines" } },
+    { "ERROR102", { Severity::ERROR, "Incomplete escape sequence", "finish the escape sequence, e.g. '\\\\n'" } },
+    { "ERROR103", { Severity::ERROR, "Invalid escape sequence '\\{}'", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\'" } },
+    { "ERROR104", { Severity::ERROR, "Multi-character char literal", "char literals must hold exactly one character" } },
+    { "ERROR105", { Severity::ERROR, "Unclosed char literal", "add a closing '" } },
+    { "ERROR106", { Severity::ERROR, "Invalid escape sequence '\\{}' in string", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\'" } },
+    { "ERROR107", { Severity::ERROR, "Unclosed string literal", "add a closing \"" } },
+    { "ERROR108", { Severity::ERROR, "Unclosed comment", "add '!--' to close the comment block" } },
 
 
     // @PARSER ERRORS and WARNINGS

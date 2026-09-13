@@ -108,28 +108,28 @@ void Lexer::scanToken() {
         case '=' : 
             if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_EQUAL_EQUAL,"==",line});
+                emit(TokenType::TOKEN_EQUAL_EQUAL,"==");
                 return;
             }
-            tokens.push_back({TokenType::TOKEN_EQUAL, "=", line});
+            emit(TokenType::TOKEN_EQUAL, "=");
             return;
         case ';': 
             emit(TokenType::TOKEN_SEMICOLON, ";");
             return;
         case '{':
-            tokens.push_back({TokenType::TOKEN_LBRACE, "{", line});
-            return;
+            emit(TokenType::TOKEN_LBRACE, "{");
+            return;//change pushback to emit
         case '}':
-            tokens.push_back({TokenType::TOKEN_RBRACE, "}", line});
+            emit(TokenType::TOKEN_RBRACE, "}");
             return;
         case ',':
-            tokens.push_back({TokenType::TOKEN_COMMA, ",", line});
+            emit(TokenType::TOKEN_COMMA, ",");
             return;
         case '[':
-            tokens.push_back({TokenType::TOKEN_LBRACKET, "[", line});
+            emit(TokenType::TOKEN_LBRACKET, "[");
             return;
         case ']':
-            tokens.push_back({TokenType::TOKEN_RBRACKET, "]", line});
+            emit(TokenType::TOKEN_RBRACKET, "]");
             return;
         case '\'':
             scanCharLit();
@@ -140,38 +140,38 @@ void Lexer::scanToken() {
         case '*':
             if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_MUL_ASSIGN, "*=", line});
+                emit(TokenType::TOKEN_MUL_ASSIGN, "*=");
             }
             else if(peek() == '*'){
                 if(peekNext()== '='){
                     advance();
                     advance();
-                    tokens.push_back({TokenType::TOKEN_DSTAR_ASSIGN, "**=", line});
+                    emit(TokenType::TOKEN_DSTAR_ASSIGN, "**=");
                     return; 
                 }else{
                     advance();
-                    tokens.push_back({TokenType::TOKEN_POWER, "**", line});
+                    emit(TokenType::TOKEN_POWER, "**");
                 return;
                 }
             }
             else{
-                tokens.push_back({TokenType::TOKEN_STAR, "*", line});
+                emit(TokenType::TOKEN_STAR, "*");
             }
             return;
         case '/':
             if(peek()=='='){
                     advance();
-                    tokens.push_back({TokenType::TOKEN_DIV_ASSIGN, "/=", line});
+                    emit(TokenType::TOKEN_DIV_ASSIGN, "/=");
             }else{
-                tokens.push_back({TokenType::TOKEN_FSLASH, "/", line});
+                emit(TokenType::TOKEN_FSLASH, "/");
                 }
                 return;
         case '%':
             if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_MODULE_ASSIGN,"%=",line});
+                emit(TokenType::TOKEN_MODULE_ASSIGN,"%=");
             }else{
-            tokens.push_back({TokenType::TOKEN_PERCENT, "%", line});
+            emit(TokenType::TOKEN_PERCENT, "%");
             }
             return;
         
@@ -191,87 +191,87 @@ void Lexer::scanToken() {
                 }
                 else{
                     advance();
-                    tokens.push_back({TokenType::TOKEN_DEC, "--", line});
+                    emit(TokenType::TOKEN_DEC, "--");
                     return;
                 }
             }
             else if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_SUB_ASSIGN,"-=",line});
+                emit(TokenType::TOKEN_SUB_ASSIGN,"-=");
                 return;
             }
             else if(peek()=='>'){
                 advance();
-                tokens.push_back({TokenType::TOKEN_ARROW, "->", line});
+                emit(TokenType::TOKEN_ARROW, "->");
                 return;
             }
             else{
-                tokens.push_back({TokenType::TOKEN_MINUS, "-", line});
+                emit(TokenType::TOKEN_MINUS, "-");
                 return;
             }
             return;
         case '+':
            if(peek()=='+'){
                 advance();
-                tokens.push_back({TokenType::TOKEN_INC, "++", line});
+                emit(TokenType::TOKEN_INC, "++");
                 return;
             }
             else if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_ADD_ASSIGN,"+=",line});
+                emit(TokenType::TOKEN_ADD_ASSIGN,"+=");
                 return;
             }
             else{
-                tokens.push_back({TokenType::TOKEN_PLUS, "+", line});
+                emit(TokenType::TOKEN_PLUS, "+");
                 return;
             }
             return;
         case '~':
-            tokens.push_back({TokenType::TOKEN_TILDE, "~", line});
+            emit(TokenType::TOKEN_TILDE, "~");
             return;
         case '!':
             if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_NOT_EQUAL, "!=", line});
+                emit(TokenType::TOKEN_NOT_EQUAL, "!=");
                 return;
             }
             else if(peek()=='>' && peekNext()=='<'){
                 advance();
                 advance();
-                tokens.push_back({TokenType::TOKEN_NOT_BETWEEN, "!><", line});
+                emit(TokenType::TOKEN_NOT_BETWEEN, "!><");
                 return;
             }
             else{
-                tokens.push_back({TokenType::TOKEN_BANG, "!", line});
+                emit(TokenType::TOKEN_BANG, "!");
                 return;
             }
             return;
         case '(':
-            tokens.push_back({TokenType::TOKEN_LPARAN, "(", line});
+            emit(TokenType::TOKEN_LPARAN, "(");
             return;
         case ')':
-            tokens.push_back({TokenType::TOKEN_RPARAN, ")", line});
+            emit(TokenType::TOKEN_RPARAN, ")");
             return;
         case '<':
             if(peek()=='<'){
                 if(peekNext()=='='){
                     advance();
                     advance();
-                tokens.push_back({TokenType::TOKEN_LSHIFT_ASSIGN, "<<=", line});
+                emit(TokenType::TOKEN_LSHIFT_ASSIGN, "<<=");
                 return;
                 }else{
                 advance();
-                tokens.push_back({TokenType::TOKEN_LSHIFT, "<<", line});
+                emit(TokenType::TOKEN_LSHIFT, "<<");
                 return;
                 }
             }
             else if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_LTEQUAL, "<=", line});
+                emit(TokenType::TOKEN_LTEQUAL, "<=");
                 return;
             }
             else{
-               tokens.push_back({TokenType::TOKEN_LTHAN, "<", line});
+               emit(TokenType::TOKEN_LTHAN, "<");
                 return;
             }
             return;
@@ -280,85 +280,85 @@ void Lexer::scanToken() {
                 if(peekNext()=='='){
                     advance();
                     advance();
-                    tokens.push_back({TokenType::TOKEN_RSHIFT_ASSIGN, ">>=", line});
+                    emit(TokenType::TOKEN_RSHIFT_ASSIGN, ">>=");
                     return;
                 }else{
                 advance();
-                tokens.push_back({TokenType::TOKEN_RSHIFT, ">>", line});
+                emit(TokenType::TOKEN_RSHIFT, ">>");
                 }
                 return;
             }
             else if(peek()=='<'){
                 advance();
-                tokens.push_back({TokenType::TOKEN_BETWEEN, "><", line});
+                emit(TokenType::TOKEN_BETWEEN, "><");
                 return;
             }
             else if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_GTEQUAL, ">=", line});
+                emit(TokenType::TOKEN_GTEQUAL, ">=");
                 return;
             }
             else{
-                tokens.push_back({TokenType::TOKEN_GTHAN, ">", line});
+                emit(TokenType::TOKEN_GTHAN, ">");
                 return;
             }
             return;
         case '^':
             if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_XOR_ASSIGN, "^=", line});
+                emit(TokenType::TOKEN_XOR_ASSIGN, "^=");
                 return;
             }else{
-            tokens.push_back({TokenType::TOKEN_CARET, "^", line});
+            emit(TokenType::TOKEN_CARET, "^");
             }
             return;
         case '&':
             if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_AND_ASSIGN, "&=", line});
+                emit(TokenType::TOKEN_AND_ASSIGN, "&=");
                 return;
             }
             else if(peek()=='&'){
                 advance();
-                tokens.push_back({TokenType::TOKEN_AND, "&&", line});
+                emit(TokenType::TOKEN_AND, "&&");
                 return;
             }else{
-            tokens.push_back({TokenType::TOKEN_AMPERSAND, "&", line});
+            emit(TokenType::TOKEN_AMPERSAND, "&");
             }
             return;
         case '|':
             if(peek()=='='){
                 advance();
-                tokens.push_back({TokenType::TOKEN_OR_ASSIGN, "|=", line});
+                emit(TokenType::TOKEN_OR_ASSIGN, "|=");
                 return;
             }
             else if(peek()=='|'){
                 advance();
-                tokens.push_back({TokenType::TOKEN_OR, "||", line});
+                emit(TokenType::TOKEN_OR, "||");
                 return;
             }else{
-            tokens.push_back({TokenType::TOKEN_PIPE, "|", line});
+            emit(TokenType::TOKEN_PIPE, "|");
             }
             return;
         case ':':
             if(peek()==':'){
                 advance();
-                tokens.push_back({TokenType::TOKEN_DCOLON, "::", line});
+                emit(TokenType::TOKEN_DCOLON, "::");
                 return;
             }else{
-                tokens.push_back({TokenType::TOKEN_COLON, ":", line});
+                emit(TokenType::TOKEN_COLON, ":");
                 return;
             }
         case '?':
-            tokens.push_back({TokenType::TOKEN_QUESTION, "?", line});
+            emit(TokenType::TOKEN_QUESTION, "?");
             return;
         case '.':
             if (peek() == '.') {
                 advance();
-                tokens.push_back({TokenType::TOKEN_RANGE, "..", line});
+                emit(TokenType::TOKEN_RANGE, "..");
                 return;
             }
-            tokens.push_back({TokenType::TOKEN_DOT, ".", line});
+            emit(TokenType::TOKEN_DOT, ".");
             return;
         }
         
@@ -380,28 +380,134 @@ void Lexer::scanNumber() {
     
     Needed support for -
 
-    1. Decimal numbers 10, 10.2, etc. (currently supported )
-    2. Binary numbers 0b0100202
-    3. Hexadecimals   0x40FAA
-    4. Octet numbers  0o242
+    1. Binary numbers 0b0100101 dont go to parser change it here only
+    2. Hexadecimals   0x40FAA
+    3. Octet numbers  0o242
+    4. exponents      1e10, 3.5e-4
 
-    5. exponents      1e10, 3.5e-4
-
-    
     */
 
     int start = current - 1;
+
+    if (start >= 0 && source[start] == '0' && !isAtEnd() && (peek() == 'b' || peek() == 'B')) {
+        advance(); 
+
+        if (isAtEnd() || (peek() != '0' && peek() != '1')) {
+            diag.report("ERROR_BIN", startLine, startColumn, source.substr(start, current - start));
+            return;
+        }
+
+        while (!isAtEnd() && (peek() == '0' || peek() == '1')) {
+            advance();
+        }
+
+        std::string binary = source.substr(start, current - start);
+        long long value = 0;
+        for (char ch : binary) {
+            if (ch == 'b' || ch == 'B') continue;
+            value = (value << 1) + (ch - '0');
+        }
+
+        emit(TokenType::TOKEN_INT_LIT, std::to_string(value));
+        return;
+    }
+    
+        if (start >= 0 && source[start] == '0' && !isAtEnd() && (peek() == 'x' || peek() == 'X')) {
+        advance(); // consume x/X
+
+        if (isAtEnd()) {
+            diag.report("ERROR_HEX", startLine, startColumn, source.substr(start, current - start));
+            return;
+        }
+
+        bool hasDigit = false;
+        while (!isAtEnd()) {
+            char ch = peek();
+            if ((ch >= '0' && ch <= '9') ||
+                (ch >= 'a' && ch <= 'f') ||
+                (ch >= 'A' && ch <= 'F')) {
+                advance();
+                hasDigit = true;
+            } else {
+                break;
+            }
+        }
+
+        if (!hasDigit) {
+            diag.report("ERROR_HEX", startLine, startColumn, source.substr(start, current - start));
+            return;
+        }
+
+        std::string hex = source.substr(start, current - start);
+        long long value = 0;
+
+        for (char ch : hex) {
+            if (ch == '0' || ch == '1' || ch == '2' || ch == '3' || ch == '4' ||
+                ch == '5' || ch == '6' || ch == '7' || ch == '8' || ch == '9') {
+                value = value * 16 + (ch - '0');
+            } else if (ch >= 'a' && ch <= 'f') {
+                value = value * 16 + (ch - 'a' + 10);
+            } else if (ch >= 'A' && ch <= 'F') {
+                value = value * 16 + (ch - 'A' + 10);
+            } else if (ch == 'x' || ch == 'X') {
+                continue;
+            }
+        }
+
+        emit(TokenType::TOKEN_INT_LIT, std::to_string(value));
+        return;
+    }
+
+        if (start >= 0 && source[start] == '0' && !isAtEnd() && (peek() == 'o' || peek() == 'O')) {
+        advance(); // consume o/O
+
+        if (isAtEnd()) {
+            diag.report("ERROR_OCT", startLine, startColumn, source.substr(start, current - start));
+            return;
+        }
+
+        bool hasDigit = false;
+        while (!isAtEnd()) {
+            char ch = peek();
+            if (ch >= '0' && ch <= '7') {
+                advance();
+                hasDigit = true;
+            } else {
+                break;
+            }
+        }
+
+        if (!hasDigit) {
+            diag.report("ERROR_OCT", startLine, startColumn, source.substr(start, current - start));
+            return;
+        }
+
+        std::string oct = source.substr(start, current - start);
+        long long value = 0;
+
+        for (char ch : oct) {
+            if (ch >= '0' && ch <= '7') {
+                value = value * 8 + (ch - '0');
+            } else if (ch == 'o' || ch == 'O') {
+                continue;
+            }
+        }
+
+        emit(TokenType::TOKEN_INT_LIT, std::to_string(value));
+        return;
+    }
+    
     while (!isAtEnd() && isDigit(peek())) advance(); 
 
     if (!isAtEnd() && peek() == '.' && isDigit(peekNext())){ 
         advance();
         while (!isAtEnd() && isDigit(peek())) advance();
 
-        tokens.push_back({TokenType::TOKEN_DECIMAL_LIT, source.substr(start, current - start), line});
+        emit(TokenType::TOKEN_DECIMAL_LIT, source.substr(start, current - start));
         
     }
     else {
-        tokens.push_back({TokenType::TOKEN_INT_LIT, source.substr(start, current - start), line});
+        emit(TokenType::TOKEN_INT_LIT, source.substr(start, current - start));
     }
 }
 
@@ -417,7 +523,7 @@ void Lexer::scanCharLit() {
     
     */
     if (peek() == '\'') { 
-        diag.report("ERROR009", startLine, startColumn, "'");
+        diag.report("ERROR100", startLine, startColumn, "'");
         advance(); 
         return;
     }
@@ -427,7 +533,7 @@ void Lexer::scanCharLit() {
     if (peek() == '\\') { 
         advance(); 
         if (isAtEnd() || peek() == '\'') { 
-            diag.report("ERROR010", startLine, startColumn, "\\");
+            diag.report("ERROR102", startLine, startColumn, "\\");
             return;
         }
 
@@ -444,14 +550,14 @@ void Lexer::scanCharLit() {
             case '"':  value = '\"'; return;
             case '\'': value = '\''; return;
             default:
-                diag.report("ERROR011", startLine, startColumn, std::string(1, es));
+                diag.report("ERROR103", startLine, startColumn, std::string(1, es));
                 return;
         }
     } 
     
     else {
         if (peek() == '\n' || peek() == '\r') {
-            diag.report("ERROR012", startLine, startColumn, "");
+            diag.report("ERROR101", startLine, startColumn, "");
             return;
         }
         value = advance();
@@ -459,7 +565,7 @@ void Lexer::scanCharLit() {
 
     if (!isAtEnd() && peek() == '\'') {        
         advance(); 
-        tokens.push_back({TokenType::TOKEN_CHAR_LIT, std::string(1,value), line});
+        emit(TokenType::TOKEN_CHAR_LIT, std::string(1,value));
         return;
     }
 
@@ -472,9 +578,9 @@ void Lexer::scanCharLit() {
         foundClosingQuote = true;
     }
     if (foundClosingQuote) {
-        diag.report("ERROR013", startLine, startColumn, "");
+        diag.report("ERROR104", startLine, startColumn, "");
     } else {
-        diag.report("ERROR014", startLine, startColumn, "");
+        diag.report("ERROR105", startLine, startColumn, "");
     }
 }
 
@@ -497,7 +603,7 @@ void Lexer::scanStringLit() {
                 case '"':  value += '\"'; return;
                 case '\'': value += '\''; return;
                 default:
-                    diag.report("ERROR015", startLine, startColumn, std::string(1, es));
+                    diag.report("ERROR106", startLine, startColumn, std::string(1, es));
                     value += es; 
                     return;
             }
@@ -506,18 +612,18 @@ void Lexer::scanStringLit() {
         }
     }
     if (isAtEnd()) {
-        diag.report("ERROR016", startLine, startColumn, "");
+        diag.report("ERROR107", startLine, startColumn, "");
         return;
     }
 
     advance(); 
-    tokens.push_back({TokenType::TOKEN_STRING_LIT, value, line, col});
+    emit(TokenType::TOKEN_STRING_LIT, value);
 }
 void Lexer::scanIdentifierOrKeyword() {
     int start = current - 1;
     while (!isAtEnd() && isAlphaNumeric(peek())) advance();
     std::string lexeme = source.substr(start, current - start);
-    tokens.push_back({checkKeyword(lexeme), lexeme, line});
+    emit(checkKeyword(lexeme), lexeme);
 }
 
 
@@ -544,7 +650,7 @@ void Lexer::skipComments(bool isMLC){
             advance();
         }
         // errors=true;
-        diag.report("ERROR017", startLine, startColumn, "");
+        diag.report("ERROR108", startLine, startColumn, "");
         
     }
     else{
@@ -590,7 +696,7 @@ char Lexer::peekNext() {
 // bool Lexer::hasErrors() {return errors;}
 
 void Lexer::emit(TokenType type, const std::string& lexeme) {
-    tokens.push_back({type, lexeme, line, startColumn});
+    emit(type, lexeme);
 }
 
 void Lexer::bumpLine() {
