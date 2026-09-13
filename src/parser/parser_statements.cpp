@@ -29,7 +29,7 @@ std::vector<std::unique_ptr<ASTNode>> Parser::parseVarDecl(AccessSpecifier acces
     Token typeToken = advance();
     std::string varType = typeToken.lexeme;
     do {
-        Token name = consume(TokenType::TOKEN_IDENT, "Expected identifier");
+        Token name = consume(TokenType::TOKEN_IDENT, "ERROR235");
         if (check(TokenType::TOKEN_LBRACKET)) {
             decls.push_back(parseArrayDeclTail(varType, name, access, isConst));
             continue;
@@ -43,7 +43,7 @@ std::vector<std::unique_ptr<ASTNode>> Parser::parseVarDecl(AccessSpecifier acces
         decls.push_back(std::make_unique<VarDeclNode>(varType, name.lexeme, std::move(value), access,name.line, isConst));
     } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
 
-    consume(TokenType::TOKEN_SEMICOLON, "Expected ';'");
+    consume(TokenType::TOKEN_SEMICOLON, "ERROR259");
     return decls;
 }
 std::unique_ptr<ASTNode> Parser::parseLiteral() {
@@ -73,7 +73,7 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
             return std::make_unique<NullLitNode>(t.line);
         default:
             errors = true;
-            std::cerr <<"Bery:Error [Line " << t.line <<"]: Expected valid expression or literal\n";
+            diag.report("ERROR256", t.line, 1, t.lexeme);
             throw ParseError();
     }
 }
@@ -90,7 +90,7 @@ std::unique_ptr<ASTNode> Parser::parseArrayDeclTail(const std::string& elementTy
         } else {
             dimensions.push_back(-1); 
         }
-        consume(TokenType::TOKEN_RBRACKET, "Expected ']'");
+        consume(TokenType::TOKEN_RBRACKET, "ERROR258");
     }
 
     std::vector<std::unique_ptr<ASTNode>> initializers;
@@ -103,7 +103,7 @@ std::unique_ptr<ASTNode> Parser::parseArrayDeclTail(const std::string& elementTy
         else if(isDynamic) {
             valueExpr = parseExpression();
         } else {
-            std::cerr <<"Bery:Error: [Line " << peek().line <<"]: Arrays must be initialized with list inside '{}'\n";
+            diag.report("ERROR257", peek().line, 1, peek().lexeme);
             errors = true;
             while (!isAtEnd() && !check(TokenType::TOKEN_SEMICOLON)) advance();
             return std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), access, isConst, nameToken.line);
@@ -115,7 +115,7 @@ std::unique_ptr<ASTNode> Parser::parseArrayDeclTail(const std::string& elementTy
 }
 
 void Parser::parseArrayInitializer(std::vector<std::unique_ptr<ASTNode>>& initializers) {
-    consume(TokenType::TOKEN_LBRACE, "Expected '{'");
+    consume(TokenType::TOKEN_LBRACE, "ERROR261");
     if (!check(TokenType::TOKEN_RBRACE)) {
         do {
             if (check(TokenType::TOKEN_LBRACE)) {
@@ -125,27 +125,27 @@ void Parser::parseArrayInitializer(std::vector<std::unique_ptr<ASTNode>>& initia
             }
         } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
     }
-    consume(TokenType::TOKEN_RBRACE, "Expected '}'");
+    consume(TokenType::TOKEN_RBRACE, "ERROR262");
 }
 
 // @enum data declaration
 std::unique_ptr<ASTNode> Parser::parseEnumDecl() {
     advance();
     int line = previous().line;
-    Token nameTok = consume(TokenType::TOKEN_IDENT, "Expected enum name");
-    consume(TokenType::TOKEN_EQUAL, "Expected '=' after enum name");
-    consume(TokenType::TOKEN_LBRACE, "Expected '{' to start enum values");
+    Token nameTok = consume(TokenType::TOKEN_IDENT, "ERROR263");
+    consume(TokenType::TOKEN_EQUAL, "ERROR264");
+    consume(TokenType::TOKEN_LBRACE, "ERROR265");
 
     std::vector<std::string> values;
     if (!check(TokenType::TOKEN_RBRACE)) {
         do {
-            Token valTok = consume(TokenType::TOKEN_IDENT, "Expected enum value");
+            Token valTok = consume(TokenType::TOKEN_IDENT, "ERROR266");
             values.push_back(valTok.lexeme);
         } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
     }
     
-    consume(TokenType::TOKEN_RBRACE, "Expected '}' after enum values");
-    consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after enum declaration");
+    consume(TokenType::TOKEN_RBRACE, "ERROR267");
+    consume(TokenType::TOKEN_SEMICOLON, "ERROR268");
 
     return std::make_unique<EnumDeclNode>(nameTok.lexeme, std::move(values), line);
 }
@@ -155,16 +155,16 @@ std::unique_ptr<ASTNode> Parser::parseImportDecl() {
     advance();
     int line = previous().line;
 
-    Token startTok = consume(TokenType::TOKEN_IDENT, "Expected module name after 'import'");
+    Token startTok = consume(TokenType::TOKEN_IDENT, "ERROR269");
     std::string fullName = startTok.lexeme;
 
     while (check(TokenType::TOKEN_DOT)) {
         advance(); 
-        Token nextIdent = consume(TokenType::TOKEN_IDENT, "Expected identifier after '.'");
+        Token nextIdent = consume(TokenType::TOKEN_IDENT, "ERROR217");
         fullName += "." + nextIdent.lexeme;
     }
 
-    consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after import statement");
+    consume(TokenType::TOKEN_SEMICOLON, "ERROR259");
     std::string filePath = fullName;
     for (char& c : filePath) {
         if (c == '.') c = '/';
@@ -178,26 +178,26 @@ std::unique_ptr<ASTNode> Parser::parseImportDecl() {
 std::unique_ptr<ASTNode> Parser::parseExternDecl() {
     int ln = peek().line;
     advance();
-    consume(TokenType::TOKEN_FUNC, "Expected 'func' after 'extern'.");
-    Token nameToken = consume(TokenType::TOKEN_IDENT, "Expected function name after 'func'.");
-    consume(TokenType::TOKEN_LPARAN, "Expected '(' after function name.");
+    consume(TokenType::TOKEN_FUNC, "ERROR270");
+    Token nameToken = consume(TokenType::TOKEN_IDENT, "ERROR271");
+    consume(TokenType::TOKEN_LPARAN, "ERROR220");
 
     std::vector<std::pair<std::string, std::string>> params;
 
     if(!check(TokenType::TOKEN_RPARAN)){
         do {
             Token typeTok = advance();
-            Token nameTok = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
+            Token nameTok = consume(TokenType::TOKEN_IDENT, "ERROR221");
             params.push_back({typeTok.lexeme, nameTok.lexeme});
         } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
     }
-    consume(TokenType::TOKEN_RPARAN, "Expected ')' after extern parameters");
+    consume(TokenType::TOKEN_RPARAN, "ERROR272");
 
     std::string returnType = "void";
     if (check(TokenType::TOKEN_ARROW)) {
         advance();
         returnType = advance().lexeme;
     }
-    consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after extern declaration");
+    consume(TokenType::TOKEN_SEMICOLON, "ERROR273");
     return std::make_unique<ExternDeclNode>(nameToken.lexeme, returnType, std::move(params), ln);
 }

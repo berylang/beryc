@@ -17,10 +17,10 @@ std::unique_ptr<ASTNode> Parser::parseIfStmt() {
     advance();
     int line = previous().line;
 
-    consume(TokenType::TOKEN_LPARAN, "Expected '(' after if");
+    consume(TokenType::TOKEN_LPARAN, "ERROR206","if");
     auto condition = parseExpression();
-    consume(TokenType::TOKEN_RPARAN, "Expected ')' after condition");
-    consume(TokenType::TOKEN_LBRACE, "Expected '{' before if Body");
+    consume(TokenType::TOKEN_RPARAN, "ERROR204","condition");
+    consume(TokenType::TOKEN_LBRACE, "ERROR205","if body");
     auto ifBranch = parseBlock();    
     std::unique_ptr<ASTNode> elseBranch = nullptr;
     if(check(TokenType::TOKEN_ELSE)){
@@ -28,7 +28,7 @@ std::unique_ptr<ASTNode> Parser::parseIfStmt() {
         if(check(TokenType::TOKEN_IF)){
             elseBranch = parseIfStmt();
         }else{
-            consume(TokenType::TOKEN_LBRACE, "Expected '{' before if else Body");
+            consume(TokenType::TOKEN_LBRACE, "ERROR205","if else body");
             elseBranch = parseBlock();
         }
     }
@@ -41,10 +41,10 @@ std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
     advance();
     int line = previous().line;
 
-    consume(TokenType::TOKEN_LPARAN, "Expected '(' after switch");
+    consume(TokenType::TOKEN_LPARAN, "ERROR206","switch");
     auto expr = parseExpression();
-    consume(TokenType::TOKEN_RPARAN, "Expected ')' after condition");
-    consume(TokenType::TOKEN_LBRACE, "Expected '{' before switch-body");
+    consume(TokenType::TOKEN_RPARAN, "ERROR204","condition");
+    consume(TokenType::TOKEN_LBRACE, "ERROR207");
 
     auto sw = std::make_unique<SwitchStmtNode>(line);
     sw->condition = std::move(expr);
@@ -54,7 +54,7 @@ std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
             advance();
             CaseBlock cb;
             cb.value = parseExpression();
-            consume(TokenType::TOKEN_COLON, "expected ':' after case");
+            consume(TokenType::TOKEN_COLON, "ERROR208");
             while (!isAtEnd() && !check(TokenType::TOKEN_CASE) &&
                    !check(TokenType::TOKEN_DEFAULT) && !check(TokenType::TOKEN_RBRACE)) {
                 for (auto& statement : parseStatement()) cb.statements.push_back(std::move(statement));
@@ -63,7 +63,7 @@ std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
         }
         else if (check(TokenType::TOKEN_DEFAULT)) {
             advance();
-            consume(TokenType::TOKEN_COLON, "Expected ':'");
+            consume(TokenType::TOKEN_COLON, "ERROR209");
             sw->hasDefault = true;
 
             while (!isAtEnd() && !check(TokenType::TOKEN_CASE) && !check(TokenType::TOKEN_RBRACE)) {
@@ -71,11 +71,11 @@ std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
             }
         }
         else {
-            std::cerr <<"Bery:Error [Line " << peek().line <<"]: Expected 'case' or 'default'\n";
             errors = true;
+            diag.report("ERROR203", peek().line, 1, peek().lexeme);
             advance();
         }
     }
-    consume(TokenType::TOKEN_RBRACE, "Expected '}' after switch body");
+    consume(TokenType::TOKEN_RBRACE, "ERROR210");
     return sw;
 }
