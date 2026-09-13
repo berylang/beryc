@@ -35,8 +35,8 @@ std::unique_ptr<ASTNode> Parser::parse() {
                         synchronize();
                     }
                 }
-                consume(TokenType::TOKEN_RBRACE, "ERROR277");
                 program->runBlock = std::move(runBlock);
+                consume(TokenType::TOKEN_RBRACE, "ERROR277");
             } 
             else if (check(TokenType::TOKEN_FUNC)) {
                 program->globals.push_back(parseFunctionDef(AccessSpecifier::PUBLIC));
