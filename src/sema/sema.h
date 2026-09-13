@@ -33,7 +33,6 @@ class SemanticAnalyzer {
 public:
    SemanticAnalyzer(ASTNode* root, DiagnosticEngine& diag);
    void analyze();
-   bool hasErrors();
    SymbolTable symbolTable;
 
 
@@ -41,7 +40,7 @@ private:
    ASTNode* root;
    TypeChecker typeChecker; 
    DiagnosticEngine& diag;
-   bool errors;
+   // bool errors;
 
    // @blocks
    void analyzeBlock(ASTNode* node);

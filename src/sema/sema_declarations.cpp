@@ -22,18 +22,18 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
         "int", "bigint", "bool", "float", "double", "char", "string"
     };
     if (!primitiveTypes.count(decl->varType) && !classes.count(decl->varType)) {
-        std::cerr <<"Bery:Error [Line " << decl->line <<"]: Unknown type '" << decl->varType <<"'\n";
-        errors = true;
+        diag.report("ERROR315", decl->line, 1, "", decl->varType);
+        
         return;
     }
     if (symbolTable.existsInCurrentScope(decl->name)) {
-        std::cerr <<"Bery:Error [Line "<< decl->line<<"]: '" << decl->name <<"' already declared in this scope.\n";
-        errors = true;
+        diag.report("ERROR316", decl->line, 1, "", decl->name);
+        
         return;
     }
     if (decl->isConst && !decl->value) {
-        std::cerr <<"Bery:Error [Line "<< decl->line <<"]: constant '" << decl->name <<"' must be initialized.\n";
-        errors = true;
+        diag.report("ERROR317", decl->line, 1, "", decl->name);
+        
         return;
     }
     if (decl->value) {
@@ -42,8 +42,8 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
         if(exprtype!="unknown" && exprtype!=decl->varType){
             if (exprtype == "null") {
                 if (decl->varType != "string") {
-                    std::cerr <<"Bery:Error [Line "<< decl->line <<"]: Cannot assign 'null' to non-reference type '" << decl->varType <<"'\n";
-                    errors = true;
+                    diag.report("ERROR318", decl->line, 1, "", decl->varType);
+                    
                     return;
                 }
             }
@@ -52,8 +52,8 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
             !(decl->varType == "bigint" && exprtype == "int")&&
             !(decl->varType == "double" && exprtype == "float")&&
             !(decl->varType == "float" && exprtype == "double")){
-                std::cerr<<"Bery:Error [Line " << decl->line <<"]: Type mismatch for "<<decl->name<<" . Expected '"<<decl->varType<<"', got '"<<exprtype<<"' \n";
-                errors = true;
+                diag.report("ERROR319", decl->line, 1, "", decl->name + std::string(". Expected '") + decl->varType + "', got '" + exprtype);
+                
                 return;
             }
         }
@@ -78,12 +78,12 @@ bool SemanticAnalyzer::isKnownType(const std::string& t) {
 void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
     auto* decl = static_cast<ArrayDeclNode*>(node);
     if (!isKnownType(decl->elementType)) {
-        std::cerr <<"Bery:Error [Line "<< decl->line <<"]: Unknown array element type '" << decl->elementType <<"'\n";
-        errors = true; return;
+        diag.report("ERROR320", decl->line, 1, "", decl->elementType);
+         return;
     }
     if (symbolTable.existsInCurrentScope(decl->name)) {
-        std::cerr <<"Bery:Error [Line "<< decl->line <<"]: '" << decl->name <<"' already declared.\n";
-        errors = true; return;
+        diag.report("ERROR321", decl->line, 1, "", decl->name);
+         return;
     }
     std::string arrayType = "array<" + decl->elementType + ">";
     bool isDynamic = decl->dimensions.size() == 1 && decl->dimensions[0] == -1;
@@ -92,8 +92,8 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
         if (decl->valueExpr) {
             std::string exprType = typeChecker.analyzeExpression(decl->valueExpr.get());
             if (exprType != "unknown" && exprType != arrayType) {
-                std::cerr <<"Bery:Error [Line " << decl->line <<"]: Type mismatch for '" << decl->name <<"'. Expected '" << arrayType <<"', got '" << exprType <<"'\n";
-                errors = true;
+                diag.report("ERROR322", decl->line, 1, "", decl->name + "'. Expected '" + arrayType + "', got '" + exprType);
+                
             }
             symbolTable.addVariable(decl->name, arrayType, decl->isConst, true, decl->line, decl->dimensions);
             return;
@@ -107,8 +107,8 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
             if (exprType != "unknown" && exprType != decl->elementType) {
                 if (!(decl->elementType == "float" && exprType == "int") &&
                     !(decl->elementType == "double" && exprType == "int")) {
-                    std::cerr <<"Bery:Error [Line "<< decl->line <<"]: Type mismatch in array initialization.\n";
-                    errors = true; return;
+                    diag.report("ERROR323", decl->line, 1, "", "");
+                     return;
                 }
             }
         }
@@ -122,33 +122,33 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
     for (size_t i = 0; i < decl->dimensions.size(); ++i) {
         if (decl->dimensions[i] < 0) {
             if (i != 0) {
-                std::cerr <<"Bery:Error [Line "<< decl->line <<"]: Only the first dimension can be omitted.\n";
-                errors = true; return;
+                diag.report("ERROR324", decl->line, 1, "", "");
+                 return;
             }
             inferredDim = i;
         } else if (decl->dimensions[i] == 0) {
-            std::cerr <<"Bery:Error [Line "<< decl->line <<"]: Dimensions must be greater than 0.\n";
-            errors = true; return;
+            diag.report("ERROR325", decl->line, 1, "", "");
+             return;
         } else {
             totalSize *= decl->dimensions[i];
         }
     }
     if (inferredDim != -1) {
         if (decl->initializers.empty()) {
-            std::cerr <<"Bery:Error [Line "<< decl->line <<"]: Must have an initializer list if dimension is omitted.\n";
-            errors = true; return;
+            diag.report("ERROR326", decl->line, 1, "", "");
+             return;
         }
         if (decl->initializers.size() % totalSize != 0) {
-            std::cerr <<"Bery:Error [Line "<< decl->line <<"]: Initializer list size does not match multi-dimensional bounds.\n";
-            errors = true; return;
+            diag.report("ERROR327", decl->line, 1, "", "");
+             return;
         }
         decl->dimensions[0] = decl->initializers.size() / totalSize;
         totalSize *= decl->dimensions[0];
     }
 
     if (!decl->initializers.empty() && decl->initializers.size() > (size_t)totalSize) {
-        std::cerr <<"Bery:Error [Line "<< decl->line <<"]: initializer list count exceeds array size.\n";
-        errors = true; return;
+        diag.report("ERROR328", decl->line, 1, "", "");
+         return;
     }
 
     for (auto& initVal : decl->initializers) {
@@ -156,8 +156,8 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
         if (exprType != "unknown" && exprType != decl->elementType) {
             if (!(decl->elementType == "float" && exprType == "int") &&
                 !(decl->elementType == "double" && exprType == "int")) {
-                std::cerr <<"Bery:Error [Line "<< decl->line <<"]: Type mismatch in array initialization.\n";
-                errors = true; return;
+                diag.report("ERROR323", decl->line, 1, "", "");
+                 return;
             }
         }
     }
@@ -169,13 +169,13 @@ void SemanticAnalyzer::analyzeFuncDef(ASTNode* node) {
 
     for (auto& param : func->parameters) {
         if (!isKnownType(param.first)) {
-            std::cerr <<"Bery:Error [Line " << func->line <<"]: Unknown parameter type '" << param.first<<"' in function '" << func->name <<"'\n";
-            errors = true;
+            diag.report("ERROR329", func->line, 1, "", param.first + "' in function '" + func->name);
+            
         }
     }
     if (!func->returnType.empty() && !isKnownType(func->returnType)) {
-        std::cerr <<"Bery:Error [Line " << func->line <<"]: Unknown return type '"   << func->returnType    <<"' in function '" << func->name <<"'\n";
-        errors = true;
+        diag.report("ERROR330", func->line, 1, "", func->returnType + "' in function '" + func->name);
+        
     }
 
     currentFunctionReturnType = func->returnType;
@@ -195,26 +195,24 @@ void SemanticAnalyzer::analyzeFuncDef(ASTNode* node) {
 void SemanticAnalyzer::analyzeReturnStmt(ASTNode* node) {
     auto* ret = static_cast<ReturnStmtNode*>(node);
     if (currentFunctionReturnType == "") {
-        std::cerr <<"Bery:Error [Line " << ret->line <<"]: 'return' used outside of a function.\n";
-        errors = true; 
+        diag.report("ERROR331", ret->line, 1, "", "");
+         
         return;
     }
     
     if (!ret->value) {
         if (currentFunctionReturnType != "void") {
-            std::cerr <<"Bery:Error [Line " << ret->line <<"]: Expected return value of type '" << currentFunctionReturnType <<"'\n";
-            errors = true;
+            diag.report("ERROR332", ret->line, 1, "", currentFunctionReturnType);
+            
         }
     } else {
         std::string valType = typeChecker.analyzeExpression(ret->value.get());
         if (valType != "unknown" && valType != currentFunctionReturnType) {
-             if (!(currentFunctionReturnType == "float" && valType == "int") &&
-                 !(currentFunctionReturnType == "double" && valType == "float") &&
-                 !(currentFunctionReturnType == "double" && valType == "int") &&
-                 !(currentFunctionReturnType == "bigint" && valType == "int")) {
-                 std::cerr <<"Bery:Error [Line " << ret->line <<"]: Type mismatch in return. Expected '" << currentFunctionReturnType <<"', got '" << valType <<"'\n";
-                 errors = true;
-             }
+            if (!(currentFunctionReturnType == "float" && valType == "int") && !(currentFunctionReturnType == "double" && valType == "float") &&
+                 !(currentFunctionReturnType == "double" && valType == "int") && !(currentFunctionReturnType == "bigint" && valType == "int")) {
+                diag.report("ERROR333", ret->line, 1, "", currentFunctionReturnType + "', got '" + valType);
+                
+            }
         }
     }
 }
@@ -224,8 +222,8 @@ void SemanticAnalyzer::analyzeEnumDecl(ASTNode* node) {
     for (const auto& val : enumDecl->values) {
         std::string mangledName = enumDecl->name + "." + val; 
         if (symbolTable.existsInCurrentScope(mangledName)) {
-            std::cerr <<"Bery:Error [Line " << enumDecl->line <<"]: Enum value '" << mangledName <<"' already declared.\n";
-            errors = true;
+            diag.report("ERROR334", enumDecl->line, 1, "", mangledName);
+            
         } else {
             symbolTable.addVariable(mangledName, "int", true, true, enumDecl->line);
         }
@@ -236,18 +234,18 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
     auto* cls = static_cast<ClassDefNode*>(node);
     if (!cls->parentName.empty()) {
         if (cls->parentName == cls->name) {
-            std::cerr << "Bery:Error [Line " << cls->line << "]: Class '" << cls->name << "' cannot inherit from itself\n";
-            errors = true;
+            diag.report("ERROR335", cls->line, 1, "", cls->name);
+            
         } else if (!classes.count(cls->parentName)) {
-            std::cerr << "Bery:Error [Line " << cls->line << "]: Unknown parent class '" << cls->parentName << "' for class '" << cls->name << "'\n";
-            errors = true;
+            diag.report("ERROR336", cls->line, 1, "", cls->parentName + "' for class '" + cls->name);
+            
         } else {
             std::unordered_set<std::string> visited;
             std::string cur = cls->parentName;
             while (!cur.empty()) {
                 if (cur == cls->name) {
-                    std::cerr << "Bery:Error [Line " << cls->line << "]: Circular inheritance detected involving class '" << cls->name << "'\n";
-                    errors = true;
+                    diag.report("ERROR337", cls->line, 1, "", cls->name);
+                    
                     break;
                 }
                 if (visited.count(cur)) break; 
@@ -272,14 +270,13 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                     if (exprType != "unknown" && exprType != fieldType) {
                         if (exprType == "null") {
                             if (fieldType!="string" && !classes.count(fieldType)) {
-                                std::cerr <<"Bery:Error [Line " <<field->line <<"]: Cannot assign 'null' to non-reference field '"<< fieldName <<"'\n";
-                                errors =true;
+                                diag.report("ERROR338", field->line, 1, "", fieldName);
                             }
                         } else if (!(fieldType == "float" && exprType == "int") &&!(fieldType == "double" && exprType == "int") &&
                             !(fieldType == "bigint" && exprType == "int") && !(fieldType == "double" && exprType == "float") &&
                             !(fieldType == "float" && exprType == "double")) {
-                            std::cerr <<"Bery:Error [Line "<<field->line<<"]: Type mismatch for field '" << fieldName<<"'. Expected '"<<fieldType <<"', got '" << exprType <<"'\n";
-                            errors=true;
+                            diag.report("ERROR339", field->line, 1, "", fieldName + "'. Expected '" + fieldType + "', got '" + exprType);
+                            
                         }
                     }
                 }
@@ -289,14 +286,14 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                 fieldType = "array<" + field->elementType + ">";
                 
                 if (!isKnownType(field->elementType)) {
-                    std::cerr <<"Bery:Error [Line "<< field->line <<"]: Unknown array element type '" << field->elementType <<"'\n";
-                    errors = true;
+                    diag.report("ERROR320", field->line, 1, "", field->elementType);
+                    
                 }
             } else {continue;}
 
             if (seen.count(fieldName)) {
-                std::cerr <<"Bery:Error [Line " << attr->line <<"]: Duplicate field '"<< fieldName <<"' in class '" << cls->name <<"'\n";
-                errors = true;
+                diag.report("ERROR340", attr->line, 1, "", fieldName + "' in class '" + cls->name);
+                
             }
             seen.insert(fieldName);
         }}
@@ -308,12 +305,12 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
             if (f->isDestructor) {
                 destructorCount++;
                 if (destructorCount > 1) {
-                    std::cerr <<"Bery:Error [Line " << f->line <<"]: Class '" << cls->name<<"' already has a destructor, only one destructor is supported\n";
-                    errors = true;
+                    diag.report("ERROR341", f->line, 1, "", cls->name);
+                    
                 }
                 if (!f->parameters.empty()) {
-                    std::cerr <<"Bery:Error [Line " << f->line <<"]: Destructor '~" << cls->name<<"' cannot take parameters (it is invoked automatically)\n";
-                    errors = true;
+                    diag.report("ERROR342", f->line, 1, "", cls->name);
+                    
                 }
             }
         }
@@ -323,13 +320,13 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
             for (auto& p : func->parameters) {
                 if (!isKnownType(p.first)) {
-                    std::cerr <<"Bery:Error [Line " << func->line <<"]: Unknown parameter type '" << p.first  <<"' in method '" << func->name <<"'\n";
-                    errors = true;
+                    diag.report("ERROR343", func->line, 1, "", p.first + "' in method '" + func->name);
+                    
                 }
             }
             if (!func->isConstructor && !func->isDestructor && !func->returnType.empty() && !isKnownType(func->returnType)) {
-                std::cerr <<"Bery:Error [Line " << func->line <<"]: Unknown return type '" << func->returnType <<"' in method '" << func->name <<"'\n";
-                errors = true;
+                diag.report("ERROR344", func->line, 1, "", func->returnType + "' in method '" + func->name);
+                
             }
 
             FunctionSignature sig;
@@ -344,8 +341,8 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                     for(const auto& parentFuncSig : parentFunc->second){
                         if(parentFuncSig.parameterTypes == sig.parameterTypes){
                             if(parentFuncSig.returnType != sig.returnType){
-                                std::cerr << "Bery:Error [Line " << func->line << "]: Method '"<<func->name << "' overrides parent method with diff return type. \n";
-                                errors = true;
+                                diag.report("ERROR345", func->line, 1, "", func->name);
+                                
                             }
                             break;
                         }
@@ -360,8 +357,8 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                 }
             } 
             if(dupeoverload && !func->isDestructor){
-                std::cerr << "Bery:Error [Line " << func->line << "]: Function '" << func->name <<"' is already defined with same parameter types.\n";
-                errors = true;
+                diag.report("ERROR346", func->line, 1, "", func->name);
+                
                     
             }
             moverload.push_back(sig);

@@ -74,7 +74,7 @@ static int runFrontend(const std::string& sourcePath,   const std::string& irPat
     Parser parser(tokens);
     auto ast = parser.parse();
 
-    diag.printAll();
+    
     if (diag.hasErrors() || parser.hasErrors()) {
         std::cerr <<"Bery: Compilation halted due to syntax errors.\n";
         return 5;
@@ -86,7 +86,8 @@ static int runFrontend(const std::string& sourcePath,   const std::string& irPat
     SemanticAnalyzer sema(ast.get(), diag);
     sema.analyze();
 
-    if (sema.hasErrors()) {
+    diag.printAll();
+    if ( diag.hasErrors()) {
         std::cerr <<"Bery: Compilation halted due to semantic errors.\n";
         return 6;
     }

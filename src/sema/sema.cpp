@@ -16,7 +16,7 @@
 #include <iostream>
 
 SemanticAnalyzer::SemanticAnalyzer(ASTNode* root, DiagnosticEngine& diag)
-   : root(root), errors(false), typeChecker(symbolTable, functions, errors, classes, currentClassContext, currentFunctionIsConstructor), diag(diag) {}
+   : root(root),  typeChecker(symbolTable, functions, classes, currentClassContext, currentFunctionIsConstructor, diag), diag(diag) {}
 
 void SemanticAnalyzer::analyze() {
     auto* program = static_cast<ProgramNode*>(root);
@@ -30,6 +30,7 @@ void SemanticAnalyzer::analyze() {
             for(auto& existing : overload) {
                 if(existing.parameterTypes == sig.parameterTypes){
                     diag.report("ERROR305", func->line, 1, "", func->name);
+                    
                     break; 
                 }
             } 
@@ -83,6 +84,3 @@ void SemanticAnalyzer::analyzeNode(ASTNode* node) {
     else if (node->type == NodeType::PASS_STMT){}
     else if (node->type == NodeType::EXTERN_DECL){}
 } 
-
-
-bool SemanticAnalyzer::hasErrors() { return errors; }

@@ -56,7 +56,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
                     for (auto& d : decls) program->globals.push_back(std::move(d));
                 } else {
                     std::cerr <<"Bery:Error [Line " << peek().line <<"]: Unexpected token '" << peek().lexeme <<"'\n";
-                    errors = true;
+                    
                     throw ParseError();
                 }
             }
@@ -67,7 +67,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
 
     if (!program->runBlock) {
         std::cerr <<"Bery:Error: no run{} block found\n";
-        errors = true;
+        
     }
     
     return program;
@@ -99,7 +99,7 @@ bool Parser::check(TokenType type) {
 
 Token Parser::consume(TokenType type, const std::string& msg) {
     if (check(type)) return advance();
-    errors = true;
+    
     std::cerr<<"Bery:Error [Line " << peek().line <<"]: " << msg <<"\n";
     throw ParseError();
 }

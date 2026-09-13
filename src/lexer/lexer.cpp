@@ -543,7 +543,7 @@ void Lexer::skipComments(bool isMLC){
             if(peek()=='\n'){bumpLine();}
             advance();
         }
-        // errors=true;
+        // 
         diag.report("ERROR017", startLine, startColumn, "");
         
     }

@@ -72,7 +72,7 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
             advance();
             return std::make_unique<NullLitNode>(t.line);
         default:
-            errors = true;
+            
             std::cerr <<"Bery:Error [Line " << t.line <<"]: Expected valid expression or literal\n";
             throw ParseError();
     }
@@ -104,7 +104,7 @@ std::unique_ptr<ASTNode> Parser::parseArrayDeclTail(const std::string& elementTy
             valueExpr = parseExpression();
         } else {
             std::cerr <<"Bery:Error: [Line " << peek().line <<"]: Arrays must be initialized with list inside '{}'\n";
-            errors = true;
+            
             while (!isAtEnd() && !check(TokenType::TOKEN_SEMICOLON)) advance();
             return std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), access, isConst, nameToken.line);
         }

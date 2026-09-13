@@ -25,6 +25,7 @@
 #include "../parser/ast/accessSpecifier.h"
 #include "../parser/ast/vardecl.h"
 #include "../parser/ast/functions.h"
+#include "../diagnostic/diagnostic_engine.h"
 
 
 struct FunctionSignature {
@@ -34,7 +35,7 @@ struct FunctionSignature {
 
 class TypeChecker {
 public:
-    TypeChecker(SymbolTable& symbolTable, std::unordered_map<std::string, std::vector<FunctionSignature>>& funcs, bool& errorsFlag, std::unordered_map<std::string, ClassDefNode*>& classesMap, std::string& currentClassRef, bool& inConstructorRef);
+    TypeChecker(SymbolTable& symbolTable, std::unordered_map<std::string, std::vector<FunctionSignature>>& funcs, std::unordered_map<std::string, ClassDefNode*>& classesMap, std::string& currentClassRef, bool& inConstructorRef, DiagnosticEngine& diagref);
     std::string analyzeExpression(ASTNode* node);
     bool typeMatchesLiteral(const std::string& type, NodeType litType);
 
@@ -44,7 +45,8 @@ private:
     std::unordered_map<std::string, ClassDefNode*>& classes;
 
     // @todo : need chnages after Error Handler is added.
-    bool& errors;
+    DiagnosticEngine& diag;
+    // bool& errors;
 
     std::string checkBinaryExpr(ASTNode* node);
     std::string checkUnaryExpr(ASTNode* node);
@@ -78,3 +80,16 @@ private:
     bool checkMemberAccess(AccessSpecifier access, const std::string& className, const std::string& memberName, const std::string& type, int line);
     std::string checkSuperCall(ASTNode* node);
 };
+
+
+// basic inline function 
+static inline std::vector<std::string> splitDots(const std::string& s) {
+    std::vector<std::string> parts;
+    size_t start = 0, pos;
+    while ((pos = s.find('.', start)) != std::string::npos) {
+        parts.push_back(s.substr(start, pos - start));
+        start = pos + 1;
+    }
+    parts.push_back(s.substr(start));
+    return parts;
+}

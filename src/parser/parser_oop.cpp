@@ -87,7 +87,7 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
             Token nameToken =consume(TokenType::TOKEN_IDENT, "Expected class name after '~'");
             if (nameToken.lexeme!= className) {
                 std::cerr <<"Bery:Error [Line " << nameToken.line <<"]: Destructor name '~" << nameToken.lexeme<<"' does not match class '" << className <<"'\n";
-                errors = true;
+                
             }
             int declLine = nameToken.line;
             consume(TokenType::TOKEN_LPARAN, "Expected '(' after destructor name");

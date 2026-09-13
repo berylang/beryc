@@ -72,7 +72,7 @@ std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
         }
         else {
             std::cerr <<"Bery:Error [Line " << peek().line <<"]: Expected 'case' or 'default'\n";
-            errors = true;
+            
             advance();
         }
     }
