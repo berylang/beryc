@@ -8,32 +8,32 @@
 std::unique_ptr<ASTNode> Parser::parseClassDecl() {
     advance();
     int line = previous().line;
-    Token className = consume(TokenType::TOKEN_IDENT, "Expected class name");
+    Token className = consume(TokenType::TOKEN_IDENT, "ERROR214");
 
     std::string parentName = "";
     if (check(TokenType::TOKEN_COLON)) {
         advance();
-        Token parentToken = consume(TokenType::TOKEN_IDENT, "Expected parent class name after ':'");
+        Token parentToken = consume(TokenType::TOKEN_IDENT, "ERROR241");
         parentName = parentToken.lexeme;
     }
-    consume(TokenType::TOKEN_LBRACE, "Expected '{' after class name");
-    
+    consume(TokenType::TOKEN_LBRACE, "ERROR242");
+
     auto attrSection = parseAttributeSection();
 
     std::unique_ptr<MethodSectionNode> methodSection = nullptr;
     if (check(TokenType::TOKEN_METHODS)) {
         methodSection = parseMethodSection(className.lexeme);
     }
-    consume(TokenType::TOKEN_RBRACE, "Expected '}' after class body");
+    consume(TokenType::TOKEN_RBRACE, "ERROR243");
     return std::make_unique<ClassDefNode>(className.lexeme, parentName, std::move(attrSection), std::move(methodSection), line);
 }
 
 std::unique_ptr<AttributeSectionNode> Parser::parseAttributeSection() {
-    consume(TokenType::TOKEN_ATTRIBUTES, "Exptected 'attributes' section");
-    consume(TokenType::TOKEN_LBRACKET, "Expected '[' after 'attributes'");
-    Token selfToken = consume(TokenType::TOKEN_IDENT, "Expected self-reference identifier");
-    consume(TokenType::TOKEN_RBRACKET, "Expected ']' after self-reference");
-    consume(TokenType::TOKEN_DCOLON, "Exptected '::' after attributes seciton verbose");
+    consume(TokenType::TOKEN_ATTRIBUTES, "ERROR244");
+    consume(TokenType::TOKEN_LBRACKET, "ERROR245");
+    Token selfToken = consume(TokenType::TOKEN_IDENT, "ERROR246");
+    consume(TokenType::TOKEN_RBRACKET, "ERROR247");
+    consume(TokenType::TOKEN_DCOLON, "ERROR248");
 
     std::vector<std::unique_ptr<ASTNode>> attributes;
     while(!isAtEnd()&& (isTypeToken(peek().type) || isClassVarDecl() || check(TokenType::TOKEN_PUBLIC) || check(TokenType::TOKEN_PRIVATE) || check(TokenType::TOKEN_PROTECTED))) {
@@ -63,8 +63,8 @@ std::unique_ptr<AttributeSectionNode> Parser::parseAttributeSection() {
 
 std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string& className) {
     int line = peek().line;
-    consume(TokenType::TOKEN_METHODS, "Expected 'methods' section");
-    consume(TokenType::TOKEN_DCOLON, "Exptected '::' after 'methods");
+    consume(TokenType::TOKEN_METHODS, "ERROR249");
+    consume(TokenType::TOKEN_DCOLON, "ERROR250");
 
     std::vector<std::unique_ptr<ASTNode>> methods;
     while(!isAtEnd()){
@@ -84,29 +84,29 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
 
         if (check(TokenType::TOKEN_TILDE)) {
             advance();
-            Token nameToken =consume(TokenType::TOKEN_IDENT, "Expected class name after '~'");
+            Token nameToken =consume(TokenType::TOKEN_IDENT, "ERROR251");
             if (nameToken.lexeme!= className) {
-                std::cerr <<"Bery:Error [Line " << nameToken.line <<"]: Destructor name '~" << nameToken.lexeme<<"' does not match class '" << className <<"'\n";
+                diag.report("ERROR240", nameToken.line, 1, nameToken.lexeme, className);
                 errors = true;
             }
             int declLine = nameToken.line;
-            consume(TokenType::TOKEN_LPARAN, "Expected '(' after destructor name");
+            consume(TokenType::TOKEN_LPARAN, "ERROR252");
             std::vector<std::pair<std::string, std::string>> params;
             if (!check(TokenType::TOKEN_RPARAN)) {
                 do {
                     Token typeToken = advance();
-                    Token pNameToken = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
+                    Token pNameToken = consume(TokenType::TOKEN_IDENT, "ERROR221");
                     std::string paramType = typeToken.lexeme;
                     if (check(TokenType::TOKEN_LBRACKET)) {
                         advance();
-                        consume(TokenType::TOKEN_RBRACKET, "Expected ']' after '[' in array parameter type");
+                        consume(TokenType::TOKEN_RBRACKET, "ERROR222");
                         paramType = "array<" + paramType + ">";
                     }
                     params.push_back({paramType, pNameToken.lexeme});
                 } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
             }
-            consume(TokenType::TOKEN_RPARAN, "Expected ')' after parameters");
-            consume(TokenType::TOKEN_LBRACE, "Expected '{' before destructor body");
+            consume(TokenType::TOKEN_RPARAN, "ERROR223");
+            consume(TokenType::TOKEN_LBRACE, "ERROR253");
             auto body = parseBlock();
             methods.push_back(std::make_unique<FunctionDefNode>(className, std::move(params), "void", std::move(body), access, declLine, false, true));
             continue;
@@ -116,22 +116,22 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
             current + 1 < (int)tokens.size() && tokens[current + 1].type == TokenType::TOKEN_LPARAN) {
             Token nameToken = advance();
             int declLine = nameToken.line;
-            consume(TokenType::TOKEN_LPARAN, "Expected '(' after constructor name");
+            consume(TokenType::TOKEN_LPARAN, "ERROR254");
             std::vector<std::pair<std::string, std::string>> params;
             if (!check(TokenType::TOKEN_RPARAN)) {  do {
                     Token typeToken = advance();
-                    Token pNameToken = consume(TokenType::TOKEN_IDENT, "Expected parameter name");
+                    Token pNameToken = consume(TokenType::TOKEN_IDENT, "ERROR221");
                     std::string paramType = typeToken.lexeme;
                     if (check(TokenType::TOKEN_LBRACKET)) {
                         advance();
-                        consume(TokenType::TOKEN_RBRACKET, "Expected ']' after '[' in array parameter type");
+                        consume(TokenType::TOKEN_RBRACKET, "ERROR222");
                         paramType = "array<" + paramType + ">";
                     }
                     params.push_back({paramType, pNameToken.lexeme});
                 } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
             }
-            consume(TokenType::TOKEN_RPARAN, "Expected ')' after parameters");
-            consume(TokenType::TOKEN_LBRACE, "Expected '{' before constructor body");
+            consume(TokenType::TOKEN_RPARAN, "ERROR223");
+            consume(TokenType::TOKEN_LBRACE, "ERROR255");
             auto body =parseBlock();
             methods.push_back(std::make_unique<FunctionDefNode>(className, std::move(params), "void", std::move(body), access, declLine, true, false));
             continue;

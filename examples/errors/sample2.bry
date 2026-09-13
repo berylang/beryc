@@ -1,5 +1,13 @@
 run {
-    while (true) {
-        break
+    bigint x = inputBigInt("Enter Number: ");
+    switch(x) {
+        case (bigint)1
+           println(109);
+
+        case (bigint)2:
+            println(20);
+            break;
+        default
+            println(67);
     }
 }

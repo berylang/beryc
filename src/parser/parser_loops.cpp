@@ -16,10 +16,10 @@
 std::unique_ptr<ASTNode> Parser::parseWhileStmt(){
     advance();
     int line = previous().line;
-    consume(TokenType::TOKEN_LPARAN,"Expected '(' after 'while'");
+    consume(TokenType::TOKEN_LPARAN,"ERROR229");
     auto condition = parseExpression();
-    consume(TokenType::TOKEN_RPARAN, "Expected ')' after condition");
-    consume(TokenType::TOKEN_LBRACE, "Expected '{' before while-body");
+    consume(TokenType::TOKEN_RPARAN, "ERROR204");
+    consume(TokenType::TOKEN_LBRACE, "ERROR230");
     auto body = parseBlock();
     return std::make_unique<WhileStmtNode>(std::move(condition), std::move(body), line);
 }
@@ -27,20 +27,20 @@ std::unique_ptr<ASTNode> Parser::parseWhileStmt(){
 std::unique_ptr<ASTNode> Parser::parseDoWhileStmt(){
     advance();
     int line = previous().line;
-    consume(TokenType::TOKEN_LBRACE, "Expected '{' before do-while-body");
+    consume(TokenType::TOKEN_LBRACE, "ERROR231");
     auto body = parseBlock();
-    consume(TokenType::TOKEN_WHILE, "Expected 'while' condition after do-while-body");
-    consume(TokenType::TOKEN_LPARAN,"Expected '(' after 'while'");
+    consume(TokenType::TOKEN_WHILE, "ERROR232");
+    consume(TokenType::TOKEN_LPARAN,"ERROR229");
     auto condition = parseExpression();
-    consume(TokenType::TOKEN_RPARAN, "Expected ')' after condition");
-    consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after condition-end");
+    consume(TokenType::TOKEN_RPARAN, "ERROR204");
+    consume(TokenType::TOKEN_SEMICOLON, "ERROR233");
     return std::make_unique<DoWhileStmtNode>(std::move(condition), std::move(body), line);
 }
 
 std::unique_ptr<ASTNode> Parser::parseForStmt() {
     advance();
     int line = previous().line;
-    consume(TokenType::TOKEN_LPARAN, "Expected '(' after 'for'");
+    consume(TokenType::TOKEN_LPARAN, "ERROR234");
     bool isForIn = false;
     bool hasExplicitType = false;
 
@@ -58,7 +58,7 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
             varType = advance().lexeme;
         }
         
-        Token varTok = consume(TokenType::TOKEN_IDENT, "Expected identifier");
+        Token varTok = consume(TokenType::TOKEN_IDENT, "ERROR235");
         advance();
 
         auto iterableOrStart = parseExpression();
@@ -75,8 +75,8 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
             step = parseExpression();
         }
 
-        consume(TokenType::TOKEN_RPARAN, "Expected ')' after for-in declaration");
-        consume(TokenType::TOKEN_LBRACE, "Expected '{' before loop body");
+        consume(TokenType::TOKEN_RPARAN, "ERROR236");
+        consume(TokenType::TOKEN_LBRACE, "ERROR237");
         auto body = parseBlock();
 
         return std::make_unique<ForInNode>(varType, varTok.lexeme, std::move(iterableOrStart), std::move(rangeEnd), std::move(step), std::move(body), line);
@@ -98,7 +98,7 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
 
         std::unique_ptr<ASTNode> cond = nullptr;
         if (!check(TokenType::TOKEN_SEMICOLON)) cond = parseExpression();
-        consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after loop condition");
+        consume(TokenType::TOKEN_SEMICOLON, "ERROR238");
 
         std::vector<std::unique_ptr<ASTNode>> update;
 
@@ -111,9 +111,9 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
                 break;
             }
         }
-        consume(TokenType::TOKEN_RPARAN, "Expected ')' after loop update");
+        consume(TokenType::TOKEN_RPARAN, "ERROR239");
         
-        consume(TokenType::TOKEN_LBRACE, "Expected '{' before loop body");
+        consume(TokenType::TOKEN_LBRACE, "ERROR237");
         auto body = parseBlock();
 
         return std::make_unique<ForStmtNode>(std::move(init), std::move(cond), std::move(update), std::move(body), line);
