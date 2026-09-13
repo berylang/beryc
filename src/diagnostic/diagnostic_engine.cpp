@@ -48,6 +48,8 @@ void DiagnosticEngine::report(const std::string& code, int line, int column, con
     diagnostics.push_back(d);
     if (d.severity == Severity::ERROR) errorCount++;
     else warningCount++;
+
+    std::cout << "I am Here\n";
 }
 
 bool DiagnosticEngine::hasErrors() const { return errorCount > 0; }
