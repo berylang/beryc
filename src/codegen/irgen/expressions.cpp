@@ -794,13 +794,6 @@ std::string CodeGen::genIndexExpr(ASTNode* node, std::ostream& outputStream) {
 std::string CodeGen::genCallExpr(ASTNode* node, std::ostream& outputStream) {
     auto* call = static_cast<CallExprNode*>(node);
 
-    static const std::unordered_set<std::string> breFns = {
-        "print", "println", "inputInt", "inputBigInt", "inputFloat",
-        "inputDouble", "inputBool", "inputChar", "inputString"
-    };
-    if (breFns.count(call->callee))
-        return genBREPrintCall(node, outputStream);
-
     if (call->callee == "super" || call->callee.rfind("super.", 0) == 0) {
         std::string parentName = classLayouts.at(currentClassName).parentName;
         Symbol& selfSym = symbolTable.get(currentSelfRef);
@@ -1027,13 +1020,13 @@ std::string CodeGen::genCallExpr(ASTNode* node, std::ostream& outputStream) {
             return llvm.__emitCall(llvmType(sig.returnType), mangled, args, outputStream);
         }
     }
-    std::string calleeKey = call->callee;
+    std::string calleeKey = llvm.__mangleOverload(call->callee, call->resolvedParamTypes);
     if (functions.find(calleeKey) == functions.end()) {
-        calleeKey = llvm.__mangleOverload(call->callee, call->resolvedParamTypes);
+        calleeKey = call->callee;
     }
     if (functions.find(calleeKey) == functions.end()) return "0";
     CodeGenFunctionSignature& sig = functions[calleeKey];
-
+    
     std::vector<std::pair<std::string, std::string>> args;
     for (size_t i = 0; i < call->arguments.size(); ++i) {
          std::string argReg = classLayouts.count(sig.parameterTypes[i])? genClassCopyValue(call->arguments[i].get(), sig.parameterTypes[i], outputStream): genExpression(call->arguments[i].get(), sig.parameterTypes[i], outputStream);

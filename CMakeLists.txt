@@ -47,7 +47,6 @@ set(CODEGEN_SOURCES
     src/codegen/irgen/expressions.cpp
     src/codegen/irgen/controlflow.cpp
     src/codegen/irgen/helpers.cpp
-    src/codegen/irgen/bre.cpp
     src/codegen/irgen/gc.cpp
 )
 

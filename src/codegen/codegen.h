@@ -65,8 +65,6 @@ private:
    void pushGCScope();
    int popGCScope();
    
-   // @BRE
-   std::string genBREPrintCall(ASTNode* node, std::ostream& outputStream);
    
    // @controlflow
    void genBlock(ASTNode* node, std::ostream& outputStream);

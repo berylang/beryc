@@ -20,9 +20,13 @@
 
 class Importer {
 public:
-    void resolveImports(ProgramNode* mainProgram, const std::string& basePath, DiagnosticEngine& diag);
+    static const std::vector<std::string> PRELUDE_MODULES;
+    void resolveImports(ProgramNode* mainProgram, const std::string& sourceBasePath, std::string& stdlibPath, DiagnosticEngine& diag);
 
 private:
     std::unordered_set<std::string> importedFiles;
-    void loadModule(const std::string& modName, const std::string& fullPath, const std::string& basePath, std::vector<std::unique_ptr<ASTNode>>& outGlobals, DiagnosticEngine& diag);
+    std::string resolvePath(const std::string& modName, const std::string& sourceBasePath, const std::string& stdlibPath);
+
+    void loadModule(const std::string& modName, const std::string& fullPath, const std::string& sourceBasePath, const std::string& stdlibPath, std::vector<std::unique_ptr<ASTNode>>& outGlobals,
+                     DiagnosticEngine& diag, bool openImport);
 };
