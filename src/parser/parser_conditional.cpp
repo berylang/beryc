@@ -55,9 +55,14 @@ std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
             CaseBlock cb;
             cb.value = parseExpression();
             consume(TokenType::TOKEN_COLON, "ERROR208");
-            while (!isAtEnd() && !check(TokenType::TOKEN_CASE) &&
-                   !check(TokenType::TOKEN_DEFAULT) && !check(TokenType::TOKEN_RBRACE)) {
-                for (auto& statement : parseStatement()) cb.statements.push_back(std::move(statement));
+            while (!isAtEnd() && !check(TokenType::TOKEN_CASE) && !check(TokenType::TOKEN_DEFAULT) && !check(TokenType::TOKEN_RBRACE)) {
+                size_t startPos = current;
+                try {
+                    for (auto& statement : parseStatement()) cb.statements.push_back(std::move(statement));
+                } catch (ParseError& e) {
+                    synchronize();
+                    if (current == startPos && !isAtEnd()) advance();
+                }
             }
             sw->cases.push_back(std::move(cb));
         }
@@ -67,7 +72,13 @@ std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
             sw->hasDefault = true;
 
             while (!isAtEnd() && !check(TokenType::TOKEN_CASE) && !check(TokenType::TOKEN_RBRACE)) {
-                for (auto& statement : parseStatement()) sw->defaultBlock.push_back(std::move(statement));
+                size_t startPos = current;
+                try {
+                    for (auto& statement : parseStatement()) sw->defaultBlock.push_back(std::move(statement));
+                } catch (ParseError& e) {
+                    synchronize();
+                    if (current == startPos && !isAtEnd()) advance();
+                }
             }
         }
         else {

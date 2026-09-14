@@ -76,7 +76,8 @@ static int runFrontend(const std::string& sourcePath,   const std::string& irPat
 
     
     if (diag.hasErrors() || parser.hasErrors()) {
-        std::cerr <<"Bery: Compilation halted due to syntax errors.\n";
+        diag.printAll();
+        std::cerr << "Bery: Compilation halted due to syntax errors.\n";
         return 5;
     }
 

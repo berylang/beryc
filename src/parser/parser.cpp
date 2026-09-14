@@ -22,6 +22,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
     auto program = std::make_unique<ProgramNode>(); 
     
     while (!isAtEnd()) {
+        size_t startPos = current;
         try {
             if (check(TokenType::TOKEN_RUN)) {
                 advance();
@@ -29,14 +30,16 @@ std::unique_ptr<ASTNode> Parser::parse() {
                 consume(TokenType::TOKEN_LBRACE, "ERROR276");
                 auto runBlock = std::make_unique<RunBlockNode>(runline);
                 while (!isAtEnd() && !check(TokenType::TOKEN_RBRACE)) {
+                    size_t startPos = current;
                     try {
                         for (auto& statement : parseStatement()) runBlock->statements.push_back(std::move(statement));
                     } catch(ParseError& e) {
                         synchronize();
+                        if (current == startPos && !isAtEnd()) advance();
                     }
                 }
-                consume(TokenType::TOKEN_RBRACE, "ERROR277");
                 program->runBlock = std::move(runBlock);
+                consume(TokenType::TOKEN_RBRACE, "ERROR277");
             } 
             else if (check(TokenType::TOKEN_FUNC)) {
                 program->globals.push_back(parseFunctionDef(AccessSpecifier::PUBLIC));
@@ -62,6 +65,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
             }
         } catch(ParseError& e) {
             synchronize();
+            if (current == startPos && !isAtEnd()) advance();
         }
     }
 
@@ -123,11 +127,13 @@ std::unique_ptr<BlockNode> Parser::parseBlock() {
 
     auto block = std::make_unique<BlockNode>(line);
     while(!isAtEnd() && !check(TokenType::TOKEN_RBRACE)){
+        size_t startPos = current;
         try {
             for (auto& statement : parseStatement()) block->statements.push_back(std::move(statement));
         }
         catch(ParseError& e) {
             synchronize();
+            if (current == startPos && !isAtEnd()) advance(); 
         }
     }
     consume(TokenType::TOKEN_RBRACE, "ERROR278");

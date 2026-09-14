@@ -15,23 +15,43 @@
 bool Parser::hasErrors() {return errors;}
 
 void Parser::synchronize() {
-    advance();
+    int depth = 0;
     while (!isAtEnd()) {
-        if (previous().type == TokenType::TOKEN_SEMICOLON) return;
-        switch (peek().type) {
-            case TokenType::TOKEN_INT:
-            case TokenType::TOKEN_FLOAT:
-            case TokenType::TOKEN_BIGINT:
-            case TokenType::TOKEN_DOUBLE:
-            case TokenType::TOKEN_STRING:
-            case TokenType::TOKEN_BOOL:
-            case TokenType::TOKEN_CHAR:
-            case TokenType::TOKEN_CONST:
-            case TokenType::TOKEN_RUN:
-                return;
-            default:
-                break; 
+        if (depth == 0) {
+            switch (peek().type) {
+                case TokenType::TOKEN_RBRACE:
+                case TokenType::TOKEN_IF:
+                case TokenType::TOKEN_ELSE:
+                case TokenType::TOKEN_WHILE:
+                case TokenType::TOKEN_DOWHILE:
+                case TokenType::TOKEN_FOR:
+                case TokenType::TOKEN_SWITCH:
+                case TokenType::TOKEN_BREAK:
+                case TokenType::TOKEN_CONTINUE:
+                case TokenType::TOKEN_PASS:
+                case TokenType::TOKEN_RETURN:
+                case TokenType::TOKEN_ENUM:
+                case TokenType::TOKEN_CONST:
+                case TokenType::TOKEN_INT:
+                case TokenType::TOKEN_FLOAT:
+                case TokenType::TOKEN_BIGINT:
+                case TokenType::TOKEN_DOUBLE:
+                case TokenType::TOKEN_STRING:
+                case TokenType::TOKEN_BOOL:
+                case TokenType::TOKEN_CHAR:
+                    return;
+                default:
+                    break;
+            }
         }
-        advance();
+
+        Token t = advance();
+        if (t.type == TokenType::TOKEN_LBRACE) {
+            depth++;
+        } else if (t.type == TokenType::TOKEN_RBRACE) {
+            depth--;
+        } else if (t.type == TokenType::TOKEN_SEMICOLON && depth == 0) {
+            return;
+        }
     }
 }
