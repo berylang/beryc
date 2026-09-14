@@ -15,44 +15,43 @@
 bool Parser::hasErrors() {return errors;}
 
 void Parser::synchronize() {
+    int depth = 0;
     while (!isAtEnd()) {
-        switch (peek().type) {
-            case TokenType::TOKEN_RBRACE:
-            case TokenType::TOKEN_LBRACE:
-            case TokenType::TOKEN_FUNC:
-            case TokenType::TOKEN_CLASS:
-            case TokenType::TOKEN_ENUM:
-            case TokenType::TOKEN_IMPORT:
-            case TokenType::TOKEN_EXTERN:
-            case TokenType::TOKEN_RUN:
-            case TokenType::TOKEN_CONST:
-            case TokenType::TOKEN_INT:
-            case TokenType::TOKEN_FLOAT:
-            case TokenType::TOKEN_BIGINT:
-            case TokenType::TOKEN_DOUBLE:
-            case TokenType::TOKEN_STRING:
-            case TokenType::TOKEN_BOOL:
-            case TokenType::TOKEN_CHAR:
-            case TokenType::TOKEN_IF:
-            case TokenType::TOKEN_WHILE:
-            case TokenType::TOKEN_DOWHILE:
-            case TokenType::TOKEN_FOR:
-            case TokenType::TOKEN_SWITCH:
-            case TokenType::TOKEN_CASE:
-            case TokenType::TOKEN_DEFAULT:
-            case TokenType::TOKEN_RETURN:
-            case TokenType::TOKEN_BREAK:
-            case TokenType::TOKEN_CONTINUE:
-            case TokenType::TOKEN_DELETE:
-            case TokenType::TOKEN_PUBLIC:
-            case TokenType::TOKEN_PRIVATE:
-            case TokenType::TOKEN_PROTECTED:
-            case TokenType::TOKEN_METHODS:
-            case TokenType::TOKEN_ATTRIBUTES:
-                return;
-            default:
-                break;
+        if (depth == 0) {
+            switch (peek().type) {
+                case TokenType::TOKEN_RBRACE:
+                case TokenType::TOKEN_IF:
+                case TokenType::TOKEN_ELSE:
+                case TokenType::TOKEN_WHILE:
+                case TokenType::TOKEN_DOWHILE:
+                case TokenType::TOKEN_FOR:
+                case TokenType::TOKEN_SWITCH:
+                case TokenType::TOKEN_BREAK:
+                case TokenType::TOKEN_CONTINUE:
+                case TokenType::TOKEN_PASS:
+                case TokenType::TOKEN_RETURN:
+                case TokenType::TOKEN_ENUM:
+                case TokenType::TOKEN_CONST:
+                case TokenType::TOKEN_INT:
+                case TokenType::TOKEN_FLOAT:
+                case TokenType::TOKEN_BIGINT:
+                case TokenType::TOKEN_DOUBLE:
+                case TokenType::TOKEN_STRING:
+                case TokenType::TOKEN_BOOL:
+                case TokenType::TOKEN_CHAR:
+                    return;
+                default:
+                    break;
+            }
         }
-        if (advance().type == TokenType::TOKEN_SEMICOLON) return;
+
+        Token t = advance();
+        if (t.type == TokenType::TOKEN_LBRACE) {
+            depth++;
+        } else if (t.type == TokenType::TOKEN_RBRACE) {
+            depth--;
+        } else if (t.type == TokenType::TOKEN_SEMICOLON && depth == 0) {
+            return;
+        }
     }
 }
