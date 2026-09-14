@@ -62,7 +62,6 @@ static int runFrontend(const std::string& sourcePath, const std::string& irPath,
 
     std::string basePath = dirOf(sourcePath) + BERY_PATH_SEP;
     std::string stdlibPath = exeDir + BERY_PATH_SEP + ".." + BERY_PATH_SEP + "src" + BERY_PATH_SEP + "stdlib" + BERY_PATH_SEP;
-    std::cerr << "[debug] stdlibPath = " << stdlibPath << "\n";
     std::stringstream buf;
     buf << file.rdbuf();
     std::string source = buf.str();

@@ -26,7 +26,7 @@
 #include <sstream>
 
 const std::vector<std::string> Importer::PRELUDE_MODULES = {
-    "io"
+    "io", "core"
 };
 
 

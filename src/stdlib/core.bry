@@ -1,0 +1,29 @@
+--!
+
+core.bry
+
+Bery Standard Library Core
+Program -termination prebuitls: panic(), assert(), exit()
+
+preluded = true
+
+!--
+
+extern func __bery_panic(string message);
+extern func __bery_exit(int code);
+
+func panic(string message) {
+    __bery_panic(message);
+}
+
+func assert(bool condition, string message) {
+    if (!condition) {
+        panic(message);
+    }
+}
+
+func exit(int code) {
+    __bery_exit(code);
+}
+
+run {}

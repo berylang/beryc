@@ -12,6 +12,7 @@ set(BRE_SOURCES
     src/bre/src/bery_string.cpp
     src/bre/src/bery_array.cpp
     src/bre/src/bery_native.cpp
+    src/bre/src/bery_stdlib_core.cpp
 )
 
 set(PARSER_SOURCES
