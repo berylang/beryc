@@ -202,9 +202,6 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR363", { Severity::ERROR, "delete supports objects only (arrays not allowed)", "delete individual elements instead of the whole array" } },
     { "ERROR364", { Severity::ERROR, "Identifier required as operand of increment or decrement operator", "use a variable identifier with '++' or '--'" } },
     { "ERROR365", { Severity::ERROR, "Between operator supports only int, bigint, float, double and char", "use a numeric or char type with the 'between' operator" } },
-    { "ERROR366", { Severity::ERROR, "print() expects exactly 1 argument", "pass exactly one argument to print()" } },
-    { "ERROR367", { Severity::ERROR, "println() expects 0 or 1 argument", "pass zero or one argument to println()" } },
-    { "ERROR368", { Severity::ERROR, "{}() expects exactly 1 argument", "pass exactly one argument to this call" } },
     { "ERROR369", { Severity::ERROR, "Class '{}' has no method '{}'", "check the method name for typos" } },
     { "ERROR370", { Severity::ERROR, "Unknown method '{}' on type '{}'", "check the method name and target type" } },
     { "ERROR371", { Severity::ERROR, "Undefined function '{}'", "declare the function before calling it" } },
@@ -237,4 +234,9 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR398", { Severity::ERROR, "Cannot access {} {} '{}' of class '{}' from outside the class", "access this member only from within the class" } },
     { "ERROR399", { Severity::ERROR, "Undefined variable '{}'", "declare '{}' before using it" } },
     { "ERROR400", { Severity::ERROR, "'{}' is not an object, cannot access '.{}'", "only object instances support member access" } },
+
+
+    // Importer errors 
+    { "ERROR501", { Severity::ERROR, "Cannot find imported module named '{}'", "write {}.bry module before importing it" } },
+    { "ERROR502", { Severity::ERROR, "Compilation halted due to syntax errors in imported module '{}'", "check for syntax errors in {} module" } },
 };

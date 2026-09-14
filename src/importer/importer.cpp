@@ -25,39 +25,72 @@
 #include <fstream>
 #include <sstream>
 
-void Importer::resolveImports(ProgramNode* mainProgram, const std::string& basePath, DiagnosticEngine& diag) {
+const std::vector<std::string> Importer::PRELUDE_MODULES = {
+    "io", "core"
+};
+
+
+std::string Importer::resolvePath(const std::string& modName, const std::string& sourceBasePath, const std::string& stdlibPath) {
+    std::string userPath = sourceBasePath + modName + ".bry";
+    std::ifstream userFile(userPath);
+    if (userFile.good()) return userPath;
+
+    std::string stdPath = stdlibPath + modName + ".bry";
+    std::ifstream stdFile(stdPath);
+    if (stdFile.good()) return stdPath;
+
+    return "";
+}
+
+void Importer::resolveImports(ProgramNode* mainProgram, const std::string& sourceBasePath, std::string& stdlibPath, DiagnosticEngine& diag) {
     std::vector<std::unique_ptr<ASTNode>> newGlobals;
-    
+    for (const auto& mod : PRELUDE_MODULES) {
+        std::string fullPath = stdlibPath + mod + ".bry";
+        loadModule(mod, fullPath, sourceBasePath, stdlibPath, newGlobals, diag,true);
+    }
+
     for (auto& node : mainProgram->globals) {
         if (node->type == NodeType::IMPORT_STMT) {
             auto* imp = static_cast<ImportNode*>(node.get());
-            std::string fullPath = basePath + imp->path; 
-            loadModule(imp->moduleName, fullPath, basePath, newGlobals, diag);
+            std::string fullPath = resolvePath(imp->moduleName, sourceBasePath, stdlibPath);
+            if (fullPath.empty()) {
+                diag.report("ERROR501", 0, 0, "", imp->moduleName);
+                diag.printAll();
+                exit(1);
+            }
+            loadModule(imp->moduleName, fullPath, sourceBasePath, stdlibPath, newGlobals, diag,false);
         } else {
             newGlobals.push_back(std::move(node));
         }
     }
     mainProgram->globals = std::move(newGlobals);
 }
-
-void Importer::loadModule(const std::string& modName, const std::string& fullPath, const std::string& basePath, std::vector<std::unique_ptr<ASTNode>>& outGlobals, DiagnosticEngine& diag) {
-    if (importedFiles.count(fullPath)) return; 
+void Importer::loadModule(const std::string& modName, const std::string& fullPath, const std::string& sourceBasePath, const std::string& stdlibPath,
+    std::vector<std::unique_ptr<ASTNode>>& outGlobals, DiagnosticEngine& diag, bool openImport) {
+    
+        if (importedFiles.count(fullPath)) return;
     importedFiles.insert(fullPath);
+
     std::ifstream file(fullPath);
     if (!file.is_open()) {
-        std::cerr <<"Bery:Error: Cannot find imported module '" << fullPath <<"'\n";
+        diag.report("ERROR501", 0, 0, "", modName);
+        diag.printAll();
         exit(1);
     }
     std::stringstream buffer;
     buffer << file.rdbuf();
-    Lexer lexer(buffer.str(), diag);
+    std::string moduleSource = buffer.str();
+    DiagnosticEngine moduleDiag(moduleSource, fullPath);
+
+    Lexer lexer(moduleSource, moduleDiag);
     auto tokens = lexer.tokanize();
-    Parser parser(tokens, diag);
+    Parser parser(tokens, moduleDiag);
     auto ast = parser.parse();
     auto* importedProg = static_cast<ProgramNode*>(ast.get());
 
-    if (parser.hasErrors()) {
-        std::cerr <<"Bery: Compilation halted due to syntax errors in imported module '" << modName <<"'.\n";
+    if (moduleDiag.hasErrors() || parser.hasErrors()) {
+        moduleDiag.printAll();
+        std::cerr << "Bery: Compilation halted due to syntax errors in imported module '" << modName << "'.\n";
         exit(1);
     }
 
@@ -65,27 +98,35 @@ void Importer::loadModule(const std::string& modName, const std::string& fullPat
     for (auto& node : importedProg->globals) {
         if (node->type == NodeType::IMPORT_STMT) {
             auto* imp = static_cast<ImportNode*>(node.get());
-            std::string nextFullPath = basePath + imp->path;
-            loadModule(imp->moduleName, nextFullPath, basePath, processedGlobals, diag);
+            std::string nextFullPath = resolvePath(imp->moduleName, sourceBasePath, stdlibPath);
+            if (nextFullPath.empty()) {
+                diag.report("ERROR501", imp->line, 1, "", imp->moduleName);
+                diag.printAll();
+                exit(1);
+            }
+            loadModule(imp->moduleName, nextFullPath, sourceBasePath, stdlibPath, processedGlobals, diag, false);
         } else {
             processedGlobals.push_back(std::move(node));
         }
     }
+
     std::unordered_set<std::string> globalNames;
     for (auto& g : processedGlobals) {
-        if (g->type == NodeType::FUNC_DEF) 
+        if (g->type == NodeType::FUNC_DEF)
             globalNames.insert(static_cast<FunctionDefNode*>(g.get())->name);
-        else if (g->type == NodeType::VAR_DECL) 
+        else if (g->type == NodeType::VAR_DECL)
             globalNames.insert(static_cast<VarDeclNode*>(g.get())->name);
-        else if (g->type == NodeType::ARRAY_DECL) 
+        else if (g->type == NodeType::ARRAY_DECL)
             globalNames.insert(static_cast<ArrayDeclNode*>(g.get())->name);
-        else if (g->type == NodeType::ENUM_DECL) 
+        else if (g->type == NodeType::ENUM_DECL)
             globalNames.insert(static_cast<EnumDeclNode*>(g.get())->name);
     }
-    ASTNameMangler mangler(modName, globalNames);
-    for (auto& g : processedGlobals) {
-        mangler.mangle(g.get());
+
+    if (!openImport) {
+        ASTNameMangler mangler(modName, globalNames);
+        for (auto& g : processedGlobals) mangler.mangle(g.get());
     }
+
     for (auto& g : processedGlobals) {
         outGlobals.push_back(std::move(g));
     }

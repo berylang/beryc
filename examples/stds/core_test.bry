@@ -1,0 +1,13 @@
+run {
+    int x = 10;
+    assert(x > 0, "x must be positive");
+    println("assert passed");
+
+    if (x != 10) {
+        panic("x should have been 10");
+    }
+    println("panic not triggered it's good then");
+
+    exit(0);
+    println("this should never print");
+}

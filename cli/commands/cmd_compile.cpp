@@ -53,7 +53,7 @@ static std::string findBRELib(const std::string& exeDir) {
     return "";
 }
 
-static int runFrontend(const std::string& sourcePath,   const std::string& irPath) {
+static int runFrontend(const std::string& sourcePath, const std::string& irPath, const std::string& exeDir) {
     std::ifstream file(sourcePath);
     if (!file.is_open()) {
         std::cerr <<"Bery: Error: cannot open file '" << sourcePath <<"'\n";
@@ -61,7 +61,7 @@ static int runFrontend(const std::string& sourcePath,   const std::string& irPat
     }
 
     std::string basePath = dirOf(sourcePath) + BERY_PATH_SEP;
-
+    std::string stdlibPath = exeDir + BERY_PATH_SEP + ".." + BERY_PATH_SEP + "src" + BERY_PATH_SEP + "stdlib" + BERY_PATH_SEP;
     std::stringstream buf;
     buf << file.rdbuf();
     std::string source = buf.str();
@@ -74,7 +74,6 @@ static int runFrontend(const std::string& sourcePath,   const std::string& irPat
     Parser parser(tokens, diag);
     auto ast = parser.parse();
 
-    
     if (diag.hasErrors() || parser.hasErrors()) {
         diag.printAll();
         std::cerr << "Bery: Compilation halted due to syntax errors.\n";
@@ -82,13 +81,13 @@ static int runFrontend(const std::string& sourcePath,   const std::string& irPat
     }
 
     Importer importer;
-    importer.resolveImports(static_cast<ProgramNode*>(ast.get()), basePath, diag);
+    importer.resolveImports(static_cast<ProgramNode*>(ast.get()), basePath, stdlibPath, diag);
 
     SemanticAnalyzer sema(ast.get(), diag);
     sema.analyze();
 
     diag.printAll();
-    if ( diag.hasErrors()) {
+    if (diag.hasErrors()) {
         std::cerr <<"Bery: Compilation halted due to semantic errors.\n";
         return 6;
     }
@@ -115,7 +114,7 @@ int cmdCompile(const std::string& sourcePath, std::string& outBinaryPath, const 
     std::string irFile  = dir + BERY_PATH_SEP + stem + ".ll";
     std::string objFile = dir + BERY_PATH_SEP + stem + tc.objectExt;
     outBinaryPath       = dir + BERY_PATH_SEP + stem + tc.binaryExt;
-    int fe = runFrontend(sourcePath, irFile);
+    int fe = runFrontend(sourcePath, irFile, exeDir);
     if (fe != 0) return fe;
     std::string compileCmd = buildCompileCmd(tc, irFile, objFile);
     if (system(compileCmd.c_str()) != 0) {

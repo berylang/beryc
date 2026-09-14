@@ -12,6 +12,7 @@ set(BRE_SOURCES
     src/bre/src/bery_string.cpp
     src/bre/src/bery_array.cpp
     src/bre/src/bery_native.cpp
+    src/bre/src/bery_stdlib_core.cpp
 )
 
 set(PARSER_SOURCES
@@ -47,7 +48,6 @@ set(CODEGEN_SOURCES
     src/codegen/irgen/expressions.cpp
     src/codegen/irgen/controlflow.cpp
     src/codegen/irgen/helpers.cpp
-    src/codegen/irgen/bre.cpp
     src/codegen/irgen/gc.cpp
 )
 

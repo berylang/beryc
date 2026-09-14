@@ -11,36 +11,6 @@
 std::string TypeChecker::checkCallExpr(ASTNode* node) {
     auto* call = static_cast<CallExprNode*>(node);
 
-    static const std::unordered_set<std::string> builtinIO = {"print", "println","inputInt", "inputBigInt", "inputFloat","inputDouble", "inputBool", "inputChar", "inputString"  };
-
-    static const std::unordered_map<std::string, std::string> inputTypes = {
-        {"inputInt", "int"}, 
-        {"inputBigInt", "bigint"}, {"inputFloat", "float"},
-        {"inputDouble", "double"}, {"inputBool", "bool"},   
-        {"inputChar", "char"}, {"inputString", "string"}
-    };
-
-    if (builtinIO.count(call->callee)) {
-        if (call->callee == "print" && call->arguments.size() != 1) {
-            diag.report("ERROR366", call->line, 1, "", "");
-            
-        }
-        if (call->callee == "println" && call->arguments.size() > 1) {
-            diag.report("ERROR367", call->line, 1, "", "");
-            
-        }
-        if (call->callee != "print" && call->callee != "println" && call->arguments.size() != 1) {
-            diag.report("ERROR368", call->line, 1, "", call->callee);
-            
-        }
-        for (auto& arg : call->arguments) {
-            analyzeExpression(arg.get());
-        }
-
-        auto it = inputTypes.find(call->callee);
-        call->resolvedType = (it != inputTypes.end()) ? it->second : "void";
-        return call->resolvedType;
-    }
     if (call->callee == "super" || call->callee.rfind("super.", 0) == 0) {
         return checkSuperCall(node);
     }
