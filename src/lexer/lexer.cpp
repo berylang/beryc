@@ -375,140 +375,82 @@ scanNumber() scans both integers and floating point numbers.
 
 */
 void Lexer::scanNumber() {
-
-    /*
-    
-    Needed support for -
-
-    1. Binary numbers 0b0100101 dont go to parser change it here only
-    2. Hexadecimals   0x40FAA
-    3. Octet numbers  0o242
-    4. exponents      1e10, 3.5e-4
-
-    */
-
     int start = current - 1;
 
-    if (start >= 0 && source[start] == '0' && !isAtEnd() && (peek() == 'b' || peek() == 'B')) {
-        advance(); 
+    if (source[start] == '0' && !isAtEnd() && (peek() == 'x' || peek() == 'X' || peek() == 'b' || peek() == 'B' || peek() == 'o' || peek() == 'O')) {
+        char prefix = peek();
+        advance();
+        int base = 10;
+        std::string noDigitsCode, badDigitCode;
+        int digitsStart = current;
 
-        if (isAtEnd() || (peek() != '0' && peek() != '1')) {
-            diag.report("ERROR_BIN", startLine, startColumn, source.substr(start, current - start));
-            return;
+        if (prefix == 'x' || prefix == 'X') {
+            base = 16; 
+            noDigitsCode = "ERROR110"; 
+            badDigitCode = "ERROR113";
+            while (!isAtEnd() && isHexDigit(peek())) advance();
+        } else if (prefix == 'b' || prefix == 'B') {
+            base = 2;  
+            noDigitsCode = "ERROR111"; 
+            badDigitCode = "ERROR114";
+            while (!isAtEnd() && isBinaryDigit(peek())) advance();
+        } else {
+            base = 8;  
+            noDigitsCode = "ERROR112"; 
+            badDigitCode = "ERROR115";
+            while (!isAtEnd() && isOctetDigit(peek())) advance();
         }
 
-        while (!isAtEnd() && (peek() == '0' || peek() == '1')) {
+        if (current == digitsStart) {
+            std::string full = source.substr(start, current - start);
+            diag.report(noDigitsCode, startLine, startColumn, full, full);
+            emit(TokenType::TOKEN_INT_LIT, "0");
+            return;
+        }
+        if (!isAtEnd() && isAlphaNumeric(peek())) {
+            std::string bad(1, peek());
+            diag.report(badDigitCode, line, col, bad, bad);
             advance();
         }
-
-        std::string binary = source.substr(start, current - start);
-        long long value = 0;
-        for (char ch : binary) {
-            if (ch == 'b' || ch == 'B') continue;
-            value = (value << 1) + (ch - '0');
+        std::string digits = source.substr(digitsStart, current - digitsStart);
+        try {
+            unsigned long long value = std::stoull(digits, nullptr, base);
+            emit(TokenType::TOKEN_INT_LIT, std::to_string(value));
+        } catch (const std::out_of_range&) {
+            std::string full = source.substr(start, current - start);
+            diag.report("ERROR117", startLine, startColumn, full, full);
+            emit(TokenType::TOKEN_INT_LIT, "0");
         }
-
-        emit(TokenType::TOKEN_INT_LIT, std::to_string(value));
         return;
     }
-    
-        if (start >= 0 && source[start] == '0' && !isAtEnd() && (peek() == 'x' || peek() == 'X')) {
-        advance(); // consume x/X
+    while (!isAtEnd() && isDigit(peek())) advance();
 
-        if (isAtEnd()) {
-            diag.report("ERROR_HEX", startLine, startColumn, source.substr(start, current - start));
-            return;
-        }
-
-        bool hasDigit = false;
-        while (!isAtEnd()) {
-            char ch = peek();
-            if ((ch >= '0' && ch <= '9') ||
-                (ch >= 'a' && ch <= 'f') ||
-                (ch >= 'A' && ch <= 'F')) {
-                advance();
-                hasDigit = true;
-            } else {
-                break;
-            }
-        }
-
-        if (!hasDigit) {
-            diag.report("ERROR_HEX", startLine, startColumn, source.substr(start, current - start));
-            return;
-        }
-
-        std::string hex = source.substr(start, current - start);
-        long long value = 0;
-
-        for (char ch : hex) {
-            if (ch == '0' || ch == '1' || ch == '2' || ch == '3' || ch == '4' ||
-                ch == '5' || ch == '6' || ch == '7' || ch == '8' || ch == '9') {
-                value = value * 16 + (ch - '0');
-            } else if (ch >= 'a' && ch <= 'f') {
-                value = value * 16 + (ch - 'a' + 10);
-            } else if (ch >= 'A' && ch <= 'F') {
-                value = value * 16 + (ch - 'A' + 10);
-            } else if (ch == 'x' || ch == 'X') {
-                continue;
-            }
-        }
-
-        emit(TokenType::TOKEN_INT_LIT, std::to_string(value));
-        return;
-    }
-
-        if (start >= 0 && source[start] == '0' && !isAtEnd() && (peek() == 'o' || peek() == 'O')) {
-        advance(); // consume o/O
-
-        if (isAtEnd()) {
-            diag.report("ERROR_OCT", startLine, startColumn, source.substr(start, current - start));
-            return;
-        }
-
-        bool hasDigit = false;
-        while (!isAtEnd()) {
-            char ch = peek();
-            if (ch >= '0' && ch <= '7') {
-                advance();
-                hasDigit = true;
-            } else {
-                break;
-            }
-        }
-
-        if (!hasDigit) {
-            diag.report("ERROR_OCT", startLine, startColumn, source.substr(start, current - start));
-            return;
-        }
-
-        std::string oct = source.substr(start, current - start);
-        long long value = 0;
-
-        for (char ch : oct) {
-            if (ch >= '0' && ch <= '7') {
-                value = value * 8 + (ch - '0');
-            } else if (ch == 'o' || ch == 'O') {
-                continue;
-            }
-        }
-
-        emit(TokenType::TOKEN_INT_LIT, std::to_string(value));
-        return;
-    }
-    
-    while (!isAtEnd() && isDigit(peek())) advance(); 
-
-    if (!isAtEnd() && peek() == '.' && isDigit(peekNext())){ 
+    bool isDecimal = false;
+    if (!isAtEnd() && peek() == '.' && isDigit(peekNext())) {
+        isDecimal = true;
         advance();
         while (!isAtEnd() && isDigit(peek())) advance();
+    }
 
-        emit(TokenType::TOKEN_DECIMAL_LIT, source.substr(start, current - start));
-        
+    if (!isAtEnd() && (peek() == 'e' || peek() == 'E')) {
+        int off = 1;
+        if (current + off < (int)source.size() && (source[current + off] == '+' || source[current + off] == '-')) off++;
+        bool hasExpDigit = (current + off < (int)source.size()) && isDigit(source[current + off]);
+
+        if (hasExpDigit) {
+            isDecimal = true;
+            advance();
+            if (!isAtEnd() && (peek() == '+' ||peek() =='-')) advance();
+            while (!isAtEnd() && isDigit(peek())) advance();
+        } else {
+            std::string bad = source.substr(start, current - start + 1);
+            diag.report("ERROR116", startLine, startColumn, bad, bad);
+            advance();
+            if (!isAtEnd() && (peek() == '+' || peek() == '-')) advance();
+        }
     }
-    else {
-        emit(TokenType::TOKEN_INT_LIT, source.substr(start, current - start));
-    }
+    std::string text = source.substr(start, current - start);
+    emit(isDecimal ? TokenType::TOKEN_DECIMAL_LIT : TokenType::TOKEN_INT_LIT, text);
 }
 
 // @todo : Enhance it later for Errors
@@ -677,6 +619,12 @@ bool Lexer::isAlpha(char c) {
 
 }
 bool Lexer::isDigit(char c) {return c >= '0' && c <= '9';}
+
+bool Lexer::isBinaryDigit(char c) { return c == '0' || c == '1'; }
+
+bool Lexer::isOctetDigit(char c) { return c >= '0' && c <= '7'; }
+
+bool Lexer::isHexDigit(char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');}
 char Lexer::advance() {
     char c = source[current++];
     if (c == '\n') bumpLine();
@@ -696,7 +644,7 @@ char Lexer::peekNext() {
 // bool Lexer::hasErrors() {return errors;}
 
 void Lexer::emit(TokenType type, const std::string& lexeme) {
-    emit(type, lexeme);
+    tokens.push_back({type, lexeme, line, startColumn});
 }
 
 void Lexer::bumpLine() {

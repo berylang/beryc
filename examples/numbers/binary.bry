@@ -1,1 +1,11 @@
-run {int a=0b1000;}
+run {
+    int a= 0b1000;
+    float b = 3.4e-2;
+
+    double c = 0x10Fae;
+
+    int d = 0b10101010100001110101;
+
+    int e = 0o0;
+    println(d);
+}

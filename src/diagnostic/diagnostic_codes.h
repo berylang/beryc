@@ -32,6 +32,14 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR106", { Severity::ERROR, "Invalid escape sequence '\\{}' in string", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\'" } },
     { "ERROR107", { Severity::ERROR, "Unclosed string literal", "add a closing \"" } },
     { "ERROR108", { Severity::ERROR, "Unclosed comment", "add '!--' to close the comment block" } },
+    { "ERROR110", { Severity::ERROR, "Hex literal '{}' has no digits after '0x'", "add at least one hex digit (0-9, a-f)" } },
+    { "ERROR111", { Severity::ERROR, "Binary literal '{}' has no digits after '0b'", "add at least one binary digit (0 or 1)" } },
+    { "ERROR112", { Severity::ERROR, "Octal literal '{}' has no digits after '0o'", "add at least one octal digit (0-7)" } },
+    { "ERROR113", { Severity::ERROR, "Invalid digit '{}' in hex literal", "hex digits must be 0-9, a-f, or A-F" } },
+    { "ERROR114", { Severity::ERROR, "Invalid digit '{}' in binary literal", "binary literals only allow 0 and 1" } },
+    { "ERROR115", { Severity::ERROR, "Invalid digit '{}' in octal literal", "octal digits must be 0-7" } },
+    { "ERROR116", { Severity::ERROR, "Malformed exponent '{}' in numeric literal", "add digits after 'e', e.g. '1e10' or '1e-3'" } },
+    { "ERROR117", { Severity::ERROR, "Integer literal '{}' is out of range", "use a smaller value or a wider type" } },
 
 
     // @PARSER ERRORS and WARNINGS
