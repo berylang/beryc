@@ -14,13 +14,7 @@ set(BRE_SOURCES
     src/bre/src/bery_native.cpp
 )
 
-add_library(bre STATIC ${BRE_SOURCES})
-target_include_directories(bre PRIVATE src)
-
-add_executable(bery
-    src/main.cpp
-    src/diagnostic/diagnostic_engine.cpp
-    src/lexer/lexer.cpp
+set(PARSER_SOURCES
     src/parser/parser.cpp
     src/parser/parser_conditional.cpp
     src/parser/parser_controlflow.cpp
@@ -30,11 +24,24 @@ add_executable(bery
     src/parser/parser_loops.cpp
     src/parser/parser_oop.cpp
     src/parser/parser_statements.cpp
+)
+
+set(SEMA_SOURCES
     src/sema/sema.cpp
     src/sema/sema_declarations.cpp
     src/sema/sema_controlflow.cpp
     src/sema/symboltable.cpp
     src/sema/typechecker.cpp
+    src/sema/typechecker_binary.cpp
+    src/sema/typechecker_unary.cpp
+    src/sema/typechecker_ternary.cpp
+    src/sema/check_calls.cpp
+    src/sema/check_access.cpp
+
+    src/sema/typechecker_oop.cpp
+)
+
+set(CODEGEN_SOURCES
     src/codegen/codegen.cpp
     src/codegen/irgen/declarations.cpp
     src/codegen/irgen/expressions.cpp
@@ -42,12 +49,9 @@ add_executable(bery
     src/codegen/irgen/helpers.cpp
     src/codegen/irgen/bre.cpp
     src/codegen/irgen/gc.cpp
-    src/importer/mangler.cpp
-    src/importer/importer.cpp
-    cli/bery_cli.cpp
-    cli/commands/cmd_compile.cpp
-    cli/commands/cmd_run.cpp
-    cli/commands/cmd_version.cpp
+)
+
+set(LLVM_EMIT_SOURCES
     src/llvm/emit/core.cpp
     src/llvm/emit/constants.cpp
     src/llvm/emit/controlflow.cpp
@@ -60,6 +64,33 @@ add_executable(bery
     src/llvm/emit/externs.cpp
     src/llvm/emit/gc.cpp
     src/llvm/emit/calls.cpp
+)
+
+set(CLI_SOURCES
+    cli/bery_cli.cpp
+    cli/commands/cmd_compile.cpp
+    cli/commands/cmd_run.cpp
+    cli/commands/cmd_version.cpp
+)
+
+set(IMPORTER_SOURCES
+    src/importer/mangler.cpp
+    src/importer/importer.cpp
+)
+
+add_library(bre STATIC ${BRE_SOURCES})
+target_include_directories(bre PRIVATE src)
+
+add_executable(bery
+    src/main.cpp
+    src/diagnostic/diagnostic_engine.cpp
+    src/lexer/lexer.cpp
+    ${PARSER_SOURCES}
+    ${SEMA_SOURCES}
+    ${CODEGEN_SOURCES}
+    ${LLVM_EMIT_SOURCES}
+    ${IMPORTER_SOURCES}
+    ${CLI_SOURCES}
 )
 
 target_include_directories(bery PRIVATE src cli)

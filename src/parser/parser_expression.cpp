@@ -42,7 +42,7 @@ std::unique_ptr<ASTNode> Parser::parseExpression(){
         if(expr->type == NodeType::IDENT || expr->type == NodeType::INDEX_EXPR) {
             return std::make_unique<AssignmentExprNode>(std::move(expr), std::move(value), optoken.lexeme, optoken.line);
         }
-        std::cerr<<"Bery:Error [Line "<< optoken.line<<"]: Invalid Assignment Target \n";
+        diag.report("ERROR211", optoken.line, 1, optoken.lexeme);
         errors= true;
         throw ParseError();
     }
@@ -56,7 +56,7 @@ std::unique_ptr<ASTNode> Parser::parseTernary() {
         int opLine = previous().line;
 
         auto trueExpr = parseExpression();
-        consume(TokenType::TOKEN_COLON, "Expected ':' in ternary operator");
+        consume(TokenType::TOKEN_COLON, "ERROR212");
         auto falseExpr = parseTernary();
 
         return std::make_unique<TernaryExprNode>(std::move(expr), std::move(trueExpr), std::move(falseExpr), opLine);
@@ -116,7 +116,7 @@ std::unique_ptr<ASTNode> Parser::parseBetween(){
        advance();
        int opLine = previous().line;
         auto lower = parseBitwise();
-        consume(TokenType::TOKEN_COMMA, "Expected ',' after lower bound");
+        consume(TokenType::TOKEN_COMMA, "ERROR213");
         auto upper = parseBitwise();
         return std::make_unique<BetweenExprNode>(
             std::move(value),
@@ -220,15 +220,15 @@ std::unique_ptr<ASTNode> Parser::parsePrimary(){
     }
     if (t.type == TokenType::TOKEN_NEW) {
         advance();
-        Token className = consume(TokenType::TOKEN_IDENT, "Expected class name after 'new'");
-        consume(TokenType::TOKEN_LPARAN, "Expected '(' after class name");
+        Token className = consume(TokenType::TOKEN_IDENT, "ERROR214");
+        consume(TokenType::TOKEN_LPARAN, "ERROR215");
         std::vector<std::unique_ptr<ASTNode>> arguments;
         if (!check(TokenType::TOKEN_RPARAN)) {
             do {
                 arguments.push_back(parseExpression());
             } while (check(TokenType::TOKEN_COMMA) && (advance(), true));
         }
-        consume(TokenType::TOKEN_RPARAN, "Expected ')' after constructor arguments");
+        consume(TokenType::TOKEN_RPARAN, "ERROR216");
         return std::make_unique<NewExprNode>(className.lexeme, std::move(arguments), t.line);
     }
     if (t.type == TokenType::TOKEN_IDENT || t.type == TokenType::TOKEN_SUPER) {
@@ -236,7 +236,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary(){
         std::string fullName = t.lexeme;
         while (check(TokenType::TOKEN_DOT)) {
             advance();
-            Token nextIdent = consume(TokenType::TOKEN_IDENT, "Expected identifier after '.'");
+            Token nextIdent = consume(TokenType::TOKEN_IDENT, "ERROR217");
             fullName += "." + nextIdent.lexeme;
         }
         if (check(TokenType::TOKEN_LPARAN)) {
@@ -249,12 +249,12 @@ std::unique_ptr<ASTNode> Parser::parsePrimary(){
             while (check(TokenType::TOKEN_LBRACKET)) {
                 advance();
                 indices.push_back(parseExpression());
-                consume(TokenType::TOKEN_RBRACKET, "Expected ']' after array index");
+                consume(TokenType::TOKEN_RBRACKET, "ERROR218");
             }
             auto idxExpr = std::make_unique<IndexExprNode>(fullName, std::move(indices), t.line);
             while (check(TokenType::TOKEN_DOT)) {
                 advance();
-                Token member = consume(TokenType::TOKEN_IDENT, "Expected identifier after '.'");
+                Token member = consume(TokenType::TOKEN_IDENT, "ERROR217");
                 idxExpr->memberChain.push_back(member.lexeme);
             }
             return idxExpr;
@@ -264,7 +264,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary(){
     if (t.type == TokenType::TOKEN_LPARAN) {
         advance();
         auto expression = parseExpression();
-        consume(TokenType::TOKEN_RPARAN, "Expected ')'");
+        consume(TokenType::TOKEN_RPARAN, "ERROR204");
         return std::make_unique<GroupedExprNode>(std::move(expression), t.line);
     }
     return parseLiteral();

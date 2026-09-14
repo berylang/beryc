@@ -26,20 +26,21 @@
 #include "../parser/ast/classes.h"
 #include "symboltable.h"
 #include "typechecker.h"
+#include "../diagnostic/diagnostic_engine.h"
 #include <unordered_map>
 
 class SemanticAnalyzer {
 public:
-   SemanticAnalyzer(ASTNode* root);
+   SemanticAnalyzer(ASTNode* root, DiagnosticEngine& diag);
    void analyze();
-   bool hasErrors();
    SymbolTable symbolTable;
 
 
 private:
    ASTNode* root;
    TypeChecker typeChecker; 
-   bool errors;
+   DiagnosticEngine& diag;
+   // bool errors;
 
    // @blocks
    void analyzeBlock(ASTNode* node);

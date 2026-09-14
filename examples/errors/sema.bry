@@ -1,0 +1,17 @@
+
+func add(int a, float b) -> float {
+    return (float)a + b;
+}
+
+func add(int a, float b) -> float {
+    return (float)a + b;
+}
+--!
+func add(int a, float b) -> float {
+    return a + b;
+}
+!--
+run {
+    float a = add(10,20.1);
+    println(a);
+}
