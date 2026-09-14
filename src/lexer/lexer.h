@@ -76,6 +76,9 @@ private:
 
     // @identification of alpha-numeric data
     bool isDigit(char c);
+    bool isBinaryDigit(char c);
+    bool isOctetDigit(char c);
+    bool isHexDigit(char c);
     bool isAlpha(char c);
     bool isAlphaNumeric(char c);
 
