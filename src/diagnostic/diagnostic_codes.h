@@ -234,6 +234,7 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR398", { Severity::ERROR, "Cannot access {} {} '{}' of class '{}' from outside the class", "access this member only from within the class" } },
     { "ERROR399", { Severity::ERROR, "Undefined variable '{}'", "declare '{}' before using it" } },
     { "ERROR400", { Severity::ERROR, "'{}' is not an object, cannot access '.{}'", "only object instances support member access" } },
+    { "ERROR401", { Severity::ERROR, "class '{}' is already defined.", "use a different class name, or remove the duplicate definition" } },
 
 
     // Importer errors 

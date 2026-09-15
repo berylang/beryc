@@ -1,0 +1,12 @@
+
+class A {
+    attributes[this]::
+        int a = 10;
+}
+
+class A {
+    attributes[mine]::
+        int a = 20;
+}
+
+run {}
