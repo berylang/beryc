@@ -1,0 +1,12 @@
+run {
+
+    while (true) {
+        print(10);
+
+        break;
+
+        println(20);
+        int a = 20;
+    
+    }
+}

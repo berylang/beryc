@@ -236,6 +236,9 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR400", { Severity::ERROR, "'{}' is not an object, cannot access '.{}'", "only object instances support member access" } },
     { "ERROR401", { Severity::ERROR, "class '{}' is already defined.", "use a different class name, or remove the duplicate definition" } },
 
+    // WARNINGS of Semantic Analyzer
+    { "WARNING301", { Severity::WARNING, "Unreachable code: this statement never executes after '{}'.", "remove the dead code, or move it before the loop/function exits" } },
+
 
     // Importer errors 
     { "ERROR501", { Severity::ERROR, "Cannot find imported module named '{}'", "write {}.bry module before importing it" } },

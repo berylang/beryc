@@ -21,11 +21,47 @@
 
 
 void SemanticAnalyzer::analyzeBlock(ASTNode* node) { 
+    /*
+        it analyzes every statement inside the block {...} using a symbol table scope mechanism.
+    
+        The scope ensures that variables declared inside the blocks are not visible outside of it. while 
+        processing the statements, it also detects return, break and continue statements so that unreachable statements
+        after them can be reported as warnings. (they are dead code instructions).
+    
+    */
     auto* block = static_cast<BlockNode*>(node);
     symbolTable.pushScope();
-    
-    for(auto& statement:block->statements){
-        analyzeNode(statement.get());
+
+    bool unreachableReported = false;
+    for (size_t i = 0; i < block->statements.size(); ++i) {
+        auto* statement = block->statements[i].get();
+        analyzeNode(statement);
+
+        /*
+        
+        For dead code elmination (although limited to the return, break and continue) keep track of the 
+        statements that immediatly stop or skip the remaining execution of the current block. If the current statement 
+        is a return, break or continue then next statements in the block will not be executed.
+        */
+        std::string terminator;
+        if (statement->type == NodeType::RETURN_STMT)
+            terminator = "return";
+        else if (statement->type == NodeType::BREAK_STMT)    
+            terminator = "break";
+        else if (statement->type == NodeType::CONTINUE_STMT) 
+            terminator = "continue";
+
+        /*
+        Rerport the ifrst statement after a terminator as "unreachable". 
+
+        There is no need to continue checking the rest of the block since execution has already been terminated or skipped
+        at this point of flow.
+
+        */
+        if (!terminator.empty() && !unreachableReported && i + 1 < block->statements.size()) {
+            diag.report("WARNING301", block->statements[i + 1]->line, 1, "", terminator);
+            unreachableReported = true; // warning once per block
+        }
     }
 
     symbolTable.popScope();
