@@ -18,6 +18,7 @@
 #include <iostream>
 #include "../parser/ast/blocknode.h"
 #include "../parser/ast/controlflow.h"
+#include "../parser/ast/literals.h"
 
 
 void SemanticAnalyzer::analyzeBlock(ASTNode* node) { 
@@ -68,16 +69,39 @@ void SemanticAnalyzer::analyzeBlock(ASTNode* node) {
 }
 
 void SemanticAnalyzer::analyzeIfStmt(ASTNode* node) { 
+
+    /*
+    
+    Analyzes an 'if' statemetn by checking that it's condtion evaluates to a 'bool' value - warn the developer
+    about condition being always true or false, and then analyzing both the if-else blocks in their own spaces.
+
+    The condtion must be a boolean expression, 
+    "unknown" is allowed here because type may not be resolvable yet and should not produce a dummy/false 
+    semantic errors/wornings.
+
+    A literal 'boolean' condition will always produce the same result, hench making one branch of it 
+    unreachable, 
+    Reporting it as warning instead of error because program is still syntantically correct.
+    
+    */
     auto* ifStmt = static_cast<IfStmtNode*>(node);
     std::string conditionType = typeChecker.analyzeExpression(ifStmt->conditions.get());
 
     if(conditionType != "bool" && conditionType != "unknown"){
-        diag.report("ERROR306", ifStmt->line, 1, "", "");
-        
+        diag.report("ERROR306", ifStmt->line, 1, "", conditionType);
     }
 
+    if (ifStmt->conditions->type == NodeType::BOOL_LIT) {
+        auto* boolLit = static_cast<BoolLitNode*>(ifStmt->conditions.get());
+        diag.report("WARNING302", ifStmt->line, 1, "", boolLit->value ? "true" : "false");
+    }
+
+    // After edge cases analyze the if branch's main scope (using SemanticAnalyzer::analyzeBlcok() function)
     analyzeBlock(ifStmt->ifBranch.get());
 
+    // an else-if is represented as another IfStmtNode, 
+    // so following shortcuirciting is used to detect the wether to evalute scope (else block)
+    //or another if branch
     if(ifStmt->elseBranch){
         if(ifStmt->elseBranch->type == NodeType::IF_STMT){
             analyzeIfStmt(ifStmt->elseBranch.get());
