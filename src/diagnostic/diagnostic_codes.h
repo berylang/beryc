@@ -147,7 +147,7 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR308", { Severity::ERROR, "Case type mismatch: {}", "match the case value's type to the switch condition's type" } },
     { "ERROR309", { Severity::ERROR, "'break' used outside of a loop or switch.", "only use 'break' inside a loop or switch body" } },
     { "ERROR310", { Severity::ERROR, "'continue' used outside of a loop.", "only use 'continue' inside a loop body" } },
-    { "ERROR311", { Severity::ERROR, "'while' condition must evaluate to 'bool'", "make sure the condition expression returns bool" } },
+    { "ERROR311", { Severity::ERROR, "'while' condition must evaluate to 'bool' (found '{}')", "make sure the condition expression returns bool" } },
     { "ERROR312", { Severity::ERROR, "Loop condition must evaluate to 'bool'", "make sure the loop condition returns bool" } },
     { "ERROR313", { Severity::ERROR, "Type '{}' is not iterable", "use an array or other iterable type in the for-in loop" } },
     { "ERROR314", { Severity::ERROR, "Type mismatched in for-in loop. Variable '{}' declared as '{}' but iterable has element type '{}'", "declare the loop variable with the iterable's element type" } },
@@ -240,6 +240,7 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "WARNING301", { Severity::WARNING, "Unreachable code: this statement never executes after '{}'.", "remove the dead code, or move it before the loop/function exits" } },
     { "WARNING302", { Severity::WARNING, "condition is always '{}', therefore the other branch is unreachable.", "remove the constant condition, or delete the dead branch" } },
     { "WARNING303", { Severity::WARNING, "Duplicate case value so this case is unreachable, earlier case already matches it.", "remove the duplicate case, or change its value" } },
+    { "WARNING304", { Severity::WARNING, "while(false) loop body is unreachable and will never execute.", "remove the dead loop, or fix the condition" } },
 
     // Importer errors 
     { "ERROR501", { Severity::ERROR, "Cannot find imported module named '{}'", "write {}.bry module before importing it" } },

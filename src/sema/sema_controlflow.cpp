@@ -115,6 +115,18 @@ void SemanticAnalyzer::analyzeIfStmt(ASTNode* node) {
 
 void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
     auto* sw = static_cast<SwitchStmtNode*>(node);
+
+    /*
+    
+    Now for analyzing the switch-case statement, validate the type of it's condition, 
+    check that each case value matches that type, detect duplicate literals case values, 
+    and finally analyzing each case and the default block in their own scope of block.
+
+    switch case are restricted to - int, bigint and char datatype.
+    an "unknown" type is allowed so that unresolved type information doesn't produce incorrect semantic errors.
+
+    
+    */
     std::string condType = typeChecker.analyzeExpression(sw->condition.get());
 
     if (condType != "unknown" && condType != "int" && condType != "bigint" && condType != "char") {
@@ -127,11 +139,20 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
 
     for (auto& c : sw->cases) {
         if (c.value) {
+
+            /*
+            
+            each case expression must have the same type as the switch condtion. This prevents cases such as a char value
+            from being used with an integer switch condition.
+
+            */
             std::string caseType = typeChecker.analyzeExpression(c.value.get());
             if (caseType != "unknown" && condType != "unknown" && caseType != condType) {
                 diag.report("ERROR308", sw->line, 1, "", "'" + caseType + "' does not match switch condition type '" + condType + "'");
             }
 
+            // convert literal case values into comparable keys so  duplicate integers and character cases can be detected regardless
+            // of where they appear in the switch case statement.
             std::string literalKey;
             if (c.value->type == NodeType::INT_LIT) {
                 literalKey = "i:" + std::to_string(static_cast<IntLitNode*>(c.value.get())->value);
@@ -139,6 +160,8 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
                 literalKey = "c:" + std::string(1, static_cast<CharLitNode*>(c.value.get())->value);
             }
 
+            // One warning regrading this - if the same literal case value has already declared, report 
+            // it as warning "duplicate case".
             if (!literalKey.empty() && !seenCaseValues.insert(literalKey).second) {
                 diag.report("WARNING303", c.value->line, 1, "", "");
             }
@@ -177,8 +200,12 @@ void SemanticAnalyzer::analyzeWhileStmt(ASTNode* node){
     std::string conditionType = typeChecker.analyzeExpression(whileStmt->condition.get());
 
     if(conditionType != "bool" && conditionType != "unknown"){
-        diag.report("ERROR311", whileStmt->line, 1, "", "");
-        
+        diag.report("ERROR311", whileStmt->line, 1, "", conditionType);
+    }
+
+    if (whileStmt->condition->type == NodeType::BOOL_LIT &&
+        !static_cast<BoolLitNode*>(whileStmt->condition.get())->value) {
+        diag.report("WARNING304", whileStmt->line, 1, "", "");
     }
 
     loopOrSwitchDepth++;
@@ -193,7 +220,7 @@ void SemanticAnalyzer::analyzeDoWhileStmt(ASTNode* node){
     std::string conditionType = typeChecker.analyzeExpression(dowhilestmt->condition.get());
 
     if(conditionType != "bool" && conditionType != "unknown"){
-        diag.report("ERROR311", dowhilestmt->line, 1, "", "");
+        diag.report("ERROR311", dowhilestmt->line, 1, "", conditionType);
         
     }
 
