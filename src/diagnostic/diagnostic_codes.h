@@ -144,7 +144,7 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR305", { Severity::ERROR, "function '{}' is already defined with same parameters.", "try using different parameters, or use different function name"}},
     { "ERROR306", { Severity::ERROR, "if condition must evaluate to 'bool' (found '{}')", "make sure the condition expression returns bool" } },
     { "ERROR307", { Severity::ERROR, "Invalid switch condition type '{}'. Expected int, bigint, or char.", "use an int, bigint, or char as the switch condition" } },
-    { "ERROR308", { Severity::ERROR, "Case type '{}' does not match switch condition type '{}'", "match the case value's type to the switch condition's type" } },
+    { "ERROR308", { Severity::ERROR, "Case type mismatch: {}", "match the case value's type to the switch condition's type" } },
     { "ERROR309", { Severity::ERROR, "'break' used outside of a loop or switch.", "only use 'break' inside a loop or switch body" } },
     { "ERROR310", { Severity::ERROR, "'continue' used outside of a loop.", "only use 'continue' inside a loop body" } },
     { "ERROR311", { Severity::ERROR, "'while' condition must evaluate to 'bool'", "make sure the condition expression returns bool" } },
@@ -239,6 +239,7 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     // WARNINGS of Semantic Analyzer
     { "WARNING301", { Severity::WARNING, "Unreachable code: this statement never executes after '{}'.", "remove the dead code, or move it before the loop/function exits" } },
     { "WARNING302", { Severity::WARNING, "condition is always '{}', therefore the other branch is unreachable.", "remove the constant condition, or delete the dead branch" } },
+    { "WARNING303", { Severity::WARNING, "Duplicate case value so this case is unreachable, earlier case already matches it.", "remove the duplicate case, or change its value" } },
 
     // Importer errors 
     { "ERROR501", { Severity::ERROR, "Cannot find imported module named '{}'", "write {}.bry module before importing it" } },

@@ -19,6 +19,7 @@
 #include "../parser/ast/blocknode.h"
 #include "../parser/ast/controlflow.h"
 #include "../parser/ast/literals.h"
+#include <unordered_set>
 
 
 void SemanticAnalyzer::analyzeBlock(ASTNode* node) { 
@@ -118,17 +119,28 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
 
     if (condType != "unknown" && condType != "int" && condType != "bigint" && condType != "char") {
         diag.report("ERROR307", sw->line, 1, "", condType);
-        
+
     }
 
     loopOrSwitchDepth++;
+    std::unordered_set<std::string> seenCaseValues;
 
     for (auto& c : sw->cases) {
         if (c.value) {
             std::string caseType = typeChecker.analyzeExpression(c.value.get());
             if (caseType != "unknown" && condType != "unknown" && caseType != condType) {
-                diag.report("ERROR308", sw->line, 1, "", caseType + "' does not match switch condition type '" + condType);
-                
+                diag.report("ERROR308", sw->line, 1, "", "'" + caseType + "' does not match switch condition type '" + condType + "'");
+            }
+
+            std::string literalKey;
+            if (c.value->type == NodeType::INT_LIT) {
+                literalKey = "i:" + std::to_string(static_cast<IntLitNode*>(c.value.get())->value);
+            } else if (c.value->type == NodeType::CHAR_LIT) {
+                literalKey = "c:" + std::string(1, static_cast<CharLitNode*>(c.value.get())->value);
+            }
+
+            if (!literalKey.empty() && !seenCaseValues.insert(literalKey).second) {
+                diag.report("WARNING303", c.value->line, 1, "", "");
             }
         }
         
