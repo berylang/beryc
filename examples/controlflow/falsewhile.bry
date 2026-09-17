@@ -1,0 +1,5 @@
+run {
+    while(false) {
+        println(10);
+    }
+}

@@ -1,0 +1,7 @@
+
+run {
+    if (false) {
+        print(10);
+    } 
+
+}

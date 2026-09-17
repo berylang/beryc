@@ -1,0 +1,13 @@
+run {
+
+    int ch = 1;
+
+    switch (ch) {
+        case 1: print(10); break;
+        case 1: print(20); break;
+
+        case 3: print(30); break;
+
+        default: print(-1);
+    }
+}
