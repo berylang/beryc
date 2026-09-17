@@ -148,9 +148,9 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR309", { Severity::ERROR, "'break' used outside of a loop or switch.", "only use 'break' inside a loop or switch body" } },
     { "ERROR310", { Severity::ERROR, "'continue' used outside of a loop.", "only use 'continue' inside a loop body" } },
     { "ERROR311", { Severity::ERROR, "'while' condition must evaluate to 'bool' (found '{}')", "make sure the condition expression returns bool" } },
-    { "ERROR312", { Severity::ERROR, "Loop condition must evaluate to 'bool'", "make sure the loop condition returns bool" } },
+    { "ERROR312", { Severity::ERROR, "Loop condition must evaluate to 'bool' (found '{}')", "make sure the loop condition returns bool" } },
     { "ERROR313", { Severity::ERROR, "Type '{}' is not iterable", "use an array or other iterable type in the for-in loop" } },
-    { "ERROR314", { Severity::ERROR, "Type mismatched in for-in loop. Variable '{}' declared as '{}' but iterable has element type '{}'", "declare the loop variable with the iterable's element type" } },
+    { "ERROR314", { Severity::ERROR, "Type mismatch in for-in loop: {}", "declare the loop variable with the iterable's element type" } },
     { "ERROR315", { Severity::ERROR, "Unknown type '{}'", "check the type name for typos or missing declarations" } },
     { "ERROR316", { Severity::ERROR, "'{}' already declared in this scope.", "rename this or remove the earlier declaration" } },
     { "ERROR317", { Severity::ERROR, "constant '{}' must be initialized.", "give the constant an initial value at declaration" } },
@@ -235,13 +235,15 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR399", { Severity::ERROR, "Undefined variable '{}'", "declare '{}' before using it" } },
     { "ERROR400", { Severity::ERROR, "'{}' is not an object, cannot access '.{}'", "only object instances support member access" } },
     { "ERROR401", { Severity::ERROR, "class '{}' is already defined.", "use a different class name, or remove the duplicate definition" } },
+    { "ERROR402", { Severity::ERROR, "Range bound type '{}' is not valid in a for-in range (expected int, bigint, float, double, or char).", "use a numeric or char expression as the range bound" } },
 
     // WARNINGS of Semantic Analyzer
     { "WARNING301", { Severity::WARNING, "Unreachable code: this statement never executes after '{}'.", "remove the dead code, or move it before the loop/function exits" } },
     { "WARNING302", { Severity::WARNING, "condition is always '{}', therefore the other branch is unreachable.", "remove the constant condition, or delete the dead branch" } },
     { "WARNING303", { Severity::WARNING, "Duplicate case value so this case is unreachable, earlier case already matches it.", "remove the duplicate case, or change its value" } },
     { "WARNING304", { Severity::WARNING, "while(false) loop body is unreachable and will never execute.", "remove the dead loop, or fix the condition" } },
-
+    { "WARNING305", { Severity::WARNING, "for-loop condition is always false so the loop body never executes", "remove the dead loop, or fix the condition" } },
+    
     // Importer errors 
     { "ERROR501", { Severity::ERROR, "Cannot find imported module named '{}'", "write {}.bry module before importing it" } },
     { "ERROR502", { Severity::ERROR, "Compilation halted due to syntax errors in imported module '{}'", "check for syntax errors in {} module" } },

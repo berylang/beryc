@@ -2,7 +2,7 @@
 
 /*
 
-    Semantic Analyzer, Declarations,
+    Semantic Analyzer, Control flows,
 
     this file analyze - 
         if statements,
@@ -182,6 +182,15 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
 }
 
 void SemanticAnalyzer::analyzeBreakStmt(ASTNode* node) {
+    /*
+
+    Validates the break statement by depth of current loop or switch statement,
+    'loopOrSwitchDepth' is incremented whenever semantic analysis enters a loop or switch.
+
+    so depth == 0 means the 'break' statement is written outside of the loop or switch case,
+    so ERROR309 explaining it's wrong is reported.
+    
+    */
     if (loopOrSwitchDepth <= 0) {
         diag.report("ERROR309", node->line, 1, "", "");
         
@@ -189,6 +198,12 @@ void SemanticAnalyzer::analyzeBreakStmt(ASTNode* node) {
 }
 
 void SemanticAnalyzer::analyzeContinueStmt(ASTNode* node) {
+    /*
+    
+    same idea as the 'break' statemetn, but continue is only used with the loops, 
+    its invalid in switch statement so we have another variable tracking the 
+    depth of loops which is 'loopDepth' 
+    */
     if (loopDepth <= 0){
         diag.report("ERROR310", node->line, 1, "", "");
         
@@ -197,6 +212,19 @@ void SemanticAnalyzer::analyzeContinueStmt(ASTNode* node) {
 
 void SemanticAnalyzer::analyzeWhileStmt(ASTNode* node){
     auto* whileStmt = static_cast<WhileStmtNode*>(node);
+
+    /*
+    
+    Firstly, the condition is type-checked and it MUST be of 'bool' type.
+    'unknown' is allowed for cases when type-checking is currently not possible.
+
+    special case - 
+        literal 'false' condition is reported as warning, because loop body will not get executed even once, 
+        so its just a dead code.
+    
+    loopOrSwitchDepth and loopDepth is increated as part of break and continue analysis.
+    */
+
     std::string conditionType = typeChecker.analyzeExpression(whileStmt->condition.get());
 
     if(conditionType != "bool" && conditionType != "unknown"){
@@ -217,6 +245,14 @@ void SemanticAnalyzer::analyzeWhileStmt(ASTNode* node){
 
 void SemanticAnalyzer::analyzeDoWhileStmt(ASTNode* node){
     auto* dowhilestmt = static_cast<DoWhileStmtNode*>(node);
+
+    /*
+    
+    as we know that body of do-while loop executed first before the condition is evalued,
+    therefore only the condition's type must evaluated here.
+
+    
+    */
     std::string conditionType = typeChecker.analyzeExpression(dowhilestmt->condition.get());
 
     if(conditionType != "bool" && conditionType != "unknown"){
@@ -234,16 +270,30 @@ void SemanticAnalyzer::analyzeDoWhileStmt(ASTNode* node){
 void SemanticAnalyzer::analyzeForStmt(ASTNode* node) {
     auto* forStmt = static_cast<ForStmtNode*>(node);
     symbolTable.pushScope();
+
+    /*
+    
+    there can be multiple 'initialization' statements, so they are analyzed first.
+    Next, validation of condition (which is optional, because user may want condition inside the loop)
+    and analysis of update expression is done.
+
+
+    */
     
     for (auto& initStmt : forStmt->init) { 
         analyzeNode(initStmt.get());
     }
     
     if (forStmt->condition) {
+        // The condition must evaluate to 'bool', and it should not be literal 'false' condition,
+        // because it is then dead code block which will never exec. so it's an warning report.
         std::string condType = typeChecker.analyzeExpression(forStmt->condition.get());
         if (condType != "bool" && condType != "unknown") {
-            diag.report("ERROR312", forStmt->line, 1, "", "");
-            
+            diag.report("ERROR312", forStmt->line, 1, "", condType);
+        }
+
+        if (forStmt->condition->type == NodeType::BOOL_LIT && !static_cast<BoolLitNode*>(forStmt->condition.get())->value) {
+            diag.report("WARNING305", forStmt->line, 1, "", "");
         }
     }
     
@@ -260,10 +310,39 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
     auto* forIn = static_cast<ForInNode*>(node);
     symbolTable.pushScope();
 
+    /*
+    
+    There are TWO forms of for-in loops in BERY - 
+
+        1. range iteration (start..end) 
+            analysis consist of checking bountries, both boundries must use a supported numeric or character type and
+            the loop variable type is inferred from starting value when ommited first.
+
+
+        2. iteration over existing iterable.
+            for arrays -the element type is extracted from 'array<T>' 
+            while, strings produces the 'char' elements.
+
+            function checks the provided variable type againsts the element type (it uses implicit type allowance)
+            
+    
+    */
+
     std::string actualVarType = forIn->varType;
     if (forIn->rangeEnd) {
         std::string startType = typeChecker.analyzeExpression(forIn->iterableOrStart.get());
         std::string endType = typeChecker.analyzeExpression(forIn->rangeEnd.get());
+
+        auto isRangeable = [](const std::string& t) {
+            return t == "int" || t == "bigint" || t == "float" || t == "double" || t == "char";
+        };
+        if (startType != "unknown" && !isRangeable(startType)) {
+            diag.report("ERROR407", forIn->line, 1, "", startType);
+        }
+        if (endType != "unknown" && !isRangeable(endType)) {
+            diag.report("ERROR407", forIn->line, 1, "", endType);
+        }
+
         if (actualVarType == "unknown" || actualVarType == "") {
             actualVarType = (startType != "unknown") ? startType : "int"; 
         }
@@ -278,15 +357,13 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
             elementType = "char";
         } else if(iterType != "unknown") {
             diag.report("ERROR313", forIn->line, 1, "", iterType);
-            
         }
         if(actualVarType == "unknown" || actualVarType == ""){
             actualVarType = elementType;
         } else if(elementType!="unknown" && actualVarType!=elementType){
             bool compatible = (actualVarType == "float" && elementType == "int") || (actualVarType == "double" && elementType == "int") || (actualVarType == "double" && elementType == "float") || (actualVarType == "bigint" && elementType == "int");
             if(!compatible){
-                diag.report("ERROR314", forIn->line, 1, "", forIn->varName + "' declared as '" + actualVarType + "' but iterable has element type '" + elementType);
-                
+                diag.report("ERROR314", forIn->line, 1, "", "'" + forIn->varName + "' declared as '" + actualVarType + "' but iterable has element type '" + elementType + "'");
             }
         }
     }
