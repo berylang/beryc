@@ -860,7 +860,14 @@ std::string CodeGen::genCallExpr(ASTNode* node, std::ostream& outputStream) {
     }
 
     size_t dot = call->callee.find('.');
+
+    bool isModuleFunctionCall = false;
     if (dot != std::string::npos) {
+        std::string overloadKey = llvm.__mangleOverload(call->callee, call->resolvedParamTypes);
+        isModuleFunctionCall = functions.count(overloadKey) > 0 || functions.count(call->callee) > 0;
+    }
+
+    if (dot != std::string::npos && !isModuleFunctionCall) {
         std::vector<std::string> parts = splitDots(call->callee);
         std::string method = parts.back();
         std::vector<std::string> headParts(parts.begin(), parts.end() - 1);

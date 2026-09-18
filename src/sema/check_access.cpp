@@ -217,7 +217,8 @@ std::string TypeChecker::checkAssignmentExpr(ASTNode* node) {
 std::string TypeChecker::checkIdentifier(ASTNode* node) {
     auto* ident = static_cast<IdentNode*>(node);
     size_t dot = ident->name.find('.');
-    if (dot != std::string::npos) {
+    bool isModuleGlobalVar = (dot != std::string::npos) && symbolTable.exists(ident->name);
+    if (dot != std::string::npos && !isModuleGlobalVar) {
         std::vector<std::string> parts = splitDots(ident->name);
         if (parts.back() == "len") {
             std::vector<std::string> headParts(parts.begin(), parts.end() - 1);

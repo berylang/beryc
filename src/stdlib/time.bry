@@ -1,0 +1,41 @@
+--!
+
+time.bry
+
+Bery Standard Library for Time
+Stopwatch timing (start/stop/elapsed) and delays.
+
+preluded = false
+explicit import required: import time; and call as time.start()
+
+!--
+
+extern func __bery_time_start();
+extern func __bery_time_stop();
+extern func __bery_time_elapsed() -> double;
+
+extern func __bery_time_delay_sec(double seconds);
+extern func __bery_time_delay_ms(int milliseconds);
+
+
+func start() {
+    __bery_time_start();
+}
+
+func stop() {
+    __bery_time_stop();
+}
+
+func elapsed() -> double {
+    return __bery_time_elapsed();
+}
+
+func delay(double seconds) {
+    __bery_time_delay_sec(seconds);
+}
+
+func delay(int milliseconds) {
+    __bery_time_delay_ms(milliseconds);
+}
+
+run {}
