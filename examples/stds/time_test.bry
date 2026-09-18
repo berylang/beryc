@@ -1,0 +1,19 @@
+import time;
+
+run {
+    time.start();
+
+    int i = 0;
+    while (true) {
+        i++;
+
+        if (i == 1000000000) {
+            break;
+        }
+    }
+
+    time.stop();
+
+    double total_time = time.elapsed();
+    println("Time for (i = " + i + ") : "  + total_time);
+}

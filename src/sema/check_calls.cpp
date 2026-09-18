@@ -15,7 +15,8 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
         return checkSuperCall(node);
     }
     size_t dot = call->callee.find('.');
-    if (dot != std::string::npos) {
+    bool isModuleFunctionCall = (dot != std::string::npos) && functions.count(call->callee) > 0;
+    if (dot != std::string::npos && !isModuleFunctionCall) {
         std::vector<std::string> parts = splitDots(call->callee);
         std::string method = parts.back();
         std::vector<std::string> headParts(parts.begin(), parts.end() - 1);
