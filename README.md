@@ -7,8 +7,9 @@
 
 </p>
 
-# The Bery Programming Language
-
+<p align="center">
+  <img src="assets/bery-logo.jpeg" alt="Bery Programming Language" width="70%">
+</p>
 Bery is a compiled, statically typed, object-oriented programming language designed for performance and clarity. Built completely from scratch with a custom C++ frontend and an LLVM backend, Bery compiles directly to highly optimized native machine code.
 
 This project is a **Learning Project** by team of five undergraduate engineers.
