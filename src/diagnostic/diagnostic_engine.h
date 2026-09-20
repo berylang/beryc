@@ -8,6 +8,7 @@ public:
     DiagnosticEngine(const std::string& source, const std::string& filename);
 
     void report(const std::string& code, int line, int column, const std::string& lexeme, const std::string& context = "");
+    void report(const std::string& code, int line, int column, const std::string& lexeme, const std::vector<std::string>& contexts);
 
     bool hasErrors() const;
     bool hasWarnings() const;

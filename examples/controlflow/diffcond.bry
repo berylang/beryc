@@ -1,0 +1,17 @@
+
+run {
+    int a = 4;
+
+    switch(a) {
+    
+        case 1:
+            println(10);
+            break;
+        case 'a':
+            println(20);
+            break;
+        default:
+            println("error");
+    }
+
+}

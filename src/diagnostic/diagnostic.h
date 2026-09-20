@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 enum class Severity { ERROR, WARNING };
 
@@ -9,6 +10,6 @@ struct Diagnostic {
     int line;
     int column;
     std::string lexeme;
-    std::string context;
+    std::vector<std::string> contexts;
     std::string hint;
 };

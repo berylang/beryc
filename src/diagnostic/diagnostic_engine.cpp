@@ -22,15 +22,23 @@ void DiagnosticEngine::splitSource(const std::string& source) {
     while (std::getline(ss, line)) sourceLines.push_back(line);
 }
 
-static std::string formatTemplate(const std::string& tmpl, const std::string& ctx) {
-    size_t pos = tmpl.find("{}");
-    if (pos == std::string::npos || ctx.empty()) return tmpl;
+static std::string formatTemplate(const std::string& tmpl, const std::vector<std::string>& contexts) {
     std::string out = tmpl;
-    out.replace(pos, 2, ctx);
+    size_t pos = 0;
+    for (const auto& ctx : contexts) {
+        pos = out.find("{}", pos);
+        if (pos == std::string::npos) break;
+        out.replace(pos, 2, ctx);
+        pos += ctx.size();
+    }
     return out;
 }
 
 void DiagnosticEngine::report(const std::string& code, int line, int column, const std::string& lexeme, const std::string& context) {
+    report(code, line, column, lexeme, context.empty() ? std::vector<std::string>{} : std::vector<std::string>{context});
+}
+
+void DiagnosticEngine::report(const std::string& code, int line, int column, const std::string& lexeme, const std::vector<std::string>& contexts) {
     auto it = DiagnosticRegistry.find(code);
     if (it == DiagnosticRegistry.end()) {
         std::cerr << "[internal] Unknown diagnostic code: " << code << "\n";
@@ -43,13 +51,11 @@ void DiagnosticEngine::report(const std::string& code, int line, int column, con
     d.line = line;
     d.column = column;
     d.lexeme = lexeme;
-    d.context = context;
+    d.contexts = contexts;
 
     diagnostics.push_back(d);
     if (d.severity == Severity::ERROR) errorCount++;
     else warningCount++;
-
-    std::cout << "I am Here\n";
 }
 
 bool DiagnosticEngine::hasErrors() const { return errorCount > 0; }
@@ -59,7 +65,7 @@ void DiagnosticEngine::printOne(const Diagnostic& d) {
     const auto& info = DiagnosticRegistry.at(d.code);
     std::string color = (d.severity == Severity::ERROR) ? COL_RED : COL_YELLOW;
 
-    std::string message = formatTemplate(info.messageTemplate, d.context);
+    std::string message = formatTemplate(info.messageTemplate, d.contexts);
     std::cout << color << filename << " [" << d.code << "] " << d.line << ":" << d.column << ": " << message << COL_RESET << "\n\n";
 
     int idx = d.line - 1;
@@ -77,7 +83,7 @@ void DiagnosticEngine::printOne(const Diagnostic& d) {
 
     std::cout << "\n";
     if (!info.hint.empty()) {
-        std::string hint = formatTemplate(info.hint, d.context);
+        std::string hint = formatTemplate(info.hint, d.contexts);
         std::cout << COL_GREEN << " Hint : " << hint << COL_RESET << "\n";
     }
     std::cout << "\n";

@@ -59,7 +59,7 @@ std::string TypeChecker::checkUnaryExpr(ASTNode* node) {
         if(!classes.count(objectType))
             diag.report("ERROR363", unary->line, 1, "", "");
 
-        unary->resolvedType = "void";
+        unary->resolvedType = "";
         return unary->resolvedType;
     }
     std::string optype = analyzeExpression(unary->operand.get());

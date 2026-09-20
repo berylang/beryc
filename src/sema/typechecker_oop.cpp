@@ -85,7 +85,7 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
             }
             for (auto& arg : call->arguments) analyzeExpression(arg.get());
             call->resolvedParamTypes.clear();
-            call->resolvedType = "void";
+            call->resolvedType = "";
             return call->resolvedType;
         }
         std::vector<std::string> argTypes;
@@ -94,7 +94,7 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
         if (!ctor) { call->resolvedType = "unknown"; return call->resolvedType; }
         call->resolvedParamTypes.clear();
         for (auto& p : ctor->parameters) call->resolvedParamTypes.push_back(p.first);
-        call->resolvedType = "void";
+        call->resolvedType = "";
         return call->resolvedType;
     }
 
@@ -118,7 +118,7 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
     }
     call->resolvedParamTypes.clear();
     for (auto& p : methodDef->parameters) call->resolvedParamTypes.push_back(p.first);
-    call->resolvedType = methodDef->returnType.empty() ? "void" : methodDef->returnType;
+    call->resolvedType = (methodDef->returnType.empty() || methodDef->returnType == "void") ? "" : methodDef->returnType;
     return call->resolvedType;
 }
 

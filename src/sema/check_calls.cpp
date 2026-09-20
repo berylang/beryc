@@ -37,7 +37,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
         if (objType.size() > 6 && objType.substr(0, 6) == "array<") {
             std::string elemType = objType.substr(6, objType.size() - 7);
             if (method == "push" || method == "pop" || method == "insert" || method == "remove") {
-                call->resolvedType = "void"; 
+                call->resolvedType = "";
                 return call->resolvedType;
             }
             if (method == "len") { 
@@ -76,7 +76,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
             for(auto& p : methodDef->parameters){call->resolvedParamTypes.push_back(p.first);}
             
             
-            call->resolvedType = methodDef->returnType.empty() ? "void" : methodDef->returnType;
+            call->resolvedType = (methodDef->returnType.empty() || methodDef->returnType == "void") ? "" : methodDef->returnType;
             return call->resolvedType;
         }
 
@@ -102,7 +102,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
                 }
                  call->resolvedParamTypes.clear();
                 for(auto& p : f->parameters){call->resolvedParamTypes.push_back(p.first);}
-                call->resolvedType = f->returnType.empty() ? "void" : f->returnType;
+                call->resolvedType = (f->returnType.empty() || f->returnType == "void") ? "" : f->returnType;
                 return call->resolvedType;
             }
 
