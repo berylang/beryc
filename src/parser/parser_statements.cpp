@@ -188,7 +188,13 @@ std::unique_ptr<ASTNode> Parser::parseExternDecl() {
         do {
             Token typeTok = advance();
             Token nameTok = consume(TokenType::TOKEN_IDENT, "ERROR221");
-            params.push_back({typeTok.lexeme, nameTok.lexeme});
+            std::string paramType = typeTok.lexeme;
+            if (check(TokenType::TOKEN_LBRACKET)) {
+                advance();
+                consume(TokenType::TOKEN_RBRACKET, "ERROR222");
+                paramType = "array<" + paramType + ">";
+            }
+            params.push_back({paramType, nameTok.lexeme});
         } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
     }
     consume(TokenType::TOKEN_RPARAN, "ERROR272");
@@ -197,6 +203,11 @@ std::unique_ptr<ASTNode> Parser::parseExternDecl() {
     if (check(TokenType::TOKEN_ARROW)) {
         advance();
         returnType = advance().lexeme;
+        if (check(TokenType::TOKEN_LBRACKET)) {
+            advance();
+            consume(TokenType::TOKEN_RBRACKET, "ERROR224");
+            returnType = "array<" + returnType + ">";
+        }
     }
     consume(TokenType::TOKEN_SEMICOLON, "ERROR273");
     return std::make_unique<ExternDeclNode>(nameToken.lexeme, returnType, std::move(params), ln);

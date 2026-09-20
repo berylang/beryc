@@ -1,0 +1,50 @@
+import os;
+
+run {
+    string plat = os.platform();
+    print("platform: ");
+    println(plat);
+    assert(plat.len() > 0, "platform() should never return an empty string");
+
+    string host = os.hostname();
+    print("hostname: ");
+    println(host);
+    assert(host.len() > 0, "hostname() should never return an empty string");
+
+    string missing = os.getEnv("BERY_OS_TEST_DOES_NOT_EXIST_12345");
+    print("missing env var, expect empty: ");
+    println(missing);
+    assert(missing.len() == 0, "getEnv() on an unset variable should return ''");
+
+
+
+    bool setOk = os.setEnv("BERY_OS_TEST_VAR", "hello_bery");
+    assert(setOk, "setEnv() should succeed");
+
+
+
+    string roundTrip = os.getEnv("BERY_OS_TEST_VAR");
+    print("round-tripped env var, expect hello_bery: ");
+    println(roundTrip);
+    assert(roundTrip == "hello_bery", "getEnv() should see what setEnv() just set");
+
+    string original = os.getCwd();
+    print("original working directory: ");
+    println(original);
+    assert(original.len() > 0, "getCwd() should never return an empty string");
+
+    bool cwdOk = os.setCwd(".");
+    assert(cwdOk, "setCwd(\".\") should always succeed");
+
+    string afterDot = os.getCwd();
+    assert(afterDot == original, "setCwd(\".\") should not actually move anywhere");
+
+    string args[] = os.getArgs();
+    print("arg count: ");
+    println(args.len());
+    assert(args.len() >= 1, "getArgs() should include at least the program name");
+    print("\targ 0: ");
+    println(args[0]);
+
+    println("TESTING os SUCCESSFULL");
+}
