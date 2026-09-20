@@ -148,7 +148,7 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
             */
             std::string caseType = typeChecker.analyzeExpression(c.value.get());
             if (caseType != "unknown" && condType != "unknown" && caseType != condType) {
-                diag.report("ERROR308", sw->line, 1, "", "'" + caseType + "' does not match switch condition type '" + condType + "'");
+                diag.report("ERROR308", sw->line, 1, "", {caseType, condType});
             }
 
             // convert literal case values into comparable keys so  duplicate integers and character cases can be detected regardless
@@ -362,7 +362,7 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
             actualVarType = elementType;
         } else if(elementType!="unknown" && actualVarType!=elementType){
             if(!isImplicityConversionCheck(elementType, actualVarType)){
-                diag.report("ERROR314", forIn->line, 1, "", "'" + forIn->varName + "' declared as '" + actualVarType + "' but iterable has element type '" + elementType + "'");
+                diag.report("ERROR314", forIn->line, 1, "", {forIn->varName, actualVarType, elementType});
             }
         }
     }
