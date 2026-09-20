@@ -16,44 +16,39 @@
 #include <iostream>
 #include <unordered_set>
 
+const std::unordered_set<std::string> PRIMITIVE_TYPES = { "int", "bigint", "bool", "float", "double", "char", "string"};
+
+bool SemanticAnalyzer::isImplicityConversionCheck(const std::string& fromType, const std::string& toType) {
+    return (toType == "float"  && fromType == "int")|| (toType == "double" && fromType == "int")||
+    (toType == "double" && fromType == "float") || (toType == "bigint" && fromType == "int");
+}
+
+
 void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
     auto* decl = static_cast<VarDeclNode*>(node);
-    static const std::unordered_set<std::string> primitiveTypes = {
-        "int", "bigint", "bool", "float", "double", "char", "string"
-    };
-    if (!primitiveTypes.count(decl->varType) && !classes.count(decl->varType)) {
+    if (!isKnownType(decl->varType)) {
         diag.report("ERROR315", decl->line, 1, "", decl->varType);
-        
         return;
     }
     if (symbolTable.existsInCurrentScope(decl->name)) {
         diag.report("ERROR316", decl->line, 1, "", decl->name);
-        
         return;
     }
     if (decl->isConst && !decl->value) {
         diag.report("ERROR317", decl->line, 1, "", decl->name);
-        
         return;
     }
     if (decl->value) {
-    std::string exprtype = typeChecker.analyzeExpression(decl->value.get());
-
-        if(exprtype!="unknown" && exprtype!=decl->varType){
+        std::string exprtype = typeChecker.analyzeExpression(decl->value.get());
+        if (exprtype != "unknown" && exprtype != decl->varType) {
             if (exprtype == "null") {
                 if (decl->varType != "string") {
                     diag.report("ERROR318", decl->line, 1, "", decl->varType);
-                    
                     return;
                 }
             }
-            else if(!(decl->varType == "float" && exprtype == "int")&&
-            !(decl->varType == "double" && exprtype == "int") &&
-            !(decl->varType == "bigint" && exprtype == "int")&&
-            !(decl->varType == "double" && exprtype == "float")&&
-            !(decl->varType == "float" && exprtype == "double")){
+            else if (!isImplicityConversionCheck(exprtype, decl->varType)) {
                 diag.report("ERROR319", decl->line, 1, "", decl->name + std::string(". Expected '") + decl->varType + "', got '" + exprtype);
-                
                 return;
             }
         }
@@ -63,14 +58,13 @@ void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
 
 
 bool SemanticAnalyzer::isKnownType(const std::string& t) {
-    static const std::unordered_set<std::string> primitiveTypes = {"int","bigint", "bool", "float","double", "char", "string","void"};
-    if(primitiveTypes.count(t)) 
+    if (PRIMITIVE_TYPES.count(t)) 
         return true;
-    if(classes.count(t)) 
+    if (classes.count(t)) 
         return true;
-    if(t.size() > 6 && t.substr(0, 6)== "array<"&& t.back()== '>') {
-        std::string inner = t.substr(6,t.size() - 7);
-        return primitiveTypes.count(inner) > 0 || classes.count(inner) > 0;
+    if (t.size() > 6 && t.substr(0, 6) == "array<" && t.back() == '>') {
+        std::string inner = t.substr(6, t.size() - 7);
+        return PRIMITIVE_TYPES.count(inner) > 0 || classes.count(inner) > 0;
     }
     return false;
 }
@@ -170,15 +164,14 @@ void SemanticAnalyzer::analyzeFuncDef(ASTNode* node) {
     for (auto& param : func->parameters) {
         if (!isKnownType(param.first)) {
             diag.report("ERROR329", func->line, 1, "", param.first + "' in function '" + func->name);
-            
         }
     }
-    if (!func->returnType.empty() && !isKnownType(func->returnType)) {
+    if (func->returnType != "void" && !func->returnType.empty() && !isKnownType(func->returnType)) {
         diag.report("ERROR330", func->line, 1, "", func->returnType + "' in function '" + func->name);
-        
     }
 
-    currentFunctionReturnType = func->returnType;
+    currentFunctionReturnType = (func->returnType == "void") ? "" : func->returnType;
+    functionDepth++;
     symbolTable.pushScope();
     for (auto& param : func->parameters) {
         std::vector<int> dims = (param.first.size() > 6 && param.first.substr(0,6) == "array<") ? std::vector<int>{-1} : std::vector<int>{};
@@ -189,34 +182,34 @@ void SemanticAnalyzer::analyzeFuncDef(ASTNode* node) {
         analyzeNode(statement.get());
     
     symbolTable.popScope();
+    functionDepth--;
     currentFunctionReturnType = "";
 }
 
 void SemanticAnalyzer::analyzeReturnStmt(ASTNode* node) {
     auto* ret = static_cast<ReturnStmtNode*>(node);
-    if (currentFunctionReturnType == "") {
+    if (functionDepth <= 0) {
         diag.report("ERROR331", ret->line, 1, "", "");
-         
         return;
     }
-    
+
+    if (currentFunctionReturnType.empty()) {
+        if (ret->value) {
+            diag.report("ERROR403", ret->line, 1, "", "");
+        }
+        return;
+    }
+
     if (!ret->value) {
-        if (currentFunctionReturnType != "void") {
-            diag.report("ERROR332", ret->line, 1, "", currentFunctionReturnType);
-            
-        }
-    } else {
-        std::string valType = typeChecker.analyzeExpression(ret->value.get());
-        if (valType != "unknown" && valType != currentFunctionReturnType) {
-            if (!(currentFunctionReturnType == "float" && valType == "int") && !(currentFunctionReturnType == "double" && valType == "float") &&
-                 !(currentFunctionReturnType == "double" && valType == "int") && !(currentFunctionReturnType == "bigint" && valType == "int")) {
-                diag.report("ERROR333", ret->line, 1, "", currentFunctionReturnType + "', got '" + valType);
-                
-            }
-        }
+        diag.report("ERROR332", ret->line, 1, "", currentFunctionReturnType);
+        return;
+    }
+
+    std::string valType = typeChecker.analyzeExpression(ret->value.get());
+    if (valType != "unknown" && valType != currentFunctionReturnType && !isImplicityConversionCheck(valType, currentFunctionReturnType)) {
+        diag.report("ERROR333", ret->line, 1, "", currentFunctionReturnType + "', got '" + valType);
     }
 }
-
 void SemanticAnalyzer::analyzeEnumDecl(ASTNode* node) {
     auto* enumDecl = static_cast<EnumDeclNode*>(node);
     for (const auto& val : enumDecl->values) {
@@ -324,9 +317,8 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                     
                 }
             }
-            if (!func->isConstructor && !func->isDestructor && !func->returnType.empty() && !isKnownType(func->returnType)) {
+            if (!func->isConstructor && !func->isDestructor && func->returnType != "void" && !func->returnType.empty() && !isKnownType(func->returnType)) {
                 diag.report("ERROR344", func->line, 1, "", func->returnType + "' in method '" + func->name);
-                
             }
 
             FunctionSignature sig;
@@ -362,7 +354,8 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                     
             }
             moverload.push_back(sig);
-            currentFunctionReturnType = func->returnType;
+            currentFunctionReturnType = (func->returnType == "void") ? "" : func->returnType;
+            functionDepth++;
             currentFunctionIsConstructor = func->isConstructor;
             symbolTable.pushScope();
             if (cls->attributes) {
@@ -388,6 +381,7 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                 analyzeNode(statement.get());
 
             symbolTable.popScope();
+            functionDepth--;
             currentFunctionReturnType = "";
             currentFunctionIsConstructor = false;
         }

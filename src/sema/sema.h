@@ -73,7 +73,8 @@ private:
    std::string currentFunctionReturnType = "";
    void analyzeFuncDef(ASTNode* node);
    void analyzeReturnStmt(ASTNode* node);
-
+   int functionDepth = 0;
+   bool isImplicityConversionCheck(const std::string& fromType, const std::string& toType);
    // @oop
    std::unordered_map<std::string, ClassDefNode*> classes;
    std::string currentClassContext = "";

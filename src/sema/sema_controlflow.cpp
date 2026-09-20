@@ -361,8 +361,7 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
         if(actualVarType == "unknown" || actualVarType == ""){
             actualVarType = elementType;
         } else if(elementType!="unknown" && actualVarType!=elementType){
-            bool compatible = (actualVarType == "float" && elementType == "int") || (actualVarType == "double" && elementType == "int") || (actualVarType == "double" && elementType == "float") || (actualVarType == "bigint" && elementType == "int");
-            if(!compatible){
+            if(!isImplicityConversionCheck(elementType, actualVarType)){
                 diag.report("ERROR314", forIn->line, 1, "", "'" + forIn->varName + "' declared as '" + actualVarType + "' but iterable has element type '" + elementType + "'");
             }
         }

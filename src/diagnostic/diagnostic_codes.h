@@ -236,6 +236,7 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR400", { Severity::ERROR, "'{}' is not an object, cannot access '.{}'", "only object instances support member access" } },
     { "ERROR401", { Severity::ERROR, "class '{}' is already defined.", "use a different class name, or remove the duplicate definition" } },
     { "ERROR402", { Severity::ERROR, "Range bound type '{}' is not valid in a for-in range (expected int, bigint, float, double, or char).", "use a numeric or char expression as the range bound" } },
+    { "ERROR403", { Severity::ERROR, "Function has no return type declared.", "remove the value, or give the function an explicit return type using '->'" } },
 
     // WARNINGS of Semantic Analyzer
     { "WARNING301", { Severity::WARNING, "Unreachable code: this statement never executes after '{}'.", "remove the dead code, or move it before the loop/function exits" } },
