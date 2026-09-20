@@ -425,7 +425,7 @@ std::string CodeGen::genBinaryExpr(ASTNode* node, const std::string& expectedTyp
         llvm.__emitLabel(endBlk, outputStream);
         return llvm.__emitLoad("i1", resAlloc, outputStream);
     }
-    if (binary->resolvedType == "string") {
+    if (opType == "string") {
         std::string lReg = genExpression(binary->left.get(), "string", outputStream);
         std::string rReg = genExpression(binary->right.get(), "string", outputStream);
         if (binary->optr == "+") {

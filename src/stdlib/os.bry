@@ -1,0 +1,69 @@
+--!
+
+os.bry
+
+Bery Standard Library OS 
+The os module provides access to basic operating-system features such as environment variables, 
+the current working directory, command-line arguments, the platform name, and the hostname.
+
+The same Bery-side API works across Windows, Linux, and macOS. 
+Platform-specific differences are handled internally by the BRE (see bery_stdlib_os.cpp).
+
+preluded = false
+(explicit import required using import os;, call as os.getEnv(...) etc.)
+
+Notes:
+
+    getEnv(name) returns an empty string ("") when the requested environment variable is not set. 
+    There is no separate existence check, so check the returned value for emptiness when needed.
+
+    setEnv(name, value) and setCwd(path) return a bool indicating whether the operation was successful.
+
+    getArgs() returns all command-line arguments, including the program name itself at index 0. 
+    This follows the same convention used by Python's sys.argv, Go's os.Args, and Rust's std::env::args().
+
+    platform() returns one of: "windows", "macos", "linux", or "unknown".
+
+!--
+
+extern func __bery_os_get_env(string name) -> string;
+extern func __bery_os_set_env(string name, string value) -> bool;
+
+extern func __bery_os_get_cwd() -> string;
+extern func __bery_os_set_cwd(string path) -> bool;
+
+extern func __bery_os_get_args() -> string[];
+
+extern func __bery_os_platform() -> string;
+extern func __bery_os_hostname() -> string;
+
+
+func getEnv(string name) -> string {
+    return __bery_os_get_env(name);
+}
+
+func setEnv(string name, string value) -> bool {
+    return __bery_os_set_env(name, value);
+}
+
+func getCwd() -> string {
+    return __bery_os_get_cwd();
+}
+
+func setCwd(string path) -> bool {
+    return __bery_os_set_cwd(path);
+}
+
+func getArgs() -> string[] {
+    return __bery_os_get_args();
+}
+
+func platform() -> string {
+    return __bery_os_platform();
+}
+
+func hostname() -> string {
+    return __bery_os_hostname();
+}
+
+run {}

@@ -484,13 +484,13 @@ void Lexer::scanCharLit() {
 
             // supported escape sequences - \n, \t, \r, \\, \0, \" and \'
             // change it for UTF-8 encoding.
-            case 'n':  value = '\n'; return;
-            case 't':  value = '\t'; return;
-            case 'r':  value = '\r'; return;
-            case '\\': value = '\\'; return;
-            case '0':  value = '\0'; return;
-            case '"':  value = '\"'; return;
-            case '\'': value = '\''; return;
+            case 'n':  value = '\n'; break;
+            case 't':  value = '\t'; break;
+            case 'r':  value = '\r'; break;
+            case '\\': value = '\\'; break;
+            case '0':  value = '\0'; break;
+            case '"':  value = '\"'; break;
+            case '\'': value = '\''; break;
             default:
                 diag.report("ERROR103", startLine, startColumn, std::string(1, es));
                 return;
@@ -537,17 +537,17 @@ void Lexer::scanStringLit() {
             
             char es = advance();
             switch (es) {
-                case 'n':  value += '\n'; return;
-                case 't':  value += '\t'; return;
-                case 'r':  value += '\r'; return;
-                case '\\': value += '\\'; return;
-                case '0':  value += '\0'; return;
-                case '"':  value += '\"'; return;
-                case '\'': value += '\''; return;
+                case 'n':  value += '\n'; break;
+                case 't':  value += '\t'; break;
+                case 'r':  value += '\r'; break;
+                case '\\': value += '\\'; break;
+                case '0':  value += '\0'; break;
+                case '"':  value += '\"'; break;
+                case '\'': value += '\''; break;
                 default:
                     diag.report("ERROR106", startLine, startColumn, std::string(1, es));
                     value += es; 
-                    return;
+                    break;
             }
         } else {
             value += advance();

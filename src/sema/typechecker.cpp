@@ -47,6 +47,12 @@ std::string TypeChecker::analyzeExpression(ASTNode* node) {
         case NodeType::IDENT:           return checkIdentifier(node);
         case NodeType::NEW_EXPR:        return checkNewExpr(node);
         case NodeType::REF_EXPR:        return checkRefExpr(node);
+        case NodeType::GROUPED_EXPR: {
+            auto* grouped = static_cast<GroupedExprNode*>(node);
+            std::string innerType = analyzeExpression(grouped->expression.get());
+            grouped->resolvedType = innerType;
+            return innerType;
+        }
         default:                        return checkLiteral(node);
     }
 }
