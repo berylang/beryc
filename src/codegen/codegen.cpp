@@ -34,6 +34,7 @@ void CodeGen::generate(const std::string& outputPath) {
     globalsOutputStream <<"declare double @llvm.pow.f64(double, double)\n";
     globalsOutputStream <<"declare void @bery_runtime_startup()\n";
     globalsOutputStream <<"declare void @bery_runtime_shutdown()\n";
+    globalsOutputStream <<"declare void @bery_runtime_set_gc(i1)\n";
 
     std::vector<ASTNode*> classNodes;
     for (auto& node : program->globals)
@@ -168,6 +169,7 @@ void CodeGen::generate(const std::string& outputPath) {
     std::ostringstream body;
     llvm.__emitFunctionHeader("i32", "main", {}, body);
     body <<"    call void @bery_runtime_startup()\n";
+    body <<"    call void @bery_runtime_set_gc(i1 " << (program->memoryManaged ? "1" : "0") << ")\n";
     for (auto& clPair : classLayouts) {
         ClassLayout& cl = clPair.second;
         int nameLen = (int)cl.name.length() + 1;

@@ -19,8 +19,14 @@ Parser::Parser(const std::vector<Token>& tokens, DiagnosticEngine& diag)
     : tokens(tokens), current(0), errors(false), diag(diag) {}
 
 std::unique_ptr<ASTNode> Parser::parse() {
-    auto program = std::make_unique<ProgramNode>(); 
-    
+    auto program = std::make_unique<ProgramNode>();
+
+    try {
+        parsePrologues(program.get());
+    } catch (ParseError& e) {
+        synchronize();
+    }
+
     while (!isAtEnd()) {
         size_t startPos = current;
         try {
@@ -69,7 +75,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
         }
     }
 
-    if (!program->runBlock) {
+    if (!program->runBlock && !program->moduleOptionalRun) {
         diag.report("ERROR275", peek().line,1,peek().lexeme);
         errors = true;
     }
@@ -188,4 +194,40 @@ std::vector<std::unique_ptr<ASTNode>> Parser::parseStatement() {
     auto expr = parseExpression();
     consume(TokenType::TOKEN_SEMICOLON, "ERROR201");
     return single(std::move(expr));
+}
+
+
+void Parser::parsePrologues(ProgramNode* program) {
+    std::unordered_set<std::string> seen;
+    while (check(TokenType::TOKEN_HASH)) {
+        advance();
+        Token nameTok = consume(TokenType::TOKEN_IDENT, "ERROR282");
+        std::string name = nameTok.lexeme;
+
+        auto it = PROLOGUE_VALUES.find(name);
+        if (it == PROLOGUE_VALUES.end()) {
+            diag.report("ERROR279", nameTok.line, 1, nameTok.lexeme, nameTok.lexeme);
+            errors = true;
+            throw ParseError();
+        }
+        if (!seen.insert(name).second) {
+            diag.report("ERROR281", nameTok.line, 1, nameTok.lexeme, nameTok.lexeme);
+            errors = true;
+            throw ParseError();
+        }
+
+        Token valueTok = peek();
+        bool validValueToken = check(TokenType::TOKEN_IDENT) || check(TokenType::TOKEN_TRUE) || check(TokenType::TOKEN_FALSE);
+        if (!validValueToken || !it->second.count(valueTok.lexeme)) {
+            diag.report("ERROR280", valueTok.line, 1, valueTok.lexeme, std::vector<std::string>{valueTok.lexeme, name});
+            errors = true;
+            throw ParseError();
+        }
+        advance();
+
+        if (name == "memory") program->memoryManaged = (valueTok.lexeme == "managed");
+        else if (name == "module") program->moduleOptionalRun = (valueTok.lexeme == "true");
+
+        consume(TokenType::TOKEN_SEMICOLON, "ERROR201", "prologue directive");
+    }
 }
