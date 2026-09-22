@@ -136,6 +136,11 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR277", { Severity::ERROR, "Expected '}' after run block", "add '}' to close the run block" } },
     { "ERROR278", { Severity::ERROR, "Expected '}' after block", "add '}' to close the block" } },
 
+    { "ERROR279", { Severity::ERROR, "Unknown prologue '{}'", "supported prologues are 'memory' and 'module'" } },
+    { "ERROR280", { Severity::ERROR, "Invalid value '{}' for prologue '{}'", "check the allowed values for this prologue" } },
+    { "ERROR281", { Severity::ERROR, "Prologue '{}' is already declared", "remove the duplicate '#{}' line" } },
+    { "ERROR282", { Severity::ERROR, "Expected prologue name after '#'", "write a prologue name like 'memory' or 'module' after '#'" } },
+
 
     // @SEMA ERRORS and WARNINGS
     { "ERROR003", { Severity::ERROR, "Undefined variable '{}'", "declare '{}' before using it" } },

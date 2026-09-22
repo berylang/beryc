@@ -9,6 +9,7 @@
 
 
 bool bery_gc_should_collect() {
+    if (!g_beryRuntime.gcEnabled) return false;
     return g_beryRuntime.allocationCount >= BERY_GC_ALLOC_THRESHHOLD || g_beryRuntime.totalAllocated >=BERY_GC_HEAP_SIZE_THRESHHOLD;
 }
 

@@ -17,7 +17,10 @@ it contains every helper functions which eventually helps the 'parse()' method.
 #include <vector>
 #include <memory>
 #include <exception>
+#include <unordered_map>
+#include <unordered_set>
 
+struct ProgramNode;
 // @panic-mode trigger for error recovery
 class ParseError : public std::exception {};
 
@@ -36,6 +39,10 @@ private:
     int current;
     bool errors;
     DiagnosticEngine& diag;
+    const std::unordered_map<std::string, std::unordered_set<std::string>> PROLOGUE_VALUES = {
+        {"memory", {"managed", "manual"}},
+        {"module", {"true", "false"}},
+    };
 
     // @pointers inside the token list
     Token advance();
@@ -52,7 +59,7 @@ private:
     
     // @panic-mode recovery
     void synchronize();
-    
+    void parsePrologues(ProgramNode* program);
 
     // @every parse function
     // @statements

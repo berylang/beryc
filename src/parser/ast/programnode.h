@@ -14,6 +14,8 @@ struct RunBlockNode : public ASTNode {
 struct ProgramNode :public ASTNode {
     std::vector<std::unique_ptr<ASTNode>> globals;
     std::unique_ptr<RunBlockNode> runBlock;
+    bool memoryManaged = true;
+    bool moduleOptionalRun = false;
 
     ProgramNode(int ln = 1) {
         type = NodeType::PROGRAM;

@@ -312,6 +312,9 @@ void Lexer::scanToken() {
             emit(TokenType::TOKEN_CARET, "^");
             }
             return;
+        case '#':
+            emit(TokenType::TOKEN_HASH, "#");
+            return;
         case '&':
             if(peek()=='='){
                 advance();

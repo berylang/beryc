@@ -1,0 +1,28 @@
+#memory manual;
+#module false;
+
+class Counter {
+    attributes[p]::
+        int id;
+
+    methods::
+        Counter(int id) {
+            p.id = id;
+        }
+
+        ~Counter() {
+            println("Counter destroyed: " + p.id);
+        }
+}
+
+run {
+    println("start");
+
+    Counter c1 = new Counter(1);
+    Counter c2 = new Counter(2);
+
+    delete c1;
+    delete c2;
+
+    println("end");
+}
