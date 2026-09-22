@@ -15,6 +15,7 @@ set(BRE_SOURCES
     src/bre/src/bery_stdlib_core.cpp
     src/bre/src/bery_stdlib_time.cpp
     src/bre/src/bery_stdlib_os.cpp
+    src/bre/src/bery_stdlib_fs.cpp
 )
 
 set(PARSER_SOURCES
