@@ -15,9 +15,14 @@ void bery_runtime_startup() {
     g_beryRuntime.totalAllocated = 0;
     g_beryRuntime.allocationCount = 0;
     g_beryRuntime.totalObjectsLive = 0;
+    g_beryRuntime.gcEnabled = true;
 
     bery_string_init_type();
     bery_array_init_type();
+}
+
+void bery_runtime_set_gc(bool enabled) {
+    g_beryRuntime.gcEnabled = enabled;
 }
 
 void bery_runtime_shutdown() {

@@ -1,3 +1,5 @@
+#module true;
+
 --!
 
 core.bry
@@ -26,4 +28,4 @@ func exit(int code) {
     __bery_exit(code);
 }
 
-run {}
+--- run {}
