@@ -1,0 +1,91 @@
+--!
+
+fs.bry
+
+Bery Standard Library for File System
+Files, directories, and their data
+Bery-side API on Windows, Linux and macOS built on std::filesystem.
+
+preluded = false
+explicit import required using import fs; and call as fs.exists(...)`
+
+!--
+
+extern func __bery_fs_exists(string path) -> bool;
+extern func __bery_fs_is_file(string path) -> bool;
+extern func __bery_fs_is_dir(string path) -> bool;
+
+extern func __bery_fs_create(string path) -> bool;
+extern func __bery_fs_create_dir(string path) -> bool;
+
+extern func __bery_fs_remove(string path) -> bool;
+extern func __bery_fs_remove_dir(string path) -> bool;
+
+extern func __bery_fs_rename(string oldPath, string newPath) -> bool;
+extern func __bery_fs_copy(string srcPath, string destPath) -> bool;
+
+extern func __bery_fs_read(string path) -> string;
+extern func __bery_fs_write(string path, string content) -> bool;
+extern func __bery_fs_append(string path, string content) -> bool;
+
+extern func __bery_fs_size(string path) -> bigint;
+extern func __bery_fs_list(string path) -> string[];
+
+
+func exists(string path) -> bool {
+    return __bery_fs_exists(path);
+}
+
+func isFile(string path) -> bool {
+    return __bery_fs_is_file(path);
+}
+
+func isDir(string path) -> bool {
+    return __bery_fs_is_dir(path);
+}
+
+func create(string path) -> bool {
+    return __bery_fs_create(path);
+}
+
+func createDir(string path) -> bool {
+    return __bery_fs_create_dir(path);
+}
+
+func remove(string path) -> bool {
+    return __bery_fs_remove(path);
+}
+
+func removeDir(string path) -> bool {
+    return __bery_fs_remove_dir(path);
+}
+
+func rename(string oldPath, string newPath) -> bool {
+    return __bery_fs_rename(oldPath, newPath);
+}
+
+func copy(string srcPath, string destPath) -> bool {
+    return __bery_fs_copy(srcPath, destPath);
+}
+
+func read(string path) -> string {
+    return __bery_fs_read(path);
+}
+
+func write(string path, string content) -> bool {
+    return __bery_fs_write(path, content);
+}
+
+func append(string path, string content) -> bool {
+    return __bery_fs_append(path, content);
+}
+
+func size(string path) -> bigint {
+    return __bery_fs_size(path);
+}
+
+func list(string path) -> string[] {
+    return __bery_fs_list(path);
+}
+
+run {}

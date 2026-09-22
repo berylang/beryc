@@ -1,0 +1,18 @@
+import fs;
+
+run {
+    string path = "notes.txt";
+
+    fs.create(path);
+    fs.write(path, "Hello, Bery!\n");
+    fs.append(path, "Second line.\n");
+
+    if (fs.exists(path)) {
+        string content = fs.read(path);
+        println(content);
+        println(fs.size(path));
+    }
+
+    fs.rename(path, "notes_backup.txt");
+    --- fs.remove("notes_backup.txt");
+}
