@@ -33,7 +33,8 @@ BeryString* __bery_os_get_env(BeryString* name) {
 
 bool __bery_os_set_env(BeryString* name, BeryString* value) {
 #if defined(_WIN32)
-    return _putenv_s(name->data, value->data) == 0;
+    std::string envString = std::string(name->data) + "=" + value->data;
+    return _putenv(envString.c_str()) == 0;
 #else
     return setenv(name->data, value->data, 1) == 0;
 #endif
