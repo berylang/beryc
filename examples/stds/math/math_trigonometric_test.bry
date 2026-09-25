@@ -1,0 +1,48 @@
+import math;
+
+run {
+    int i = 0;
+    bigint b = 0;
+    float f = 0.0;
+    double d = 0.0;
+
+    int a = 1;
+    bigint ab = 1;
+    float af = 1.0;
+    double ad = 1.0;
+
+    println(math.sin(i));
+    println(math.sin(b));
+    println(math.sin(f));
+    println(math.sin(d));
+
+    println(math.cos(i));
+    println(math.cos(b));
+    println(math.cos(f));
+    println(math.cos(d));
+
+    println(math.tan(i));
+    println(math.tan(b));
+    println(math.tan(f));
+    println(math.tan(d));
+
+    println(math.asin(a));
+    println(math.asin(ab));
+    println(math.asin(af));
+    println(math.asin(ad));
+
+    println(math.acos(a));
+    println(math.acos(ab));
+    println(math.acos(af));
+    println(math.acos(ad));
+
+    println(math.atan(a));
+    println(math.atan(ab));
+    println(math.atan(af));
+    println(math.atan(ad));
+
+    println(math.atan2(a, a));
+    println(math.atan2(ab, ab));
+    println(math.atan2(af, af));
+    println(math.atan2(ad, ad));
+}

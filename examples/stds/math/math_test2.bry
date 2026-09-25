@@ -1,0 +1,30 @@
+import math;
+
+run {
+    int a = -10;
+    int b = 6;
+    bigint c = -100;
+    bigint d = 30;
+    float e = -5.5;
+    float f = 2.5;
+    double g = -10.25;
+    double h = 3.5;
+
+    println(math.abs(a));
+    println(math.abs(c));
+    println(math.abs(e));
+    println(math.abs(g));
+
+    println(math.min(a, b));
+    println(math.min(c, d));
+    println(math.min(e, f));
+    println(math.min(g, h));
+
+    println(math.max(a, b));
+    println(math.max(c, d));
+    println(math.max(e, f));
+    println(math.max(g, h));
+
+    println(math.mod(a, b));
+    println(math.mod(c, d));
+}

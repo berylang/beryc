@@ -1,0 +1,13 @@
+import math;
+
+run {
+    int a = -10;
+    bigint b = -100;
+    float c = -5.5;
+    double d = -10.25;
+
+    println(math.abs(a));
+    println(math.abs(b));
+    println(math.abs(c));
+    println(math.abs(d));
+}

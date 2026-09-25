@@ -1,0 +1,48 @@
+import math;
+
+run{
+int zero_i = 0;
+bigint zero_bi = 0;
+float zero_f = 0.0;
+double zero_d = 0.0;
+
+int one_i = 1;
+bigint one_bi = 1;
+float one_f = 1.0;
+double one_d = 1.0;
+
+int half_i = 0;
+bigint half_bi = 0;
+float half_f = 0.5;
+double half_d = 0.5;
+
+println(math.sinh(zero_i));
+println(math.sinh(zero_bi));
+println(math.sinh(zero_f));
+println(math.sinh(zero_d));
+
+println(math.cosh(zero_i));
+println(math.cosh(zero_bi));
+println(math.cosh(zero_f));
+println(math.cosh(zero_d));
+
+println(math.tanh(zero_i));
+println(math.tanh(zero_bi));
+println(math.tanh(zero_f));
+println(math.tanh(zero_d));
+
+println(math.asinh(one_i));
+println(math.asinh(one_bi));
+println(math.asinh(one_f));
+println(math.asinh(one_d));
+
+println(math.acosh(one_i));
+println(math.acosh(one_bi));
+println(math.acosh(one_f));
+println(math.acosh(one_d));
+
+println(math.atanh(half_i));
+println(math.atanh(half_bi));
+println(math.atanh(half_f));
+println(math.atanh(half_d));
+}

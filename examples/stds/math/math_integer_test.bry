@@ -1,0 +1,23 @@
+import math;
+
+run {
+    int a = 48;
+    int b = 18;
+    bigint c = 84;
+    bigint d = 30;
+    int x = 12;
+    int y = 18;
+    bigint p = 21;
+    bigint q = 6;
+    int n = 5;
+    bigint m = 10;
+
+    println(math.gcd(a, b));
+    println(math.gcd(c, d));
+
+    println(math.lcm(x, y));
+    println(math.lcm(p, q));
+
+    println(math.factorial(n));
+    println(math.factorial(m));
+}
