@@ -203,7 +203,7 @@ std::string TypeChecker::checkAssignmentExpr(ASTNode* node) {
         if (!(targetType == "float" && exptype == "int") &&  !(targetType == "double" && exptype == "int") &&
             !(targetType == "bigint" && exptype == "int") &&  !(targetType == "double" && exptype == "float")) {
             
-            diag.report("ERROR381", assign->line, 1, "", targetName + "'. Expected '" + targetType + "', got '" + exptype);
+            diag.report("ERROR381", assign->line, 1, "", {targetName,targetType,exptype});
             
             assign->resolvedType = "unknown";
             return assign->resolvedType;

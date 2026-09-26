@@ -1,0 +1,108 @@
+#module true;
+
+--!
+
+random.bry
+
+Bery Standard Library for Random
+preluded = false
+
+!--
+
+extern func __bery_random_seed(bigint seedValue);
+
+extern func __bery_random_int() -> int;
+extern func __bery_random_int_range(int minV, int maxV) -> int;
+extern func __bery_random_bigint() -> bigint;
+
+extern func __bery_random_double() -> double;
+extern func __bery_random_double_range(double minV, double maxV) -> double;
+
+extern func __bery_random_bool() -> bool;
+extern func __bery_random_bool_chance(double probability) -> bool;
+
+extern func __bery_random_choice_int(int arr[]) -> int;
+extern func __bery_random_choice_double(double arr[]) -> double;
+extern func __bery_random_choice_bool(bool arr[]) -> bool;
+extern func __bery_random_choice_string(string arr[]) -> string;
+
+extern func __bery_random_shuffle_int(int arr[]);
+extern func __bery_random_shuffle_double(double arr[]);
+extern func __bery_random_shuffle_bool(bool arr[]);
+extern func __bery_random_shuffle_string(string arr[]);
+
+extern func __bery_random_alpha_numeric(int length) -> string;
+extern func __bery_random_uuid() -> string;
+
+
+func seed(bigint seedValue) {
+    __bery_random_seed(seedValue);
+}
+
+func random_int() -> int {
+    return __bery_random_int();
+}
+
+func random_int(int min_value, int max_value) -> int {
+    return __bery_random_int_range(min_value, max_value);
+}
+
+func random_bigint() -> bigint {
+    return __bery_random_bigint();
+}
+
+func random_double() -> double {
+    return __bery_random_double();
+}
+
+func random_double(double min_value, double max_value) -> double {
+    return __bery_random_double_range(min_value, max_value);
+}
+
+func random_bool() -> bool {
+    return __bery_random_bool();
+}
+
+func bool_chance(double probability) -> bool {
+    return __bery_random_bool_chance(probability);
+}
+
+func choice_int(int arr[]) -> int {
+    return __bery_random_choice_int(arr);
+}
+
+func choice_double(double arr[]) -> double {
+    return __bery_random_choice_double(arr);
+}
+
+func choice_bool(bool arr[]) -> bool {
+    return __bery_random_choice_bool(arr);
+}
+
+func choice_str(string arr[]) -> string {
+    return __bery_random_choice_string(arr);
+}
+
+func shuffle_int(int arr[]) {
+    __bery_random_shuffle_int(arr);
+}
+
+func shuffle_double(double arr[]) {
+    __bery_random_shuffle_double(arr);
+}
+
+func shuffle_bool(bool arr[]) {
+    __bery_random_shuffle_bool(arr);
+}
+
+func shuffle_str(string arr[]) {
+    __bery_random_shuffle_string(arr);
+}
+
+func alphaNumeric(int length) -> string {
+    return __bery_random_alpha_numeric(length);
+}
+
+func uuid() -> string {
+    return __bery_random_uuid();
+}

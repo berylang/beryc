@@ -1,0 +1,22 @@
+import random;
+import time;
+
+
+run {
+
+    --- random.seed(34);
+    time.start();
+    double a = random.random_double(10, 100);
+    println(a);
+
+    int arr[] = {1,2,3,4,5};
+    random.shuffle_int(arr);
+    for (int i in arr) {
+        print(i + " ");
+    }
+    println();
+    time.stop();
+
+    double el = time.elapsed();
+    println("Time elapsed : " + el);
+}
