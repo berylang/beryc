@@ -1,0 +1,19 @@
+class Counter {
+    attributes[p]::
+        int id;
+
+    methods::
+        Counter(int id) {
+            p.id = id;
+        }
+
+        ~Counter() {
+            println("Destroyed " + p.id);
+        }
+}
+
+run {
+    Counter c = new Counter(1);
+    delete c;
+    println("Done");
+}
