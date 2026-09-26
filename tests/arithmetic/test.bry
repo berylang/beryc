@@ -2,5 +2,6 @@ run {
     int a = 4;
     int b = 7;
     println(a + b);
+    println(b - a);
     println(a * b);
 }
