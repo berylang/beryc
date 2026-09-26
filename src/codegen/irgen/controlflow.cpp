@@ -295,7 +295,16 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& outputStream) {
         std::string updateLabel = llvm.__labelWithId("forin_update", blockid);
         std::string endLabel = llvm.__labelWithId("forin_end", blockid);
 
-        if (iterType.size() > 6 && iterType.substr(0, 6) == "array<") {
+         bool isDynamicArray = iterType.size() > 6 && iterType.substr(0, 6) == "array<";
+        if (isDynamicArray && forIn->iterableOrStart->type == NodeType::IDENT) {
+            auto* srcIdent = static_cast<IdentNode*>(forIn->iterableOrStart.get());
+            if (symbolTable.exists(srcIdent->name) &&
+                symbolTable.get(srcIdent->name).llvmAllocType != "i8*") {
+                isDynamicArray = false;
+            }
+        }
+
+        if (isDynamicArray) {
             std::string elementType = iterType.substr(6, iterType.size() - 7);
             std::string elementLlvmType = llvmType(elementType);
             llvm.__declareExternFn("i64", "bery_array_length", {"i8*"});

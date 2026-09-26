@@ -28,9 +28,8 @@ uint32_t bery_type_register(const char* typeName, size_t instanceSize, BeryField
         reg->capacity *= 2;
         reg->types = static_cast<BeryTypeInfo*>(realloc(reg->types, sizeof(BeryTypeInfo) * reg->capacity));
     }
-
-    uint32_t newId = reg->count;
-    BeryTypeInfo* info = &reg->types[newId];
+    uint32_t newId = reg->count + 1;
+    BeryTypeInfo* info = &reg->types[reg->count];
     info->typeId = newId;
     info->typeName = typeName;
     info->instanceSize = instanceSize;
@@ -43,9 +42,11 @@ uint32_t bery_type_register(const char* typeName, size_t instanceSize, BeryField
 }
 
 BeryTypeInfo* bery_type_lookup(uint32_t typeId) {
+    if (typeId == 0) return nullptr;
     BeryTypeRegistry* reg = registry();
-    if (typeId >= reg->count) return nullptr;
-    return &reg->types[typeId];
+    uint32_t idx = typeId - 1;
+    if (idx >= reg->count) return nullptr;
+    return &reg->types[idx];
 }
 void bery_type_registry_shutdown() {
     if (!g_beryRuntime.typeRegistry) return;
