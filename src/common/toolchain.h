@@ -113,15 +113,13 @@ inline BeryToolChain detectToolchain() {
 inline std::string buildCompileCmd(const BeryToolChain& tc,const std::string& irFile, const std::string& objFile) {
 #ifdef BERY_WINDOWS
     std::string triple = (tc.linker == "g++")? "x86_64-pc-windows-gnu" : "x86_64-pc-windows-msvc";
-    return tc.llc + " -filetype=obj -mtriple="+triple+" \""+ irFile + "\" -o \"" + objFile + "\"";
-    //g++ -filetype=obj -mtriple=x86_64-pc-windows-gnu "bery_out.ll" -o "file" 
-    //clang -filetype=obj -mtriple=x86_64-pc-windows-msvc "bery_out.ll" -o "file" 
+    return tc.llc + " -filetype=obj -relocation-model=pic -mtriple="+triple+" \""+ irFile + "\" -o \"" + objFile + "\"";
 #elif defined(BERY_MACOS)
-    return tc.llc + " -filetype=obj -mtriple=x86_64-apple-darwin \""+ irFile + "\" -o \"" + objFile + "\"";
+    return tc.llc + " -filetype=obj -relocation-model=pic -mtriple=x86_64-apple-darwin \""+ irFile + "\" -o \"" + objFile + "\"";
 #elif defined(BERY_LINUX)
-    return tc.llc + " -filetype=obj -mtriple=x86_64-pc-linux-gnu \"" + irFile + "\" -o \"" + objFile + "\"";
+    return tc.llc + " -filetype=obj -relocation-model=pic -mtriple=x86_64-pc-linux-gnu \"" + irFile + "\" -o \"" + objFile + "\"";
 #else
-    return tc.llc + " -filetype=obj \"" + irFile + "\" -o \"" + objFile + "\"";
+    return tc.llc + " -filetype=obj -relocation-model=pic \"" + irFile + "\" -o \"" + objFile + "\"";
 #endif
 }
 
