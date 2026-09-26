@@ -1,0 +1,29 @@
+import math;
+
+run{
+int i = 1;
+bigint bi = 1;
+float f = 1.0;
+double d = 1.0;
+
+
+println(math.erf(i));
+println(math.erf(bi));
+println(math.erf(f));
+println(math.erf(d));
+
+println(math.erfc(i));
+println(math.erfc(bi));
+println(math.erfc(f));
+println(math.erfc(d));
+
+println(math.lgamma(i));
+println(math.lgamma(bi));
+println(math.lgamma(f));
+println(math.lgamma(d));
+
+println(math.tgamma(i));
+println(math.tgamma(bi));
+println(math.tgamma(f));
+println(math.tgamma(d));
+}

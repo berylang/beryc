@@ -1,0 +1,18 @@
+import math;
+
+run{
+println(math.PI());
+println(math.E());
+println(math.TAU());
+println(math.LOG2E());
+println(math.LOG10E());
+println(math.INV_PI());
+println(math.INV_SQRT_PI());
+println(math.LN2());
+println(math.LN10());
+println(math.SQRT2());
+println(math.SQRT3());
+println(math.INV_SQRT3());
+println(math.EULER_GAMMA());
+println(math.PHI());
+}

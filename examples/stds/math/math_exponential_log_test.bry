@@ -1,0 +1,43 @@
+import math;
+
+run {
+    int i = 2;
+    bigint b = 2;
+    float f = 2.0;
+    double d = 2.0;
+
+    println(math.exp(i));
+    println(math.exp(b));
+    println(math.exp(f));
+    println(math.exp(d));
+
+    println(math.exp2(i));
+    println(math.exp2(b));
+    println(math.exp2(f));
+    println(math.exp2(d));
+
+    println(math.expm1(i));
+    println(math.expm1(b));
+    println(math.expm1(f));
+    println(math.expm1(d));
+
+    println(math.log(i));
+    println(math.log(b));
+    println(math.log(f));
+    println(math.log(d));
+
+    println(math.log10(i));
+    println(math.log10(b));
+    println(math.log10(f));
+    println(math.log10(d));
+
+    println(math.log2(i));
+    println(math.log2(b));
+    println(math.log2(f));
+    println(math.log2(d));
+
+    println(math.log1p(i));
+    println(math.log1p(b));
+    println(math.log1p(f));
+    println(math.log1p(d));
+}

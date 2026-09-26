@@ -1,0 +1,40 @@
+import math;
+
+run {
+    int i = 5;
+    bigint b = 5;
+    float f = 5.4;
+    double d = 5.7;
+    float nf = -5.4;
+    double nd = -5.7;
+
+    println(math.floor(i));
+    println(math.floor(b));
+    println(math.floor(f));
+    println(math.floor(d));
+
+    println(math.ceil(i));
+    println(math.ceil(b));
+    println(math.ceil(nf));
+    println(math.ceil(nd));
+
+    println(math.trunc(f));
+    println(math.trunc(d));
+    println(math.trunc(nf));
+    println(math.trunc(nd));
+
+    println(math.round(f));
+    println(math.round(d));
+    println(math.round(nf));
+    println(math.round(nd));
+
+    println(math.lround(i));
+    println(math.lround(b));
+    println(math.lround(f));
+    println(math.lround(d));
+
+    println(math.llround(i));
+    println(math.llround(b));
+    println(math.llround(f));
+    println(math.llround(d));
+}
