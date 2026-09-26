@@ -1,0 +1,32 @@
+import math;
+
+run{
+int a = 10;
+int b = 20;
+
+bigint c = 100;
+bigint d = 200;
+
+float e = 10.0;
+float f = 20.0;
+
+double g = 100.0;
+double h = 200.0;
+
+float x1 = 10.0;
+float x2 = 20.0;
+float t1 = 0.5;
+
+double y1 = 100.0;
+double y2 = 200.0;
+double t2 = 0.5;
+
+
+println(math.midpoint(a, b));
+println(math.midpoint(c, d));
+println(math.midpoint(e, f));
+println(math.midpoint(g, h));
+
+println(math.lerp(x1, x2, t1));
+println(math.lerp(y1, y2, t2));
+}

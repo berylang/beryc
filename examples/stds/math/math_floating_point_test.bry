@@ -1,0 +1,67 @@
+import math;
+
+run{
+float f1 = 10.5;
+float f2 = 3.0;
+
+double d1 = 10.5;
+double d2 = 3.0;
+
+float fa = 2.0;
+float fb = 3.0;
+float fc = 4.0;
+
+double da = 2.0;
+double db = 3.0;
+double dc = 4.0;
+
+float ldf = 3.0;
+double ldd = 3.0;
+
+int exp = 2;
+
+bigint big_exp = 2;
+
+
+println(math.fmod(f1, f2));
+println(math.fmod(d1, d2));
+
+println(math.remainder(f1, f2));
+println(math.remainder(d1, d2));
+
+println(math.fma(fa, fb, fc));
+println(math.fma(da, db, dc));
+
+println(math.fmin(f1, f2));
+println(math.fmin(d1, d2));
+
+println(math.fmax(f1, f2));
+println(math.fmax(d1, d2));
+
+println(math.fdim(f1, f2));
+println(math.fdim(d1, d2));
+
+println(math.copysign(f1, -f2));
+println(math.copysign(d1, -d2));
+
+println(math.ldexp(ldf, exp));
+println(math.ldexp(ldd, exp));
+
+println(math.scalbn(ldf, exp));
+println(math.scalbn(ldd, exp));
+
+println(math.scalbln(ldf, big_exp));
+println(math.scalbln(ldd, big_exp));
+
+println(math.ilogb(f1));
+println(math.ilogb(d1));
+
+println(math.logb(f1));
+println(math.logb(d1));
+
+println(math.nextafter(f1, f2));
+println(math.nextafter(d1, d2));
+
+println(math.nexttoward(f1, d2));
+println(math.nexttoward(d1, d2));
+}

@@ -1,0 +1,31 @@
+import math;
+
+run {
+    int i = 3;
+    bigint b = 64;
+    float f = 25.0;
+    double d = 144.0;
+
+    int a = 25;
+    bigint c = 64;
+
+    println(math.sqrt(a));
+    println(math.sqrt(c));
+    println(math.sqrt(f));
+    println(math.sqrt(d));
+
+    println(math.cbrt(27));
+    println(math.cbrt(b));
+    println(math.cbrt(27.0));
+    println(math.cbrt(64.0));
+
+    println(math.pow(5, 3));
+    println(math.pow(2, 3));
+    println(math.pow(2.0, 3.0));
+    println(math.pow(2.0, 3.0));
+
+    println(math.hypot(3, 4));
+    println(math.hypot(3, 4));
+    println(math.hypot(3.0, 4.0));
+    println(math.hypot(5.0, 12.0));
+}

@@ -1,0 +1,1014 @@
+--!
+math.bry
+
+Bery Standard Library for Mathematics
+
+preluded = false
+explicit import required using import math; and call as math.function(...)
+
+!--
+
+--- BASIC OPERATIONS
+extern func __bery_math_abs_int(int value) -> int;
+extern func __bery_math_abs_bigint(bigint value) -> bigint;
+extern func __bery_math_abs_float(float value) -> float;
+extern func __bery_math_abs_double(double value) -> double;
+
+extern func __bery_math_min_int(int a, int b) -> int;
+extern func __bery_math_min_bigint(bigint a, bigint b) -> bigint;
+extern func __bery_math_min_float(float a, float b) -> float;
+extern func __bery_math_min_double(double a, double b) -> double;
+
+extern func __bery_math_max_int(int a, int b) -> int;
+extern func __bery_math_max_bigint(bigint a, bigint b) -> bigint;
+extern func __bery_math_max_float(float a, float b) -> float;
+extern func __bery_math_max_double(double a, double b) -> double;
+
+extern func __bery_math_mod_int(int a, int b) -> int;
+extern func __bery_math_mod_bigint(bigint a, bigint b) -> bigint;
+
+
+--- POWER AND ROOT FUNCTIONS
+extern func __bery_math_sqrt_int(int value) -> double;
+extern func __bery_math_sqrt_bigint(bigint value) -> double;
+extern func __bery_math_sqrt_float(float value) -> float;
+extern func __bery_math_sqrt_double(double value) -> double;
+
+extern func __bery_math_cbrt_int(int value) -> double;
+extern func __bery_math_cbrt_bigint(bigint value) -> double;
+extern func __bery_math_cbrt_float(float value) -> float;
+extern func __bery_math_cbrt_double(double value) -> double;
+
+extern func __bery_math_pow_int(int base, int exponent) -> double;
+extern func __bery_math_pow_bigint(bigint base, bigint exponent) -> double;
+extern func __bery_math_pow_float(float base, float exponent) -> float;
+extern func __bery_math_pow_double(double base, double exponent) -> double;
+
+extern func __bery_math_hypot_int(int a, int b) -> double;
+extern func __bery_math_hypot_bigint(bigint a, bigint b) -> double;
+extern func __bery_math_hypot_float(float a, float b) -> float;
+extern func __bery_math_hypot_double(double a, double b) -> double;
+
+
+--- EXPONENTIAL AND LOGARITHMIC FUNCTIONS
+extern func __bery_math_exp_int(int value) -> double;
+extern func __bery_math_exp_bigint(bigint value) -> double;
+extern func __bery_math_exp_float(float value) -> float;
+extern func __bery_math_exp_double(double value) -> double;
+
+extern func __bery_math_exp2_int(int value) -> double;
+extern func __bery_math_exp2_bigint(bigint value) -> double;
+extern func __bery_math_exp2_float(float value) -> float;
+extern func __bery_math_exp2_double(double value) -> double;
+
+extern func __bery_math_expm1_int(int value) -> double;
+extern func __bery_math_expm1_bigint(bigint value) -> double;
+extern func __bery_math_expm1_float(float value) -> float;
+extern func __bery_math_expm1_double(double value) -> double;
+
+extern func __bery_math_log_int(int value) -> double;
+extern func __bery_math_log_bigint(bigint value) -> double;
+extern func __bery_math_log_float(float value) -> float;
+extern func __bery_math_log_double(double value) -> double;
+
+extern func __bery_math_log10_int(int value) -> double;
+extern func __bery_math_log10_bigint(bigint value) -> double;
+extern func __bery_math_log10_float(float value) -> float;
+extern func __bery_math_log10_double(double value) -> double;
+
+extern func __bery_math_log2_int(int value) -> double;
+extern func __bery_math_log2_bigint(bigint value) -> double;
+extern func __bery_math_log2_float(float value) -> float;
+extern func __bery_math_log2_double(double value) -> double;
+
+extern func __bery_math_log1p_int(int value) -> double;
+extern func __bery_math_log1p_bigint(bigint value) -> double;
+extern func __bery_math_log1p_float(float value) -> float;
+extern func __bery_math_log1p_double(double value) -> double;
+
+
+--- ROUNDING FUNCTIONS
+extern func __bery_math_floor_int(int value) -> double;
+extern func __bery_math_floor_bigint(bigint value) -> double;
+extern func __bery_math_floor_float(float value) -> float;
+extern func __bery_math_floor_double(double value) -> double;
+
+extern func __bery_math_ceil_int(int value) -> double;
+extern func __bery_math_ceil_bigint(bigint value) -> double;
+extern func __bery_math_ceil_float(float value) -> float;
+extern func __bery_math_ceil_double(double value) -> double;
+
+extern func __bery_math_trunc_int(int value) -> double;
+extern func __bery_math_trunc_bigint(bigint value) -> double;
+extern func __bery_math_trunc_float(float value) -> float;
+extern func __bery_math_trunc_double(double value) -> double;
+
+extern func __bery_math_round_int(int value) -> double;
+extern func __bery_math_round_bigint(bigint value) -> double;
+extern func __bery_math_round_float(float value) -> float;
+extern func __bery_math_round_double(double value) -> double;
+
+extern func __bery_math_lround_int(int value) -> int;
+extern func __bery_math_lround_bigint(bigint value) -> bigint;
+extern func __bery_math_lround_float(float value) -> int;
+extern func __bery_math_lround_double(double value) -> int;
+
+extern func __bery_math_llround_int(int value) -> bigint;
+extern func __bery_math_llround_bigint(bigint value) -> bigint;
+extern func __bery_math_llround_float(float value) -> bigint;
+extern func __bery_math_llround_double(double value) -> bigint;
+
+
+--- INTEGER FUNCTIONS
+extern func __bery_math_gcd_int(int a, int b) -> int;
+extern func __bery_math_gcd_bigint(bigint a, bigint b) -> bigint;
+extern func __bery_math_lcm_int(int a, int b) -> int;
+extern func __bery_math_lcm_bigint(bigint a, bigint b) -> bigint;
+extern func __bery_math_factorial_int(int value) -> bigint;
+extern func __bery_math_factorial_bigint(bigint value) -> bigint;
+
+
+--- NUMERIC FUNCTIONS
+extern func __bery_math_midpoint_int(int a, int b) -> int;
+extern func __bery_math_midpoint_bigint(bigint a, bigint b) -> bigint;
+extern func __bery_math_midpoint_float(float a, float b) -> float;
+extern func __bery_math_midpoint_double(double a, double b) -> double;
+extern func __bery_math_lerp_float(float a, float b, float t) -> float;
+extern func __bery_math_lerp_double(double a, double b, double t) -> double;
+
+
+--- FLOATING-POINT FUNCTIONS
+extern func __bery_math_fmod_float(float a, float b) -> float;
+extern func __bery_math_fmod_double(double a, double b) -> double;
+
+extern func __bery_math_remainder_float(float a, float b) -> float;
+extern func __bery_math_remainder_double(double a, double b) -> double;
+
+extern func __bery_math_fma_float(float a, float b, float c) -> float;
+extern func __bery_math_fma_double(double a, double b, double c) -> double;
+
+extern func __bery_math_fmin_float(float a, float b) -> float;
+extern func __bery_math_fmin_double(double a, double b) -> double;
+
+extern func __bery_math_fmax_float(float a, float b) -> float;
+extern func __bery_math_fmax_double(double a, double b) -> double;
+
+extern func __bery_math_fdim_float(float a, float b) -> float;
+extern func __bery_math_fdim_double(double a, double b) -> double;
+
+extern func __bery_math_copysign_float(float a, float b) -> float;
+extern func __bery_math_copysign_double(double a, double b) -> double;
+
+extern func __bery_math_ldexp_float(float value, int exponent) -> float;
+extern func __bery_math_ldexp_double(double value, int exponent) -> double;
+
+extern func __bery_math_scalbn_float(float value, int exponent) -> float;
+extern func __bery_math_scalbn_double(double value, int exponent) -> double;
+
+extern func __bery_math_scalbln_float(float value, bigint exponent) -> float;
+extern func __bery_math_scalbln_double(double value, bigint exponent) -> double;
+
+extern func __bery_math_ilogb_float(float value) -> int;
+extern func __bery_math_ilogb_double(double value) -> int;
+
+extern func __bery_math_logb_float(float value) -> float;
+extern func __bery_math_logb_double(double value) -> double;
+
+extern func __bery_math_nextafter_float(float from, float to) -> float;
+extern func __bery_math_nextafter_double(double from, double to) -> double;
+
+extern func __bery_math_nexttoward_float(float from, double to) -> double;
+extern func __bery_math_nexttoward_double(double from, double to) -> double;
+
+
+--- TRIGONOMETRIC FUNCTIONS
+extern func __bery_math_sin_int(int value) -> double;
+extern func __bery_math_sin_bigint(bigint value) -> double;
+extern func __bery_math_sin_float(float value) -> float;
+extern func __bery_math_sin_double(double value) -> double;
+
+extern func __bery_math_cos_int(int value) -> double;
+extern func __bery_math_cos_bigint(bigint value) -> double;
+extern func __bery_math_cos_float(float value) -> float;
+extern func __bery_math_cos_double(double value) -> double;
+
+extern func __bery_math_tan_int(int value) -> double;
+extern func __bery_math_tan_bigint(bigint value) -> double;
+extern func __bery_math_tan_float(float value) -> float;
+extern func __bery_math_tan_double(double value) -> double;
+
+extern func __bery_math_asin_int(int value) -> double;
+extern func __bery_math_asin_bigint(bigint value) -> double;
+extern func __bery_math_asin_float(float value) -> float;
+extern func __bery_math_asin_double(double value) -> double;
+
+extern func __bery_math_acos_int(int value) -> double;
+extern func __bery_math_acos_bigint(bigint value) -> double;
+extern func __bery_math_acos_float(float value) -> float;
+extern func __bery_math_acos_double(double value) -> double;
+
+extern func __bery_math_atan_int(int value) -> double;
+extern func __bery_math_atan_bigint(bigint value) -> double;
+extern func __bery_math_atan_float(float value) -> float;
+extern func __bery_math_atan_double(double value) -> double;
+
+extern func __bery_math_atan2_int(int y, int x) -> double;
+extern func __bery_math_atan2_bigint(bigint y, bigint x) -> double;
+extern func __bery_math_atan2_float(float y, float x) -> float;
+extern func __bery_math_atan2_double(double y, double x) -> double;
+
+
+
+--- HYPERBOLIC FUNCTIONS
+extern func __bery_math_sinh_int(int value) -> double;
+extern func __bery_math_sinh_bigint(bigint value) -> double;
+extern func __bery_math_sinh_float(float value) -> float;
+extern func __bery_math_sinh_double(double value) -> double;
+
+extern func __bery_math_cosh_int(int value) -> double;
+extern func __bery_math_cosh_bigint(bigint value) -> double;
+extern func __bery_math_cosh_float(float value) -> float;
+extern func __bery_math_cosh_double(double value) -> double;
+
+extern func __bery_math_tanh_int(int value) -> double;
+extern func __bery_math_tanh_bigint(bigint value) -> double;
+extern func __bery_math_tanh_float(float value) -> float;
+extern func __bery_math_tanh_double(double value) -> double;
+
+extern func __bery_math_asinh_int(int value) -> double;
+extern func __bery_math_asinh_bigint(bigint value) -> double;
+extern func __bery_math_asinh_float(float value) -> float;
+extern func __bery_math_asinh_double(double value) -> double;
+
+extern func __bery_math_acosh_int(int value) -> double;
+extern func __bery_math_acosh_bigint(bigint value) -> double;
+extern func __bery_math_acosh_float(float value) -> float;
+extern func __bery_math_acosh_double(double value) -> double;
+
+extern func __bery_math_atanh_int(int value) -> double;
+extern func __bery_math_atanh_bigint(bigint value) -> double;
+extern func __bery_math_atanh_float(float value) -> float;
+extern func __bery_math_atanh_double(double value) -> double;
+
+
+--- SPECIAL FUNCTIONS
+extern func __bery_math_erf_int(int value) -> double;
+extern func __bery_math_erf_bigint(bigint value) -> double;
+extern func __bery_math_erf_float(float value) -> float;
+extern func __bery_math_erf_double(double value) -> double;
+
+extern func __bery_math_erfc_int(int value) -> double;
+extern func __bery_math_erfc_bigint(bigint value) -> double;
+extern func __bery_math_erfc_float(float value) -> float;
+extern func __bery_math_erfc_double(double value) -> double;
+
+extern func __bery_math_lgamma_int(int value) -> double;
+extern func __bery_math_lgamma_bigint(bigint value) -> double;
+extern func __bery_math_lgamma_float(float value) -> float;
+extern func __bery_math_lgamma_double(double value) -> double;
+
+extern func __bery_math_tgamma_int(int value) -> double;
+extern func __bery_math_tgamma_bigint(bigint value) -> double;
+extern func __bery_math_tgamma_float(float value) -> float;
+extern func __bery_math_tgamma_double(double value) -> double;
+
+
+--- MATHEMATICAL CONSTANTS
+extern func __bery_math_pi() -> double;
+extern func __bery_math_e() -> double;
+extern func __bery_math_tau() -> double;
+extern func __bery_math_log2e() -> double;
+extern func __bery_math_log10e() -> double;
+extern func __bery_math_inv_pi() -> double;
+extern func __bery_math_inv_sqrt_pi() -> double;
+extern func __bery_math_ln2() -> double;
+extern func __bery_math_ln10() -> double;
+extern func __bery_math_sqrt2() -> double;
+extern func __bery_math_sqrt3() -> double;
+extern func __bery_math_inv_sqrt3() -> double;
+extern func __bery_math_euler_gamma() -> double;
+extern func __bery_math_phi() -> double;
+
+
+--- BASIC OPERATIONS
+
+func abs(int value) -> int {
+    return __bery_math_abs_int(value);
+}
+func abs(bigint value) -> bigint {
+    return __bery_math_abs_bigint(value);
+}
+func abs(float value) -> float {
+    return __bery_math_abs_float(value);
+}
+func abs(double value) -> double {
+    return __bery_math_abs_double(value);
+}
+
+func min(int a, int b) -> int {
+    return __bery_math_min_int(a, b);
+}
+func min(bigint a, bigint b) -> bigint {
+    return __bery_math_min_bigint(a, b);
+}
+func min(float a, float b) -> float {
+    return __bery_math_min_float(a, b);
+}
+func min(double a, double b) -> double {
+    return __bery_math_min_double(a, b);
+}
+
+
+func max(int a, int b) -> int {
+    return __bery_math_max_int(a, b);
+}
+func max(bigint a, bigint b) -> bigint {
+    return __bery_math_max_bigint(a, b);
+}
+func max(float a, float b) -> float {
+    return __bery_math_max_float(a, b);
+}
+func max(double a, double b) -> double {
+    return __bery_math_max_double(a, b);
+}
+
+func mod(int a, int b) -> int {
+    return __bery_math_mod_int(a, b);
+}
+func mod(bigint a, bigint b) -> bigint {
+    return __bery_math_mod_bigint(a, b);
+}
+
+
+--- POWER AND ROOT FUNCTIONS
+
+func sqrt(int value) -> double {
+    return __bery_math_sqrt_int(value);
+}
+func sqrt(bigint value) -> double {
+    return __bery_math_sqrt_bigint(value);
+}
+func sqrt(float value) -> float {
+    return __bery_math_sqrt_float(value);
+}
+func sqrt(double value) -> double {
+    return __bery_math_sqrt_double(value);
+}
+
+func cbrt(int value) -> double {
+    return __bery_math_cbrt_int(value);
+}
+func cbrt(bigint value) -> double {
+    return __bery_math_cbrt_bigint(value);
+}
+func cbrt(float value) -> float {
+    return __bery_math_cbrt_float(value);
+}
+func cbrt(double value) -> double {
+    return __bery_math_cbrt_double(value);
+}
+
+func pow(int base, int exponent) -> double {
+    return __bery_math_pow_int(base, exponent);
+}
+func pow(bigint base, bigint exponent) -> double {
+    return __bery_math_pow_bigint(base, exponent);
+}
+func pow(float base, float exponent) -> float {
+    return __bery_math_pow_float(base, exponent);
+}
+func pow(double base, double exponent) -> double {
+    return __bery_math_pow_double(base, exponent);
+}
+
+func hypot(int a, int b) -> double {
+    return __bery_math_hypot_int(a, b);
+}
+func hypot(bigint a, bigint b) -> double {
+    return __bery_math_hypot_bigint(a, b);
+}
+func hypot(float a, float b) -> float {
+    return __bery_math_hypot_float(a, b);
+}
+func hypot(double a, double b) -> double {
+    return __bery_math_hypot_double(a, b);
+}
+
+
+--- EXPONENTIAL AND LOGARITHMIC FUNCTIONS
+
+func exp(int value) -> double {
+    return __bery_math_exp_int(value);
+}
+func exp(bigint value) -> double {
+    return __bery_math_exp_bigint(value);
+}
+func exp(float value) -> float {
+    return __bery_math_exp_float(value);
+}
+func exp(double value) -> double {
+    return __bery_math_exp_double(value);
+}
+
+func exp2(int value) -> double {
+    return __bery_math_exp2_int(value);
+}
+func exp2(bigint value) -> double {
+    return __bery_math_exp2_bigint(value);
+}
+func exp2(float value) -> float {
+    return __bery_math_exp2_float(value);
+}
+func exp2(double value) -> double {
+    return __bery_math_exp2_double(value);
+}
+
+func expm1(int value) -> double {
+    return __bery_math_expm1_int(value);
+}
+func expm1(bigint value) -> double {
+    return __bery_math_expm1_bigint(value);
+}
+func expm1(float value) -> float {
+    return __bery_math_expm1_float(value);
+}
+func expm1(double value) -> double {
+    return __bery_math_expm1_double(value);
+}
+
+func log(int value) -> double {
+    return __bery_math_log_int(value);
+}
+func log(bigint value) -> double {
+    return __bery_math_log_bigint(value);
+}
+func log(float value) -> float {
+    return __bery_math_log_float(value);
+}
+func log(double value) -> double {
+    return __bery_math_log_double(value);
+}
+
+func log10(int value) -> double {
+    return __bery_math_log10_int(value);
+}
+func log10(bigint value) -> double {
+    return __bery_math_log10_bigint(value);
+}
+func log10(float value) -> float {
+    return __bery_math_log10_float(value);
+}
+func log10(double value) -> double {
+    return __bery_math_log10_double(value);
+}
+
+func log2(int value) -> double {
+    return __bery_math_log2_int(value);
+}
+func log2(bigint value) -> double {
+    return __bery_math_log2_bigint(value);
+}
+func log2(float value) -> float {
+    return __bery_math_log2_float(value);
+}
+func log2(double value) -> double {
+    return __bery_math_log2_double(value);
+}
+
+func log1p(int value) -> double {
+    return __bery_math_log1p_int(value);
+}
+func log1p(bigint value) -> double {
+    return __bery_math_log1p_bigint(value);
+}
+func log1p(float value) -> float {
+    return __bery_math_log1p_float(value);
+}
+func log1p(double value) -> double {
+    return __bery_math_log1p_double(value);
+}
+
+
+--- ROUNDING FUNCTIONS
+
+func floor(int value) -> double {
+    return __bery_math_floor_int(value);
+}
+func floor(bigint value) -> double {
+    return __bery_math_floor_bigint(value);
+}
+func floor(float value) -> float {
+    return __bery_math_floor_float(value);
+}
+func floor(double value) -> double {
+    return __bery_math_floor_double(value);
+}
+
+
+func ceil(int value) -> double {
+    return __bery_math_ceil_int(value);
+}
+func ceil(bigint value) -> double {
+    return __bery_math_ceil_bigint(value);
+}
+func ceil(float value) -> float {
+    return __bery_math_ceil_float(value);
+}
+func ceil(double value) -> double {
+    return __bery_math_ceil_double(value);
+}
+
+
+func trunc(int value) -> double {
+    return __bery_math_trunc_int(value);
+}
+func trunc(bigint value) -> double {
+    return __bery_math_trunc_bigint(value);
+}
+func trunc(float value) -> float {
+    return __bery_math_trunc_float(value);
+}
+func trunc(double value) -> double {
+    return __bery_math_trunc_double(value);
+}
+
+
+func round(int value) -> double {
+    return __bery_math_round_int(value);
+}
+func round(bigint value) -> double {
+    return __bery_math_round_bigint(value);
+}
+func round(float value) -> float {
+    return __bery_math_round_float(value);
+}
+func round(double value) -> double {
+    return __bery_math_round_double(value);
+}
+
+
+func lround(int value) -> int {
+    return __bery_math_lround_int(value);
+}
+func lround(bigint value) -> bigint {
+    return __bery_math_lround_bigint(value);
+}
+func lround(float value) -> int {
+    return __bery_math_lround_float(value);
+}
+func lround(double value) -> int {
+    return __bery_math_lround_double(value);
+}
+
+func llround(int value) -> bigint {
+    return __bery_math_llround_int(value);
+}
+func llround(bigint value) -> bigint {
+    return __bery_math_llround_bigint(value);
+}
+func llround(float value) -> bigint {
+    return __bery_math_llround_float(value);
+}
+func llround(double value) -> bigint {
+    return __bery_math_llround_double(value);
+}
+
+
+--- INTEGER FUNCTIONS
+
+func gcd(int a, int b) -> int {
+    return __bery_math_gcd_int(a, b);
+}
+func gcd(bigint a, bigint b) -> bigint {
+    return __bery_math_gcd_bigint(a, b);
+}
+
+func lcm(int a, int b) -> int {
+    return __bery_math_lcm_int(a, b);
+}
+func lcm(bigint a, bigint b) -> bigint {
+    return __bery_math_lcm_bigint(a, b);
+}
+
+func factorial(int value) -> bigint {
+    return __bery_math_factorial_int(value);
+}
+func factorial(bigint value) -> bigint {
+    return __bery_math_factorial_bigint(value);
+}
+
+
+--- NUMERIC FUNCTIONS
+
+func midpoint(int a, int b) -> int {
+    return __bery_math_midpoint_int(a, b);
+}
+func midpoint(bigint a, bigint b) -> bigint {
+    return __bery_math_midpoint_bigint(a, b);
+}
+func midpoint(float a, float b) -> float {
+    return __bery_math_midpoint_float(a, b);
+}
+func midpoint(double a, double b) -> double {
+    return __bery_math_midpoint_double(a, b);
+}
+
+func lerp(float a, float b, float t) -> float {
+    return __bery_math_lerp_float(a, b, t);
+}
+func lerp(double a, double b, double t) -> double {
+    return __bery_math_lerp_double(a, b, t);
+}
+
+
+--- FLOATING-POINT FUNCTIONS
+func fmod(float a, float b) -> float {
+    return __bery_math_fmod_float(a, b);
+}
+func fmod(double a, double b) -> double {
+    return __bery_math_fmod_double(a, b);
+}
+
+func remainder(float a, float b) -> float {
+    return __bery_math_remainder_float(a, b);
+}
+func remainder(double a, double b) -> double {
+    return __bery_math_remainder_double(a, b);
+}
+
+func fma(float a, float b, float c) -> float {
+    return __bery_math_fma_float(a, b, c);
+}
+func fma(double a, double b, double c) -> double {
+    return __bery_math_fma_double(a, b, c);
+}
+
+func fmin(float a, float b) -> float {
+    return __bery_math_fmin_float(a, b);
+}
+func fmin(double a, double b) -> double {
+    return __bery_math_fmin_double(a, b);
+}
+
+func fmax(float a, float b) -> float {
+    return __bery_math_fmax_float(a, b);
+}
+func fmax(double a, double b) -> double {
+    return __bery_math_fmax_double(a, b);
+}
+
+func fdim(float a, float b) -> float {
+    return __bery_math_fdim_float(a, b);
+}
+func fdim(double a, double b) -> double {
+    return __bery_math_fdim_double(a, b);
+}
+
+func copysign(float a, float b) -> float {
+    return __bery_math_copysign_float(a, b);
+}
+func copysign(double a, double b) -> double {
+    return __bery_math_copysign_double(a, b);
+}
+
+func ldexp(float value, int exponent) -> float {
+    return __bery_math_ldexp_float(value, exponent);
+}
+func ldexp(double value, int exponent) -> double {
+    return __bery_math_ldexp_double(value, exponent);
+}
+
+func scalbn(float value, int exponent) -> float {
+    return __bery_math_scalbn_float(value, exponent);
+}
+func scalbn(double value, int exponent) -> double {
+    return __bery_math_scalbn_double(value, exponent);
+}
+
+func scalbln(float value, bigint exponent) -> float {
+    return __bery_math_scalbln_float(value, exponent);
+}
+func scalbln(double value, bigint exponent) -> double {
+    return __bery_math_scalbln_double(value, exponent);
+}
+
+func ilogb(float value) -> int {
+    return __bery_math_ilogb_float(value);
+}
+func ilogb(double value) -> int {
+    return __bery_math_ilogb_double(value);
+}
+
+func logb(float value) -> float {
+    return __bery_math_logb_float(value);
+}
+func logb(double value) -> double {
+    return __bery_math_logb_double(value);
+}
+
+func nextafter(float from, float to) -> float {
+    return __bery_math_nextafter_float(from, to);
+}
+func nextafter(double from, double to) -> double {
+    return __bery_math_nextafter_double(from, to);
+}
+
+func nexttoward(float from, double to) -> double {
+    return __bery_math_nexttoward_float(from, to);
+}
+func nexttoward(double from, double to) -> double {
+    return __bery_math_nexttoward_double(from, to);
+}
+
+
+--- TRIGONOMETRIC FUNCTIONS
+
+func sin(int value) -> double {
+    return __bery_math_sin_int(value);
+}
+func sin(bigint value) -> double {
+    return __bery_math_sin_bigint(value);
+}
+func sin(float value) -> float {
+    return __bery_math_sin_float(value);
+}
+func sin(double value) -> double {
+    return __bery_math_sin_double(value);
+}
+
+
+func cos(int value) -> double {
+    return __bery_math_cos_int(value);
+}
+func cos(bigint value) -> double {
+    return __bery_math_cos_bigint(value);
+}
+func cos(float value) -> float {
+    return __bery_math_cos_float(value);
+}
+func cos(double value) -> double {
+    return __bery_math_cos_double(value);
+}
+
+
+func tan(int value) -> double {
+    return __bery_math_tan_int(value);
+}
+func tan(bigint value) -> double {
+    return __bery_math_tan_bigint(value);
+}
+func tan(float value) -> float {
+    return __bery_math_tan_float(value);
+}
+func tan(double value) -> double {
+    return __bery_math_tan_double(value);
+}
+
+
+func asin(int value) -> double {
+    return __bery_math_asin_int(value);
+}
+func asin(bigint value) -> double {
+    return __bery_math_asin_bigint(value);
+}
+func asin(float value) -> float {
+    return __bery_math_asin_float(value);
+}
+func asin(double value) -> double {
+    return __bery_math_asin_double(value);
+}
+
+
+func acos(int value) -> double {
+    return __bery_math_acos_int(value);
+}
+func acos(bigint value) -> double {
+    return __bery_math_acos_bigint(value);
+}
+func acos(float value) -> float {
+    return __bery_math_acos_float(value);
+}
+func acos(double value) -> double {
+    return __bery_math_acos_double(value);
+}
+
+
+func atan(int value) -> double {
+    return __bery_math_atan_int(value);
+}
+func atan(bigint value) -> double {
+    return __bery_math_atan_bigint(value);
+}
+func atan(float value) -> float {
+    return __bery_math_atan_float(value);
+}
+func atan(double value) -> double {
+    return __bery_math_atan_double(value);
+}
+
+
+func atan2(int y, int x) -> double {
+    return __bery_math_atan2_int(y, x);
+}
+func atan2(bigint y, bigint x) -> double {
+    return __bery_math_atan2_bigint(y, x);
+}
+func atan2(float y, float x) -> float {
+    return __bery_math_atan2_float(y, x);
+}
+func atan2(double y, double x) -> double {
+    return __bery_math_atan2_double(y, x);
+}
+
+--- HYPERBOLIC FUNCTIONS
+
+func sinh(int value) -> double {
+    return __bery_math_sinh_int(value);
+}
+func sinh(bigint value) -> double {
+    return __bery_math_sinh_bigint(value);
+}
+func sinh(float value) -> float {
+    return __bery_math_sinh_float(value);
+}
+func sinh(double value) -> double {
+    return __bery_math_sinh_double(value);
+}
+
+
+func cosh(int value) -> double {
+    return __bery_math_cosh_int(value);
+}
+func cosh(bigint value) -> double {
+    return __bery_math_cosh_bigint(value);
+}
+func cosh(float value) -> float {
+    return __bery_math_cosh_float(value);
+}
+func cosh(double value) -> double {
+    return __bery_math_cosh_double(value);
+}
+
+
+func tanh(int value) -> double {
+    return __bery_math_tanh_int(value);
+}
+func tanh(bigint value) -> double {
+    return __bery_math_tanh_bigint(value);
+}
+
+func tanh(float value) -> float {
+    return __bery_math_tanh_float(value);
+}
+
+func tanh(double value) -> double {
+    return __bery_math_tanh_double(value);
+}
+
+
+func asinh(int value) -> double {
+    return __bery_math_asinh_int(value);
+}
+func asinh(bigint value) -> double {
+    return __bery_math_asinh_bigint(value);
+}
+func asinh(float value) -> float {
+    return __bery_math_asinh_float(value);
+}
+func asinh(double value) -> double {
+    return __bery_math_asinh_double(value);
+}
+
+
+func acosh(int value) -> double {
+    return __bery_math_acosh_int(value);
+}
+func acosh(bigint value) -> double {
+    return __bery_math_acosh_bigint(value);
+}
+func acosh(float value) -> float {
+    return __bery_math_acosh_float(value);
+}
+func acosh(double value) -> double {
+    return __bery_math_acosh_double(value);
+}
+
+
+func atanh(int value) -> double {
+    return __bery_math_atanh_int(value);
+}
+func atanh(bigint value) -> double {
+    return __bery_math_atanh_bigint(value);
+}
+func atanh(float value) -> float {
+    return __bery_math_atanh_float(value);
+}
+func atanh(double value) -> double {
+    return __bery_math_atanh_double(value);
+}
+
+
+
+
+--- SPECIAL FUNCTIONS
+
+func erf(int value) -> double {
+    return __bery_math_erf_int(value);
+}
+func erf(bigint value) -> double {
+    return __bery_math_erf_bigint(value);
+}
+func erf(float value) -> float {
+    return __bery_math_erf_float(value);
+}
+func erf(double value) -> double {
+    return __bery_math_erf_double(value);
+}
+
+func erfc(int value) -> double {
+    return __bery_math_erfc_int(value);
+}
+func erfc(bigint value) -> double {
+    return __bery_math_erfc_bigint(value);
+}
+func erfc(float value) -> float {
+    return __bery_math_erfc_float(value);
+}
+func erfc(double value) -> double {
+    return __bery_math_erfc_double(value);
+}
+
+func lgamma(int value) -> double {
+    return __bery_math_lgamma_int(value);
+}
+func lgamma(bigint value) -> double {
+    return __bery_math_lgamma_bigint(value);
+}
+func lgamma(float value) -> float {
+    return __bery_math_lgamma_float(value);
+}
+func lgamma(double value) -> double {
+    return __bery_math_lgamma_double(value);
+}
+
+func tgamma(int value) -> double {
+    return __bery_math_tgamma_int(value);
+}
+func tgamma(bigint value) -> double {
+    return __bery_math_tgamma_bigint(value);
+}
+func tgamma(float value) -> float {
+    return __bery_math_tgamma_float(value);
+}
+func tgamma(double value) -> double {
+    return __bery_math_tgamma_double(value);
+}
+
+
+--- MATHEMATICAL CONSTANTS
+
+func PI() -> double {
+    return __bery_math_pi();
+}
+func E() -> double {
+    return __bery_math_e();
+}
+func TAU() -> double {
+    return __bery_math_tau();
+}
+func LOG2E() -> double {
+    return __bery_math_log2e();
+}
+func LOG10E() -> double {
+    return __bery_math_log10e();
+}
+func INV_PI() -> double {
+    return __bery_math_inv_pi();
+}
+func INV_SQRT_PI() -> double {
+    return __bery_math_inv_sqrt_pi();
+}
+func LN2() -> double {
+    return __bery_math_ln2();
+}
+func LN10() -> double {
+    return __bery_math_ln10();
+}
+func SQRT2() -> double {
+    return __bery_math_sqrt2();
+}
+func SQRT3() -> double {
+    return __bery_math_sqrt3();
+}
+func INV_SQRT3() -> double {
+    return __bery_math_inv_sqrt3();
+}
+func EULER_GAMMA() -> double {
+    return __bery_math_euler_gamma();
+}
+func PHI() -> double {
+    return __bery_math_phi();
+}
+
+
+run {}
