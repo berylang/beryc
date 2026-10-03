@@ -26,7 +26,7 @@ std::string TypeChecker::checkBinaryExpr(ASTNode* node) {
         if (lType == "string" || rType == "string") {
             if((lType != "string" && lType != "int" && lType != "bigint" && lType != "float" && lType != "double" && lType != "char" && lType != "bool") 
                 ||  (rType != "string" && rType != "int" && rType != "bigint" && rType != "float" && rType != "double" && rType != "char" && rType != "bool")){
-                diag.report("ERROR348", binary->line, 1, "", "");
+                diag.report("ERROR348", binary->line, binary->column, binary->length, "");
                 
                 binary->resolvedType = "unknown";
                 return binary->resolvedType; 
@@ -34,12 +34,18 @@ std::string TypeChecker::checkBinaryExpr(ASTNode* node) {
             if(lType != "string"){
                 auto cast = std::make_unique<CastExprNode>("string",std::move(binary->left), binary->line);
                 cast->srcType = lType;
+                cast->column = binary->column;
+                cast->length = binary->length;
+                cast->span = binary->span;
                 binary->left = std::move(cast);
 
             }
             if(rType != "string"){
                 auto cast = std::make_unique<CastExprNode>("string",std::move(binary->right), binary->line);
                 cast->srcType = rType;
+                cast->column = binary->column;
+                cast->length = binary->length;
+                cast->span = binary->span;
                 binary->right = std::move(cast);
 
             }
@@ -57,7 +63,7 @@ std::string TypeChecker::checkBinaryExpr(ASTNode* node) {
 
     if (binary->optr == "&&" || binary->optr == "||") {
         if (lType != "bool" || rType != "bool") {
-            diag.report("ERROR349", binary->line, 1, "", binary->optr + "' cannot be used on type '" + lType + "' and '" + rType);
+            diag.report("ERROR349", binary->line, binary->column, binary->length, binary->optr + "' cannot be used on type '" + lType + "' and '" + rType);
             
             binary->resolvedType = "unknown";
             return binary->resolvedType;
@@ -68,7 +74,7 @@ std::string TypeChecker::checkBinaryExpr(ASTNode* node) {
 
     std::string resolved = resolveNumericPromotion(lType, rType);
     if (resolved.empty()) {
-        diag.report("ERROR350", binary->line, 1, "", lType + "' and '" + rType);
+        diag.report("ERROR350", binary->line, binary->column, binary->length, lType + "' and '" + rType);
         
         binary->resolvedType = "unknown";
         return binary->resolvedType;
@@ -79,7 +85,7 @@ std::string TypeChecker::checkBinaryExpr(ASTNode* node) {
         binary->optr == "<"  || binary->optr == "<=") {
         if (binary->optr != "==" && binary->optr != "!=") {
             if (lType == "string" || lType == "bool" || rType == "string" || rType == "bool") {
-                diag.report("ERROR351", binary->line, 1, "", binary->optr + "' cannot be used on type '" + lType + "' and '" + rType);
+                diag.report("ERROR351", binary->line, binary->column, binary->length, binary->optr + "' cannot be used on type '" + lType + "' and '" + rType);
                 
                 binary->resolvedType = "unknown";
                 return binary->resolvedType;
@@ -91,13 +97,13 @@ std::string TypeChecker::checkBinaryExpr(ASTNode* node) {
 
     if (binary->optr == "<<" || binary->optr == ">>") {
         if (rType != "int" && rType != "bigint") {
-            diag.report("ERROR352", binary->line, 1, "", "");
+            diag.report("ERROR352", binary->line, binary->column, binary->length, "");
             
             binary->resolvedType = "unknown";
             return binary->resolvedType;
         }
         if (resolved != "int" && resolved != "bigint") {
-            diag.report("ERROR353", binary->line, 1, "", "");
+            diag.report("ERROR353", binary->line, binary->column, binary->length, "");
             
             binary->resolvedType = "unknown";
             return binary->resolvedType;
@@ -108,7 +114,7 @@ std::string TypeChecker::checkBinaryExpr(ASTNode* node) {
 
     if (binary->optr == "&" || binary->optr == "^" || binary->optr == "|") {
         if ((lType != "int" && lType != "bigint") || (rType != "int" && rType != "bigint")) {
-            diag.report("ERROR354", binary->line, 1, "", "");
+            diag.report("ERROR354", binary->line, binary->column, binary->length, "");
             
             binary->resolvedType = "unknown";
             return binary->resolvedType;

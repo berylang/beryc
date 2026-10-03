@@ -14,8 +14,7 @@
 
 
 std::unique_ptr<ASTNode> Parser::parseIfStmt() {
-    advance();
-    int line = previous().line;
+    Token kw = advance();
 
     consume(TokenType::TOKEN_LPARAN, "ERROR206","if");
     auto condition = parseExpression();
@@ -33,20 +32,18 @@ std::unique_ptr<ASTNode> Parser::parseIfStmt() {
         }
     }
 
-    return std::make_unique<IfStmtNode>(std::move(condition),std::move(ifBranch),std::move(elseBranch),line); 
+    return withLoc(std::make_unique<IfStmtNode>(std::move(condition), std::move(ifBranch), std::move(elseBranch), kw.line), kw);
 
 }
 
 std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
-    advance();
-    int line = previous().line;
-
+    Token kw = advance();
     consume(TokenType::TOKEN_LPARAN, "ERROR206","switch");
     auto expr = parseExpression();
     consume(TokenType::TOKEN_RPARAN, "ERROR204","condition");
     consume(TokenType::TOKEN_LBRACE, "ERROR207");
 
-    auto sw = std::make_unique<SwitchStmtNode>(line);
+    auto sw = withLoc(std::make_unique<SwitchStmtNode>(kw.line), kw);
     sw->condition = std::move(expr);
 
     while (!isAtEnd() && !check(TokenType::TOKEN_RBRACE)) {
@@ -83,7 +80,7 @@ std::unique_ptr<ASTNode> Parser::parseSwitchStmt() {
         }
         else {
             errors = true;
-            diag.report("ERROR203", peek().line, 1, peek().lexeme);
+            diag.report("ERROR203", peek().line, peek().column, peek().length);
             advance();
         }
     }

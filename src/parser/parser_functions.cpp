@@ -18,8 +18,7 @@
 */
 
 std::unique_ptr<ASTNode> Parser::parseFunctionDef(AccessSpecifier access) {
-    advance(); 
-    int line = previous().line;
+    advance();
     Token nameTokenen = consume(TokenType::TOKEN_IDENT, "ERROR219");
     consume(TokenType::TOKEN_LPARAN, "ERROR220");
 
@@ -52,7 +51,7 @@ std::unique_ptr<ASTNode> Parser::parseFunctionDef(AccessSpecifier access) {
 
     consume(TokenType::TOKEN_LBRACE, "ERROR225");
     auto body = parseBlock();
-    return std::make_unique<FunctionDefNode>(nameTokenen.lexeme, std::move(params), returnType, std::move(body),access, line);
+    return withLoc(std::make_unique<FunctionDefNode>(nameTokenen.lexeme, std::move(params), returnType, std::move(body), access, nameTokenen.line), nameTokenen);
 }
 
 std::unique_ptr<ASTNode> Parser::parseCallExpr(const Token& identifierToken) {
@@ -65,18 +64,18 @@ std::unique_ptr<ASTNode> Parser::parseCallExpr(const Token& identifierToken) {
         } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
     }
     consume(TokenType::TOKEN_RPARAN, "ERROR227");
-    
-    return std::make_unique<CallExprNode>(identifierToken.lexeme, std::move(arguments), identifierToken.line);
+    auto node = withLoc(std::make_unique<CallExprNode>(identifierToken.lexeme, std::move(arguments), identifierToken.line), identifierToken);
+    spanFrom(node.get(), SourceLoc{identifierToken.line, identifierToken.column, 1}, previous());
+    return node;
 }
 
 std::unique_ptr<ASTNode> Parser::parseReturnStmt() {
-    advance(); 
-    int line = previous().line;
+    Token retTok = advance();
     std::unique_ptr<ASTNode> value = nullptr;
     if (!check(TokenType::TOKEN_SEMICOLON)) {
         value = parseExpression();
     }
     
     consume(TokenType::TOKEN_SEMICOLON, "ERROR228");
-    return std::make_unique<ReturnStmtNode>(std::move(value), line);
+    return withLoc(std::make_unique<ReturnStmtNode>(std::move(value), retTok.line), retTok);
 }

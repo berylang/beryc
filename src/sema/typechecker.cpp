@@ -71,7 +71,7 @@ std::string TypeChecker::checkCastExpr(ASTNode* node) {
     };
 
     if (!isPrimitive(srcType) || !isPrimitive(castNode->targetType)) {
-        diag.report("ERROR382", castNode->line, 1, "", srcType + "' to '" + castNode->targetType);
+        diag.report("ERROR382", castNode->line, castNode->column, castNode->length, srcType + "' to '" + castNode->targetType);
         
         castNode->resolvedType = "unknown";
         return castNode->resolvedType;
@@ -101,7 +101,7 @@ std::string TypeChecker::checkLiteral(ASTNode* node) {
             node->resolvedType = "null";
             return node->resolvedType;
         default:
-            diag.report("ERROR383", node->line, 1, "", "");
+            diag.report("ERROR383", node->line, node->column, node->length, "");
             node->resolvedType = "unknown";
             return node->resolvedType;
     }

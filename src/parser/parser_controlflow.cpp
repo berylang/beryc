@@ -12,24 +12,19 @@
 
 
 std::unique_ptr<ASTNode> Parser::parseBreakStmt() {
-    int line = previous().line;
-    advance();
+    Token kw = advance();
     consume(TokenType::TOKEN_SEMICOLON, "ERROR201", "break");
-    return std::make_unique<BreakStmtNode>(line);
+    return withLoc(std::make_unique<BreakStmtNode>(kw.line), kw);
 }
 
 std::unique_ptr<ASTNode> Parser::parseContinueStmt() {
-    int line = previous().line;
-    advance();
+    Token kw = advance();
     consume(TokenType::TOKEN_SEMICOLON, "ERROR201", "continue");
-    return std::make_unique<ContinueStmtNode>(line);
+    return withLoc(std::make_unique<ContinueStmtNode>(kw.line), kw);
 }
 
 std::unique_ptr<ASTNode> Parser::parsePassStmt() {
-    int line = previous().line;
-    advance();
+    Token kw = advance();
     consume(TokenType::TOKEN_SEMICOLON, "ERROR201", "pass");
-    return std::make_unique<PassStmtNode>(line);
+    return withLoc(std::make_unique<PassStmtNode>(kw.line), kw);
 }
-
-

@@ -56,7 +56,7 @@ static std::string findBRELib(const std::string& exeDir) {
 static int runFrontend(const std::string& sourcePath, const std::string& irPath, const std::string& exeDir) {
     std::ifstream file(sourcePath);
     if (!file.is_open()) {
-        std::cerr <<"Bery: Error: cannot open file '" << sourcePath <<"'\n";
+        DiagnosticEngine::fatal("cannot open file '" + sourcePath + "'");
         return 3;
     }
 
@@ -75,8 +75,7 @@ static int runFrontend(const std::string& sourcePath, const std::string& irPath,
     auto ast = parser.parse();
 
     if (diag.hasErrors() || parser.hasErrors()) {
-        diag.printAll();
-        std::cerr << "Bery: Compilation halted due to syntax errors.\n";
+        diag.printAll("syntax");
         return 5;
     }
 
@@ -86,9 +85,8 @@ static int runFrontend(const std::string& sourcePath, const std::string& irPath,
     SemanticAnalyzer sema(ast.get(), diag);
     sema.analyze();
 
-    diag.printAll();
+    diag.printAll("semantic");
     if (diag.hasErrors()) {
-        std::cerr <<"Bery: Compilation halted due to semantic errors.\n";
         return 6;
     }
     CodeGen codegen(ast.get(), sema.symbolTable);
@@ -99,13 +97,13 @@ static int runFrontend(const std::string& sourcePath, const std::string& irPath,
 int cmdCompile(const std::string& sourcePath, std::string& outBinaryPath, const std::string& exeDir) {
     BeryToolChain tc = detectToolchain();
     if (!tc.valid) {
-        std::cerr <<"Bery: Error: no LLVM toolchain found.\n\tInstall llc and g++ (Linux), clang++ (macOS/Windows).\n";
+        DiagnosticEngine::fatal("no LLVM toolchain found", "install llc and g++ (Linux) or clang++ (macOS/Windows)");
         return 10;
     }
 
     std::string breLib = findBRELib(exeDir);
     if (breLib.empty()) {
-        std::cerr <<"Bery: Error: cannot find libbre.a.\n\tRun 'cmake --build build' first.\n";
+        DiagnosticEngine::fatal("cannot find libbre.a", "run 'cmake --build build' first");
         return 11;
     }
 
@@ -118,14 +116,14 @@ int cmdCompile(const std::string& sourcePath, std::string& outBinaryPath, const 
     if (fe != 0) return fe;
     std::string compileCmd = buildCompileCmd(tc, irFile, objFile);
     if (system(compileCmd.c_str()) != 0) {
-        std::cerr <<"Bery: Error: llc failed.\n";
+        DiagnosticEngine::fatal("llc failed (see the output above)");
         return 12;
     }
     
     std::string linkCmd = buildLinkCmd(tc, objFile, breLib, outBinaryPath);
 
     if (system(linkCmd.c_str()) != 0) {
-        std::cerr <<"Bery: Error: linker failed.\n";
+        DiagnosticEngine::fatal("linking failed (see the output above)");
         return 13;
     }
     remove(irFile.c_str());

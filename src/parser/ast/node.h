@@ -47,11 +47,21 @@ enum class NodeType {
     CLASS_DEF,ATTRIBUTE_SECTION,METHOD_SECTION, NEW_EXPR,REF_EXPR,
 };
 
+struct SourceLoc {
+    int line = 0;
+    int column = 1;
+    int length = 1;
+};
 
 struct ASTNode {
     NodeType type;
-    int line;
+    int line = 0;
+    int column = 1; 
+    int length = 1;
+    SourceLoc span{0, 0, 0};
     std::string resolvedType;
     virtual ~ASTNode() = default;
+    SourceLoc loc() const { return {line, column, length}; }
+    SourceLoc whole() const { return span.length ? span : loc(); }
 };
 

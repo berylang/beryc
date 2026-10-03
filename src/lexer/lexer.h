@@ -51,10 +51,11 @@ private:
     int col;
     int startColumn;
     int startLine;
+    int startOffset; 
     // bool errors;
     std::vector<Token> tokens;
     DiagnosticEngine& diag;
-
+    int spanLen() const { return current - startOffset; }
     void emit(TokenType type, const std::string& lexeme);
     void bumpLine();
     // @pointers inside the source

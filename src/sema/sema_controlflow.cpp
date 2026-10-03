@@ -61,7 +61,7 @@ void SemanticAnalyzer::analyzeBlock(ASTNode* node) {
 
         */
         if (!terminator.empty() && !unreachableReported && i + 1 < block->statements.size()) {
-            diag.report("WARNING301", block->statements[i + 1]->line, 1, "", terminator);
+            diag.report("WARNING301", block->statements[i + 1]->line, block->statements[i + 1]->column, block->statements[i + 1]->length, terminator);
             unreachableReported = true; // warning once per block
         }
     }
@@ -88,13 +88,14 @@ void SemanticAnalyzer::analyzeIfStmt(ASTNode* node) {
     auto* ifStmt = static_cast<IfStmtNode*>(node);
     std::string conditionType = typeChecker.analyzeExpression(ifStmt->conditions.get());
 
-    if(conditionType != "bool" && conditionType != "unknown"){
-        diag.report("ERROR306", ifStmt->line, 1, "", conditionType);
+    auto cw = ifStmt->conditions->whole();
+    if (conditionType != "bool" && conditionType != "unknown") {
+        diag.report("ERROR306", cw.line, cw.column, cw.length, conditionType);
     }
 
     if (ifStmt->conditions->type == NodeType::BOOL_LIT) {
         auto* boolLit = static_cast<BoolLitNode*>(ifStmt->conditions.get());
-        diag.report("WARNING302", ifStmt->line, 1, "", boolLit->value ? "true" : "false");
+        diag.report("WARNING302", cw.line, cw.column, cw.length, boolLit->value ? "true" : "false");
     }
 
     // After edge cases analyze the if branch's main scope (using SemanticAnalyzer::analyzeBlcok() function)
@@ -130,7 +131,7 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
     std::string condType = typeChecker.analyzeExpression(sw->condition.get());
 
     if (condType != "unknown" && condType != "int" && condType != "bigint" && condType != "char") {
-        diag.report("ERROR307", sw->line, 1, "", condType);
+        diag.report("ERROR307", sw->line, sw->column, sw->length, condType);
 
     }
 
@@ -148,7 +149,7 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
             */
             std::string caseType = typeChecker.analyzeExpression(c.value.get());
             if (caseType != "unknown" && condType != "unknown" && caseType != condType) {
-                diag.report("ERROR308", sw->line, 1, "", {caseType, condType});
+                diag.report("ERROR308", sw->line, sw->column, sw->length, {caseType, condType});
             }
 
             // convert literal case values into comparable keys so  duplicate integers and character cases can be detected regardless
@@ -163,7 +164,7 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
             // One warning regrading this - if the same literal case value has already declared, report 
             // it as warning "duplicate case".
             if (!literalKey.empty() && !seenCaseValues.insert(literalKey).second) {
-                diag.report("WARNING303", c.value->line, 1, "", "");
+                diag.report("WARNING303", c.value->line, c.value->column, c.value->length, "");
             }
         }
         
@@ -192,7 +193,7 @@ void SemanticAnalyzer::analyzeBreakStmt(ASTNode* node) {
     
     */
     if (loopOrSwitchDepth <= 0) {
-        diag.report("ERROR309", node->line, 1, "", "");
+        diag.report("ERROR309", node->line, node->column, node->length, "");
         
     }
 }
@@ -205,7 +206,7 @@ void SemanticAnalyzer::analyzeContinueStmt(ASTNode* node) {
     depth of loops which is 'loopDepth' 
     */
     if (loopDepth <= 0){
-        diag.report("ERROR310", node->line, 1, "", "");
+        diag.report("ERROR310", node->line, node->column, node->length, "");
         
     }
 }
@@ -227,13 +228,14 @@ void SemanticAnalyzer::analyzeWhileStmt(ASTNode* node){
 
     std::string conditionType = typeChecker.analyzeExpression(whileStmt->condition.get());
 
-    if(conditionType != "bool" && conditionType != "unknown"){
-        diag.report("ERROR311", whileStmt->line, 1, "", conditionType);
+    auto cw = whileStmt->condition->whole();
+    if (conditionType != "bool" && conditionType != "unknown") {
+        diag.report("ERROR311", cw.line, cw.column, cw.length, conditionType);
     }
 
     if (whileStmt->condition->type == NodeType::BOOL_LIT &&
         !static_cast<BoolLitNode*>(whileStmt->condition.get())->value) {
-        diag.report("WARNING304", whileStmt->line, 1, "", "");
+        diag.report("WARNING304", cw.line, cw.column, cw.length, "");
     }
 
     loopOrSwitchDepth++;
@@ -255,9 +257,9 @@ void SemanticAnalyzer::analyzeDoWhileStmt(ASTNode* node){
     */
     std::string conditionType = typeChecker.analyzeExpression(dowhilestmt->condition.get());
 
-    if(conditionType != "bool" && conditionType != "unknown"){
-        diag.report("ERROR311", dowhilestmt->line, 1, "", conditionType);
-        
+    auto cw = dowhilestmt->condition->whole();
+    if (conditionType != "bool" && conditionType != "unknown") {
+        diag.report("ERROR311", cw.line, cw.column, cw.length, conditionType);
     }
 
     loopOrSwitchDepth++;
@@ -288,12 +290,12 @@ void SemanticAnalyzer::analyzeForStmt(ASTNode* node) {
         // The condition must evaluate to 'bool', and it should not be literal 'false' condition,
         // because it is then dead code block which will never exec. so it's an warning report.
         std::string condType = typeChecker.analyzeExpression(forStmt->condition.get());
+        auto cw = forStmt->condition->whole();
         if (condType != "bool" && condType != "unknown") {
-            diag.report("ERROR312", forStmt->line, 1, "", condType);
+            diag.report("ERROR312", cw.line, cw.column, cw.length, condType);
         }
-
         if (forStmt->condition->type == NodeType::BOOL_LIT && !static_cast<BoolLitNode*>(forStmt->condition.get())->value) {
-            diag.report("WARNING305", forStmt->line, 1, "", "");
+            diag.report("WARNING305", cw.line, cw.column, cw.length, "");
         }
     }
     
@@ -337,10 +339,10 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
             return t == "int" || t == "bigint" || t == "float" || t == "double" || t == "char";
         };
         if (startType != "unknown" && !isRangeable(startType)) {
-            diag.report("ERROR407", forIn->line, 1, "", startType);
+            diag.report("ERROR407", forIn->line, forIn->column, forIn->length, startType);
         }
         if (endType != "unknown" && !isRangeable(endType)) {
-            diag.report("ERROR407", forIn->line, 1, "", endType);
+            diag.report("ERROR407", forIn->line, forIn->column, forIn->length, endType);
         }
 
         if (actualVarType == "unknown" || actualVarType == "") {
@@ -356,13 +358,13 @@ void SemanticAnalyzer::analyzeForInStmt(ASTNode* node) {
         } else if(iterType == "string"){
             elementType = "char";
         } else if(iterType != "unknown") {
-            diag.report("ERROR313", forIn->line, 1, "", iterType);
+            diag.report("ERROR313", forIn->line, forIn->column, forIn->length, iterType);
         }
         if(actualVarType == "unknown" || actualVarType == ""){
             actualVarType = elementType;
         } else if(elementType!="unknown" && actualVarType!=elementType){
             if(!isImplicityConversionCheck(elementType, actualVarType)){
-                diag.report("ERROR314", forIn->line, 1, "", {forIn->varName, actualVarType, elementType});
+                diag.report("ERROR314", forIn->line, forIn->column, forIn->length, {forIn->varName, actualVarType, elementType});
             }
         }
     }

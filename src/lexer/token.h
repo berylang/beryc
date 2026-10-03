@@ -79,5 +79,5 @@ struct Token {
     std::string lexeme;
     int line;
     int column;
-    
+    int length = 1;
 };
