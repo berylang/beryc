@@ -31,10 +31,9 @@ std::unique_ptr<ASTNode> Parser::parse() {
         size_t startPos = current;
         try {
             if (check(TokenType::TOKEN_RUN)) {
-                advance();
-                int runline = previous().line;
+                Token runTok = advance();
                 consume(TokenType::TOKEN_LBRACE, "ERROR276");
-                auto runBlock = std::make_unique<RunBlockNode>(runline);
+                auto runBlock = withLoc(std::make_unique<RunBlockNode>(runTok.line), runTok);
                 while (!isAtEnd() && !check(TokenType::TOKEN_RBRACE)) {
                     size_t startPos = current;
                     try {
@@ -64,7 +63,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
                     auto decls = parseVarDecl(AccessSpecifier::PUBLIC, isConst);
                     for (auto& d : decls) program->globals.push_back(std::move(d));
                 } else {
-                    diag.report("ERROR274", peek().line, 1, peek().lexeme);
+                   diag.report("ERROR274", peek().line, peek().column, peek().length);
                     errors = true;
                     throw ParseError();
                 }
@@ -76,7 +75,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
     }
 
     if (!program->runBlock && !program->moduleOptionalRun) {
-        diag.report("ERROR275", peek().line,1,peek().lexeme);
+        diag.report("ERROR275", peek().line, peek().column, peek().length);
         errors = true;
     }
     
@@ -110,7 +109,7 @@ bool Parser::check(TokenType type) {
 Token Parser::consume(TokenType type, const std::string& code, const std::string& context) {
     if (check(type)) return advance();
     errors = true;
-    diag.report(code, peek().line, 1, peek().lexeme, context);
+    diag.report(code, peek().line, peek().column, peek().length, context);
     throw ParseError();
 }
 
@@ -129,9 +128,8 @@ std::vector<std::unique_ptr<ASTNode>> Parser::single(std::unique_ptr<ASTNode> no
     return outputStream;
 }
 std::unique_ptr<BlockNode> Parser::parseBlock() {
-    int line = previous().line;
-
-    auto block = std::make_unique<BlockNode>(line);
+    Token open = previous();
+    auto block = withLoc(std::make_unique<BlockNode>(open.line), open);
     while(!isAtEnd() && !check(TokenType::TOKEN_RBRACE)){
         size_t startPos = current;
         try {
@@ -206,12 +204,12 @@ void Parser::parsePrologues(ProgramNode* program) {
 
         auto it = PROLOGUE_VALUES.find(name);
         if (it == PROLOGUE_VALUES.end()) {
-            diag.report("ERROR279", nameTok.line, 1, nameTok.lexeme, nameTok.lexeme);
+            diag.report("ERROR279", nameTok.line, nameTok.column, nameTok.length, nameTok.lexeme);
             errors = true;
             throw ParseError();
         }
         if (!seen.insert(name).second) {
-            diag.report("ERROR281", nameTok.line, 1, nameTok.lexeme, nameTok.lexeme);
+            diag.report("ERROR281", nameTok.line, nameTok.column, nameTok.length, nameTok.lexeme);
             errors = true;
             throw ParseError();
         }
@@ -219,7 +217,7 @@ void Parser::parsePrologues(ProgramNode* program) {
         Token valueTok = peek();
         bool validValueToken = check(TokenType::TOKEN_IDENT) || check(TokenType::TOKEN_TRUE) || check(TokenType::TOKEN_FALSE);
         if (!validValueToken || !it->second.count(valueTok.lexeme)) {
-            diag.report("ERROR280", valueTok.line, 1, valueTok.lexeme, std::vector<std::string>{valueTok.lexeme, name});
+            diag.report("ERROR280", valueTok.line, valueTok.column, valueTok.length, std::vector<std::string>{valueTok.lexeme, name});
             errors = true;
             throw ParseError();
         }

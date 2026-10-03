@@ -61,8 +61,8 @@ private:
     std::string checkNewExpr(ASTNode* node);
     std::string checkRefExpr(ASTNode* node);
     std::string resolveFieldType(ClassDefNode* cls, const std::string& fieldName);
-    std::string resolveChainType(const std::vector<std::string>& parts, int line);
-    std::string resolveFieldChainFrom(std::string currentType, const std::vector<std::string>& parts, int line);
+    std::string resolveChainType(const std::vector<std::string>& parts, SourceLoc loc);
+    std::string resolveFieldChainFrom(std::string currentType, const std::vector<std::string>& parts, SourceLoc loc);
     std::string resolveNumericPromotion(const std::string& lType, const std::string& rType);
 
     // @oop
@@ -73,11 +73,11 @@ private:
     std::vector<FunctionDefNode*> getInheritedMethods(ClassDefNode* cls, const std::string& methodName);
     bool sameMethodSignature(FunctionDefNode* a, FunctionDefNode* b);
     std::vector<FunctionDefNode*> findConstructors(ClassDefNode* cls);
-    FunctionDefNode* resolveMethodOverload(const std::vector<FunctionDefNode*>& candidate, const std::vector<std::string>& argTypes, const std::string& label, int line);
-    const FunctionSignature* resolveFunctionOverload(const std::vector<FunctionSignature>& candidate, const std::vector<std::string>& argTypes, const std::string& label, int line);
+    FunctionDefNode* resolveMethodOverload(const std::vector<FunctionDefNode*>& candidate, const std::vector<std::string>& argTypes, const std::string& label, SourceLoc loc);
+    const FunctionSignature* resolveFunctionOverload(const std::vector<FunctionSignature>& candidate, const std::vector<std::string>& argTypes, const std::string& label, SourceLoc loc);
     bool isParameterTypePromotable(const std::string& from, const std::string& to);
     bool isParameterTypeExactlyMatching(const std::vector<std::string>& a, const std::vector<std::string>& b);
-    bool checkMemberAccess(AccessSpecifier access, const std::string& className, const std::string& memberName, const std::string& type, int line);
+    bool checkMemberAccess(AccessSpecifier access, const std::string& className, const std::string& memberName, const std::string& type, SourceLoc loc);
     std::string checkSuperCall(ASTNode* node);
 };
 

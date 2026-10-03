@@ -76,15 +76,14 @@ static std::unordered_map<std::string, TokenType> keywords = {
 };
 
 Lexer::Lexer(const std::string& source, DiagnosticEngine& diag)
-    : source(source), current(0), line(1), col(1), startColumn(1), startLine(1), diag(diag) {}
-
+    : source(source), current(0), line(1), col(1), startColumn(1), startLine(1), startOffset(0), diag(diag) {}
 
 std::vector<Token> Lexer::tokanize() {
     while (!isAtEnd()) {
         skipWhitespaces();
         if (!isAtEnd()) scanToken();
     }
-    tokens.push_back({TokenType::TOKEN_EOF, "", line, col});
+    tokens.push_back({TokenType::TOKEN_EOF, "", line, col, 1});
 
     // it goes to parser next. vector of tokens.
     return tokens;
@@ -93,6 +92,7 @@ std::vector<Token> Lexer::tokanize() {
 void Lexer::scanToken() {
     startColumn = col;
     startLine = line;
+    startOffset = current;
     char c = advance();
 
     if (isAlpha(c)) {
@@ -406,13 +406,13 @@ void Lexer::scanNumber() {
 
         if (current == digitsStart) {
             std::string full = source.substr(start, current - start);
-            diag.report(noDigitsCode, startLine, startColumn, full, full);
+            diag.report(noDigitsCode, startLine, startColumn, (int)full.size(), full);
             emit(TokenType::TOKEN_INT_LIT, "0");
             return;
         }
         if (!isAtEnd() && isAlphaNumeric(peek())) {
             std::string bad(1, peek());
-            diag.report(badDigitCode, line, col, bad, bad);
+            diag.report(badDigitCode, line, col, 1, bad);
             advance();
         }
         std::string digits = source.substr(digitsStart, current - digitsStart);
@@ -421,7 +421,7 @@ void Lexer::scanNumber() {
             emit(TokenType::TOKEN_INT_LIT, std::to_string(value));
         } catch (const std::out_of_range&) {
             std::string full = source.substr(start, current - start);
-            diag.report("ERROR117", startLine, startColumn, full, full);
+            diag.report("ERROR117", startLine, startColumn, (int)full.size(), full);
             emit(TokenType::TOKEN_INT_LIT, "0");
         }
         return;
@@ -447,7 +447,7 @@ void Lexer::scanNumber() {
             while (!isAtEnd() && isDigit(peek())) advance();
         } else {
             std::string bad = source.substr(start, current - start + 1);
-            diag.report("ERROR116", startLine, startColumn, bad, bad);
+            diag.report("ERROR116", startLine, startColumn, (int)bad.size(), bad);
             advance();
             if (!isAtEnd() && (peek() == '+' || peek() == '-')) advance();
         }
@@ -467,9 +467,9 @@ void Lexer::scanCharLit() {
         @todo : Changed it to the UTF-8 encoding.
     
     */
-    if (peek() == '\'') { 
-        diag.report("ERROR100", startLine, startColumn, "'");
-        advance(); 
+    if (peek() == '\'') {
+        advance();
+        diag.report("ERROR100", startLine, startColumn, spanLen());
         return;
     }
 
@@ -477,8 +477,8 @@ void Lexer::scanCharLit() {
 
     if (peek() == '\\') { 
         advance(); 
-        if (isAtEnd() || peek() == '\'') { 
-            diag.report("ERROR102", startLine, startColumn, "\\");
+        if (isAtEnd() || peek() == '\'') {
+            diag.report("ERROR102", startLine, startColumn, spanLen());
             return;
         }
 
@@ -495,14 +495,14 @@ void Lexer::scanCharLit() {
             case '"':  value = '\"'; break;
             case '\'': value = '\''; break;
             default:
-                diag.report("ERROR103", startLine, startColumn, std::string(1, es));
+                diag.report("ERROR103", startLine, startColumn, spanLen(), std::string(1, es));
                 return;
         }
     } 
     
     else {
         if (peek() == '\n' || peek() == '\r') {
-            diag.report("ERROR101", startLine, startColumn, "");
+            diag.report("ERROR101", startLine, startColumn, spanLen());
             return;
         }
         value = advance();
@@ -522,22 +522,19 @@ void Lexer::scanCharLit() {
         advance(); 
         foundClosingQuote = true;
     }
-    if (foundClosingQuote) {
-        diag.report("ERROR104", startLine, startColumn, "");
-    } else {
-        diag.report("ERROR105", startLine, startColumn, "");
-    }
+    if (foundClosingQuote) diag.report("ERROR104", startLine, startColumn, spanLen());
+    else                   diag.report("ERROR105", startLine, startColumn, spanLen());
 }
 
 
 void Lexer::scanStringLit() {
     std::string value = "";
     while (!isAtEnd() && peek() != '"') {
-        if (peek() == '\n') bumpLine();
         if (peek() == '\\') {
+            int escLine = line, escCol = col;
             advance();
             if (isAtEnd()) return;
-            
+
             char es = advance();
             switch (es) {
                 case 'n':  value += '\n'; break;
@@ -548,16 +545,16 @@ void Lexer::scanStringLit() {
                 case '"':  value += '\"'; break;
                 case '\'': value += '\''; break;
                 default:
-                    diag.report("ERROR106", startLine, startColumn, std::string(1, es));
-                    value += es; 
+                    diag.report("ERROR106", escLine, escCol, 2, std::string(1, es));
+                    value += es;
                     break;
             }
         } else {
             value += advance();
         }
     }
-    if (isAtEnd()) {
-        diag.report("ERROR107", startLine, startColumn, "");
+   if (isAtEnd()) {
+        diag.report("ERROR107", startLine, startColumn, spanLen());
         return;
     }
 
@@ -591,12 +588,9 @@ void Lexer::skipComments(bool isMLC){
                     return;
                 }
             }
-            if(peek()=='\n'){bumpLine();}
             advance();
         }
-        // errors=true;
-        diag.report("ERROR108", startLine, startColumn, "");
-        
+        diag.report("ERROR108", startLine, startColumn, spanLen());
     }
     else{
         while(!isAtEnd() && peek()!='\n'){advance();}
@@ -647,7 +641,7 @@ char Lexer::peekNext() {
 // bool Lexer::hasErrors() {return errors;}
 
 void Lexer::emit(TokenType type, const std::string& lexeme) {
-    tokens.push_back({type, lexeme, line, startColumn});
+    tokens.push_back({type, lexeme, startLine, startColumn, spanLen()});
 }
 
 void Lexer::bumpLine() {

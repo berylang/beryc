@@ -9,7 +9,7 @@ struct Diagnostic {
     Severity severity;
     int line;
     int column;
-    std::string lexeme;
+    int length;
     std::vector<std::string> contexts;
     std::string hint;
 };

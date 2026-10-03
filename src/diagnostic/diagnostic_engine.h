@@ -6,13 +6,12 @@
 class DiagnosticEngine {
 public:
     DiagnosticEngine(const std::string& source, const std::string& filename);
-
-    void report(const std::string& code, int line, int column, const std::string& lexeme, const std::string& context = "");
-    void report(const std::string& code, int line, int column, const std::string& lexeme, const std::vector<std::string>& contexts);
-
+    static void fatal(const std::string& message, const std::string& hint = "");
+    void report(const std::string& code, int line, int column, int length, const std::string& context = "");
+    void report(const std::string& code, int line, int column, int length, const std::vector<std::string>& contexts);
     bool hasErrors() const;
     bool hasWarnings() const;
-    void printAll();
+    void printAll(const std::string& stage = "");
 
 private:
     std::string filename;
@@ -23,5 +22,5 @@ private:
 
     void splitSource(const std::string& source);
     void printOne(const Diagnostic& d);
-    void printStatsBox();
+    void printSummary(const std::string& stage);
 };

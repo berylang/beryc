@@ -2,6 +2,7 @@
 #include "commands/cmd_compile.h"
 #include "commands/cmd_run.h"
 #include "commands/cmd_version.h"
+#include "../src/diagnostic/diagnostic_engine.h"
 #include <iostream>
 #include <string>
 #include <cstdlib>
@@ -66,21 +67,21 @@ int beryMain(int argc, char* argv[]){
         return cmd_version();
     }
     if(command=="compile"){
-        if(argc<3){
-            std::cerr<<"Bery : Error : Missing source path\n";
+        if (argc < 3) {
+            DiagnosticEngine::fatal("missing source file", "usage: bery " + command + " <file.bry>");
             return 1;
         }
         std::string out_path;
         return cmdCompile(argv[2],out_path,ExeDir);
     }
     if(command == "run"){
-        if(argc<3){
-            std::cerr<<"Bery : Error : Missing source path\n";
+        if (argc < 3) {
+            DiagnosticEngine::fatal("missing source file", "usage: bery " + command + " <file.bry>");
             return 1;
         }
         return cmdRun(argv[2],ExeDir);
     }
-    std::cerr <<"Bery : Error : Unknown command '" << command <<"'\n";
+    DiagnosticEngine::fatal("unknown command '" + command + "'");
     printUsage();
     return 1;
 }

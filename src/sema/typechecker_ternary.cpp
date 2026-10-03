@@ -9,7 +9,7 @@ std::string TypeChecker::checkTernaryExpr(ASTNode* node) {
     auto* tern = static_cast<TernaryExprNode*>(node);
     std::string condType = analyzeExpression(tern->condition.get());
     if (condType != "bool") {
-        diag.report("ERROR355", tern->line, 1, "", condType);
+        diag.report("ERROR355", tern->line, tern->column, tern->length, condType);
         
         tern->resolvedType = "unknown";
         return tern->resolvedType;
@@ -20,7 +20,7 @@ std::string TypeChecker::checkTernaryExpr(ASTNode* node) {
 
     std::string resolved = resolveNumericPromotion(tType, fType);
     if (resolved.empty()) {
-        diag.report("ERROR356", tern->line, 1, "", tType + "' vs '" + fType);
+        diag.report("ERROR356", tern->line, tern->column, tern->length, tType + "' vs '" + fType);
         
         tern->resolvedType = "unknown";
         return tern->resolvedType;
@@ -43,7 +43,7 @@ std::string TypeChecker::checkBetweenExpr(ASTNode* node) {
     };
 
     if(!validType(valueType) || !validType(lowerType) || !validType(upperType)){
-        diag.report("ERROR365", between->line, 1, "", "");
+        diag.report("ERROR365", between->line, between->column, between->length, "");
         
         between->resolvedType = "unknown";
         return between->resolvedType;

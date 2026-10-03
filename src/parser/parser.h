@@ -38,6 +38,19 @@ private:
     std::vector<Token> tokens;
     int current;
     bool errors;
+
+    template <typename T>
+    static std::unique_ptr<T> withLoc(std::unique_ptr<T> node, const Token& tok) {
+        node->line   = tok.line;
+        node->column = tok.column;
+        node->length = tok.length;
+        return node;
+    }
+    static void spanFrom(ASTNode* node, const SourceLoc& start, const Token& endTok) {
+        int len = (endTok.line == start.line) ? endTok.column + endTok.length - start.column : 1 << 20;
+        node->span = {start.line, start.column, len};
+    }
+    
     DiagnosticEngine& diag;
     const std::unordered_map<std::string, std::unordered_set<std::string>> PROLOGUE_VALUES = {
         {"memory", {"managed", "manual"}},

@@ -14,19 +14,17 @@
 */
 
 std::unique_ptr<ASTNode> Parser::parseWhileStmt(){
-    advance();
-    int line = previous().line;
+    Token kw = advance();
     consume(TokenType::TOKEN_LPARAN,"ERROR229");
     auto condition = parseExpression();
     consume(TokenType::TOKEN_RPARAN, "ERROR204");
     consume(TokenType::TOKEN_LBRACE, "ERROR230");
     auto body = parseBlock();
-    return std::make_unique<WhileStmtNode>(std::move(condition), std::move(body), line);
+    return withLoc(std::make_unique<WhileStmtNode>(std::move(condition), std::move(body), kw.line), kw);
 }
 
 std::unique_ptr<ASTNode> Parser::parseDoWhileStmt(){
-    advance();
-    int line = previous().line;
+    Token kw = advance();
     consume(TokenType::TOKEN_LBRACE, "ERROR231");
     auto body = parseBlock();
     consume(TokenType::TOKEN_WHILE, "ERROR232");
@@ -34,12 +32,11 @@ std::unique_ptr<ASTNode> Parser::parseDoWhileStmt(){
     auto condition = parseExpression();
     consume(TokenType::TOKEN_RPARAN, "ERROR204");
     consume(TokenType::TOKEN_SEMICOLON, "ERROR233");
-    return std::make_unique<DoWhileStmtNode>(std::move(condition), std::move(body), line);
+    return withLoc(std::make_unique<DoWhileStmtNode>(std::move(condition), std::move(body), kw.line), kw);
 }
 
 std::unique_ptr<ASTNode> Parser::parseForStmt() {
-    advance();
-    int line = previous().line;
+    Token kw = advance();
     consume(TokenType::TOKEN_LPARAN, "ERROR234");
     bool isForIn = false;
     bool hasExplicitType = false;
@@ -79,7 +76,7 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
         consume(TokenType::TOKEN_LBRACE, "ERROR237");
         auto body = parseBlock();
 
-        return std::make_unique<ForInNode>(varType, varTok.lexeme, std::move(iterableOrStart), std::move(rangeEnd), std::move(step), std::move(body), line);
+        return withLoc(std::make_unique<ForInNode>(varType, varTok.lexeme, std::move(iterableOrStart), std::move(rangeEnd), std::move(step), std::move(body), kw.line), kw);
     } 
     else {
         std::vector<std::unique_ptr<ASTNode>> init;
@@ -116,6 +113,6 @@ std::unique_ptr<ASTNode> Parser::parseForStmt() {
         consume(TokenType::TOKEN_LBRACE, "ERROR237");
         auto body = parseBlock();
 
-        return std::make_unique<ForStmtNode>(std::move(init), std::move(cond), std::move(update), std::move(body), line);
+        return withLoc(std::make_unique<ForStmtNode>(std::move(init), std::move(cond), std::move(update), std::move(body), kw.line), kw);
     }
 }

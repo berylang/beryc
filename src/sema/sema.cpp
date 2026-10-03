@@ -48,7 +48,7 @@ void SemanticAnalyzer::analyze() {
             std::vector<FunctionSignature>& overload = functions[func->name];
             for(auto& existing : overload) {
                 if(existing.parameterTypes == sig.parameterTypes){
-                    diag.report("ERROR305", func->line, 1, "", func->name);
+                    diag.report("ERROR305", func->line, func->column, func->length, func->name);
                     break; 
                 }
             } 
@@ -64,7 +64,7 @@ void SemanticAnalyzer::analyze() {
 
             */
             if (classes.find(cls->name) != classes.end()) {
-                diag.report("ERROR401", cls->line, 1, "", cls->name);
+                diag.report("ERROR401", cls->line, cls->column, cls->length, cls->name);
             } else {
                 classes[cls->name] = cls;
             }
