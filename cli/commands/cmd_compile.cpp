@@ -141,15 +141,15 @@ int cmdCompile(const std::string& sourcePath, std::string& outBinaryPath, const 
     outBinaryPath = dir + BERY_PATH_SEP + stem + tc.binaryExt;
     int fe = runFrontend(sourcePath, irFile, exeDir);
     if (fe != 0) return fe;
-    std::string compileCmd = buildCompileCmd(tc, irFile, objFile);
-    if (system(compileCmd.c_str()) != 0) {
-        DiagnosticEngine::fatal("llc failed (see the output above)");
+   std::string compileCmd = buildCompileCmd(tc, irFile, objFile);
+    if (runShell(compileCmd) != 0) {
+        DiagnosticEngine::fatal("compiling IR failed (see the output above)");
         return 12;
     }
-    
+
     std::string linkCmd = buildLinkCmd(tc, objFile, breLib, outBinaryPath);
 
-    if (system(linkCmd.c_str()) != 0) {
+    if (runShell(linkCmd) != 0) {
         DiagnosticEngine::fatal("linking failed (see the output above)");
         return 13;
     }

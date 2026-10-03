@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cstdio>
 #include <algorithm>
+#include <cstdlib>
 
 namespace {
     std::mt19937_64& engine() {

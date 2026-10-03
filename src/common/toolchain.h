@@ -14,6 +14,11 @@
 
 // Folder name of the toolchain shipped next to bin/ in release archives.
 inline const std::string kBundledToolchainDir = "toolchain";
+#ifdef BERY_WINDOWS
+inline const std::string kBundledToolPrefix = "x86_64-w64-mingw32-";
+#else
+inline const std::string kBundledToolPrefix = "";
+#endif
 
 struct BeryToolChain {
     // clang driver: compiles the .ll IR file into an object file.
@@ -88,8 +93,8 @@ inline BeryToolChain detectToolchain(const std::string& exeDir) {
 
     std::string root = bundledRoot(exeDir);
     std::string bin = root + BERY_PATH_SEP + "bin" + BERY_PATH_SEP;
-    std::string bundledClang = bin + "clang" + exeSuffix();
-    std::string bundledClangxx = bin + "clang++" + exeSuffix();
+    std::string bundledClang = bin + kBundledToolPrefix + "clang" + exeSuffix();
+    std::string bundledClangxx = bin + kBundledToolPrefix + "clang++" + exeSuffix();
 
     if (std::filesystem::exists(bundledClang) && std::filesystem::exists(bundledClangxx)) {
         tc.clang = bundledClang;
