@@ -12,7 +12,18 @@
 #include <sstream>
 #include <cstdlib>
 #include <filesystem>
-
+#include <cstdint>
+#include <limits.h>
+#ifdef BERY_WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#define NOGDI
+#include <windows.h>
+#elif defined(BERY_MACOS)
+#include <mach-o/dyld.h>
+#else
+#include <unistd.h>
+#endif
 
 static std::string stemOf(const std::string& path) {
     size_t slash = path.find_last_of("/\\");
@@ -27,11 +38,27 @@ static std::string dirOf(const std::string& path) {
     return path.substr(0, slash);
 }
 
+
+static std::string executablePath(const char* argv0) {
+#ifdef BERY_WINDOWS
+    char buf[MAX_PATH];
+    DWORD n = GetModuleFileNameA(nullptr, buf, MAX_PATH);
+    if (n > 0 && n < MAX_PATH) return std::string(buf, n);
+#elif defined(BERY_MACOS)
+    char buf[PATH_MAX];
+    uint32_t size = sizeof(buf);
+    if (_NSGetExecutablePath(buf, &size) == 0) return std::filesystem::weakly_canonical(buf).string();
+#else
+    char buf[PATH_MAX];
+    ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (n > 0) return std::string(buf, n);
+#endif
+    return argv0;
+}
+
 std::string getExeDir(const char* argv) {
-    std::string path = argv;
-    size_t slash = path.find_last_of("/\\");
-    if (slash == std::string::npos) return ".";
-    return path.substr(0, slash);
+    std::string dir = std::filesystem::path(executablePath(argv)).parent_path().string();
+    return dir.empty() ? "." : dir;
 }
 
 static std::string findBRELib(const std::string& exeDir) {
@@ -95,7 +122,7 @@ static int runFrontend(const std::string& sourcePath, const std::string& irPath,
 }
 
 int cmdCompile(const std::string& sourcePath, std::string& outBinaryPath, const std::string& exeDir) {
-    BeryToolChain tc = detectToolchain();
+    BeryToolChain tc = detectToolchain(exeDir);
     if (!tc.valid) {
         DiagnosticEngine::fatal("no LLVM toolchain found", "install llc and g++ (Linux) or clang++ (macOS/Windows)");
         return 10;
@@ -107,11 +134,11 @@ int cmdCompile(const std::string& sourcePath, std::string& outBinaryPath, const 
         return 11;
     }
 
-    std::string stem  = stemOf(sourcePath);
-    std::string dir   = dirOf(sourcePath);
-    std::string irFile  = dir + BERY_PATH_SEP + stem + ".ll";
+    std::string stem = stemOf(sourcePath);
+    std::string dir = dirOf(sourcePath);
+    std::string irFile = dir + BERY_PATH_SEP + stem + ".ll";
     std::string objFile = dir + BERY_PATH_SEP + stem + tc.objectExt;
-    outBinaryPath       = dir + BERY_PATH_SEP + stem + tc.binaryExt;
+    outBinaryPath = dir + BERY_PATH_SEP + stem + tc.binaryExt;
     int fe = runFrontend(sourcePath, irFile, exeDir);
     if (fe != 0) return fe;
     std::string compileCmd = buildCompileCmd(tc, irFile, objFile);

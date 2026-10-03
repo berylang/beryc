@@ -30,6 +30,7 @@ static std::string getRealExeDir() {
     return (slash == std::string::npos) ? "." : path.substr(0, slash);
 }
 
+
 static void prependBundledToolchainToPath(const std::string& exeDir) {
 #ifdef _WIN32
     std::string bundled = exeDir + "\\..\\toolchain\\bin";

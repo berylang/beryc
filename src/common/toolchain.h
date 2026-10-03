@@ -1,46 +1,44 @@
 #pragma once
 
 /*
-    
-    Bery Compiler Toolchain,
+    Bery Compiler Toolchain.
 
-    It finds the compiler tools on the machine and builds the shell commands to compile and link a Bery program.
-
+    Finds the compiler tools and builds the shell commands to compile and link a Bery program.
+    Bundled toolchain (<exeDir>/../toolchain) is preferred over the system one.
 */
 
 #include "platform.h"
-#include <string>
 #include <cstdlib>
+#include <filesystem>
+#include <string>
 
-// Holds  the detected toolchain info needed to compile and link the Bery program inside machine.
+// Folder name of the toolchain shipped next to bin/ in release archives.
+inline const std::string kBundledToolchainDir = "toolchain";
+
 struct BeryToolChain {
-    // LLVM compiler which is used for converting .ll IR file into the
-    // object file via LLVM backend.
-    std::string llc;
+    // clang driver: compiles the .ll IR file into an object file.
+    std::string clang;
 
-    // Linker is tool which links objects and BRE (Bery Runtime Environment) into final binary
-    // which could be 'g++' or 'clang++'
-    std::string linker;
+    // clang++ driver: links object + BRE into the final binary.
+    std::string clangxx;
 
+    // Sysroot of the bundled toolchain. Empty when not needed.
+    std::string sysroot;
 
-    // As extensions of files of objects and binary changes across different
-    // Operating Systems we need to detect and store it.
-    // which are .o / .obj 
+    // .o / .obj
     std::string objectExt;
 
-    // binary file may have no exentension, or have '.exe'
+    // "" or ".exe"
     std::string binaryExt;
 
-    // flag that toolchain is detected and built. false if detection failed that's why
-    // caller of these methods should abort the compilation
+    // true when the toolchain shipped with Bery is used.
+    bool bundled;
+
+    // false if detection failed; the caller must abort compilation.
     bool valid;
 };
 
-
-// Detection of commands exists on the system PATH
-// this uses 'where' command to detect the commands in WINDOWS system.
-// 'which' on Unix systems.
-// It returns true if the command is found, otherwise false.
+// Checks if a command exists on the system PATH ('where' on Windows, 'which' on Unix).
 inline bool commandExists(const std::string& cmd) {
 #ifdef BERY_WINDOWS
     std::string check = "where " + cmd + " >nul 2>&1";
@@ -50,88 +48,112 @@ inline bool commandExists(const std::string& cmd) {
     return system(check.c_str()) == 0;
 }
 
-// Main detector. Detects the available LLVM tools on current machine
-// Tries llc versions from latest (unversioned) down to llc-18
-// Returns a BeryToolChain with valid=false if llc or a linker is not found
-inline BeryToolChain detectToolchain() {
-    BeryToolChain tc;
-    tc.valid = false;
+inline std::string shellQuote(const std::string& s) {
+    return "\"" + s + "\"";
+}
 
-    // Try different llc versions in order, 
-    // it stops as any one fount.
-    if      (commandExists("llc"))    tc.llc = "llc";
-    else if (commandExists("llc-22")) tc.llc = "llc-22";
-    else if (commandExists("llc-20")) tc.llc = "llc-20";
-    else if (commandExists("llc-19")) tc.llc = "llc-19";
-    else if (commandExists("llc-18")) tc.llc = "llc-18";
-    else {
-        // no llc found, it cannot be compiled
-        tc.llc = "";
+// cmd.exe strips the first and last quote of a command that starts with a quote,
+// which breaks quoted absolute paths. Wrapping the whole command in one more pair fixes it.
+inline int runShell(const std::string& cmd) {
+#ifdef BERY_WINDOWS
+    return system(("\"" + cmd + "\"").c_str());
+#else
+    return system(cmd.c_str());
+#endif
+}
+
+inline std::string exeSuffix() {
+#ifdef BERY_WINDOWS
+    return ".exe";
+#else
+    return "";
+#endif
+}
+
+inline std::string bundledRoot(const std::string& exeDir) {
+    return exeDir + BERY_PATH_SEP + ".." + BERY_PATH_SEP + kBundledToolchainDir;
+}
+
+inline BeryToolChain detectToolchain(const std::string& exeDir) {
+    BeryToolChain tc;
+    tc.bundled = false;
+    tc.valid = false;
+#ifdef BERY_WINDOWS
+    tc.objectExt = ".obj";
+    tc.binaryExt = ".exe";
+#else
+    tc.objectExt = ".o";
+    tc.binaryExt = "";
+#endif
+
+    std::string root = bundledRoot(exeDir);
+    std::string bin = root + BERY_PATH_SEP + "bin" + BERY_PATH_SEP;
+    std::string bundledClang = bin + "clang" + exeSuffix();
+    std::string bundledClangxx = bin + "clang++" + exeSuffix();
+
+    if (std::filesystem::exists(bundledClang) && std::filesystem::exists(bundledClangxx)) {
+        tc.clang = bundledClang;
+        tc.clangxx = bundledClangxx;
+        tc.bundled = true;
+        std::string sysroot = root + BERY_PATH_SEP + "sysroot";
+        if (std::filesystem::is_directory(sysroot)) tc.sysroot = sysroot;
+        tc.valid = true;
         return tc;
     }
 
-#ifdef BERY_WINDOWS
-    // Windows prefers clang++ as a linker
-    // if not found then it checks for g++
-    tc.objectExt = ".obj";
-    tc.binaryExt = ".exe";
-
-    //WINDOWS: clang++ is preferred since it handles MSVC ABI better than minGW g++
-    if      (commandExists("clang++")) tc.linker = "clang++";
-    else if (commandExists("g++"))     tc.linker = "g++";
-    else return tc;
-#elif defined(BERY_MACOS)
-    // MACOS prefers clang++ as a linker
-    // if not found it finds g++
-    tc.objectExt = ".o";
-    // no extension for binary on linux/macos 
-
-    // clang++ is a native toolchain in macos. g++ if it is not present.
-    tc.binaryExt = ""; 
-    if      (commandExists("clang++")) tc.linker = "clang++";
-    else if (commandExists("g++"))     tc.linker = "g++";
-    else return tc;
-#elif defined(BERY_LINUX)
-    tc.objectExt = ".o";
-    // no file exentions for binaries in linux
-    tc.binaryExt = ""; 
-    // g++ is preffered since it's more commonly available.
-    if      (commandExists("g++"))     tc.linker = "g++";
-    else if (commandExists("clang++")) tc.linker = "clang++";
-    else return tc;
-#else
-    return tc;
-#endif
-    tc.valid = true;
+    // System fallback: only for contributors building from source.
+    if (commandExists("clang") && commandExists("clang++")) {
+        tc.clang = "clang";
+        tc.clangxx = "clang++";
+        tc.valid = true;
+    }
     return tc;
 }
 
-// Comamnd building,
-// Builds the llc commands that compile .ll IR file into a native object file.
-// -mtriple flag tells llc the exact target architecture, llc can guess it wrong (it's default value) to convert it into binary
-// on cross-compile setups or multi-target LLVM ubuilds
-inline std::string buildCompileCmd(const BeryToolChain& tc,const std::string& irFile, const std::string& objFile) {
+// Flags
+
+inline std::string targetFlag(const BeryToolChain& tc) {
+    if (!tc.bundled) return "";
 #ifdef BERY_WINDOWS
-    std::string triple = (tc.linker == "g++")? "x86_64-pc-windows-gnu" : "x86_64-pc-windows-msvc";
-    return tc.llc + " -filetype=obj -relocation-model=pic -mtriple="+triple+" \""+ irFile + "\" -o \"" + objFile + "\"";
-#elif defined(BERY_MACOS)
-    return tc.llc + " -filetype=obj -relocation-model=pic -mtriple=x86_64-apple-darwin \""+ irFile + "\" -o \"" + objFile + "\"";
+    return " --target=x86_64-w64-mingw32";
 #elif defined(BERY_LINUX)
-    return tc.llc + " -filetype=obj -relocation-model=pic -mtriple=x86_64-pc-linux-gnu \"" + irFile + "\" -o \"" + objFile + "\"";
+    return " --target=x86_64-linux-musl";
 #else
-    return tc.llc + " -filetype=obj -relocation-model=pic \"" + irFile + "\" -o \"" + objFile + "\"";
+    return "";
 #endif
 }
 
-// Linker command,
-// BUilds the linker command that links the object file and BRE runtime library
+inline std::string sysrootFlag(const BeryToolChain& tc) {
+    return tc.sysroot.empty() ? "" : " --sysroot=" + shellQuote(tc.sysroot);
+}
 
-// brelib is a full path like "/<path>/libbre.a". that's why we need to split it into:
-//      -L"/<path>/" (directory containing the lib)
-//      -lbre  (lib name without "lib" prefix and ".a" extension)
-// becuase -l<name> is  how unix linkers resolves library names via -L paths.
+inline std::string picFlag() {
+#ifdef BERY_WINDOWS
+    return "";
+#else
+    return " -fPIC";
+#endif
+}
+
+// Bundled Linux/Windows toolchains produce static binaries, so user programs run anywhere.
+inline std::string bundledLinkFlags(const BeryToolChain& tc) {
+    if (!tc.bundled) return "";
+#ifdef BERY_MACOS
+    return "";
+#else
+    return " -static -fuse-ld=lld";
+#endif
+}
+
+// Commands
+
+// -O0 keeps the same behavior as before (no IR optimization). Try -O2 after all examples pass.
+inline std::string buildCompileCmd(const BeryToolChain& tc, const std::string& irFile, const std::string& objFile) {
+    return shellQuote(tc.clang) + " -c -O0 -Wno-override-module" + targetFlag(tc) + sysrootFlag(tc) + picFlag()
+        + " " + shellQuote(irFile) + " -o " + shellQuote(objFile);
+}
+
 inline std::string buildLinkCmd(const BeryToolChain& tc, const std::string& objFile, const std::string& breLib, const std::string& outBinary) {
-
-    return tc.linker+" \""+objFile+"\" \""+breLib+"\" -o \""+outBinary+"\"";
-
+    return shellQuote(tc.clangxx) + targetFlag(tc) + sysrootFlag(tc) + bundledLinkFlags(tc)
+        + " " + shellQuote(objFile) + " " + shellQuote(breLib) + " -o " + shellQuote(outBinary);
 }
