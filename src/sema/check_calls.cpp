@@ -20,7 +20,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
         std::vector<std::string> parts = splitDots(call->callee);
         std::string method = parts.back();
         std::vector<std::string> headParts(parts.begin(), parts.end() - 1);
-        std::string objType = resolveChainType(headParts, call->line);
+        std::string objType = resolveChainType(headParts, call->loc());
         if (objType == "unknown") { call->resolvedType = "unknown"; return call->resolvedType; }
 
         if (objType == "string") {
@@ -55,7 +55,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
             ClassDefNode* cls = classIt->second;
             std::vector<FunctionDefNode*> candidateMethod = getInheritedMethods(cls, method);
             if(candidateMethod.empty()){
-                diag.report("ERROR369", call->line, 1, "", objType + "' has no method '" + method);
+                diag.report("ERROR369", call->line, call->column, call->length, objType + "' has no method '" + method);
                 
                 call->resolvedType = "unknown";
                 return call->resolvedType;
@@ -63,12 +63,12 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
 
             std::vector<std::string> argTypes;
             for(auto& arg : call->arguments){argTypes.push_back(analyzeExpression(arg.get()));}
-            FunctionDefNode* methodDef = resolveMethodOverload(candidateMethod, argTypes, method, call->line);
+            FunctionDefNode* methodDef = resolveMethodOverload(candidateMethod, argTypes, method, call->loc());
             if (!methodDef) {
                 call->resolvedType = "unknown";
                 return call->resolvedType;
             }
-            if (!checkMemberAccess(methodDef->access, objType, method, "method", call->line)) {
+            if (!checkMemberAccess(methodDef->access, objType, method, "method", call->loc())) {
                 call->resolvedType = "unknown";
                 return call->resolvedType;
             }
@@ -80,7 +80,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
             return call->resolvedType;
         }
 
-        diag.report("ERROR370", call->line, 1, "", method + "' on type '" + objType);
+        diag.report("ERROR370", call->line, call->column, call->length, method + "' on type '" + objType);
         
         call->resolvedType = "unknown";
         return call->resolvedType;
@@ -95,7 +95,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
                 for(auto& argsss : call->arguments){
                     argumentTypesName.push_back(analyzeExpression(argsss.get()));
                 }
-                FunctionDefNode* f = resolveMethodOverload(candidateFunction, argumentTypesName, call->callee, call->line);
+                FunctionDefNode* f = resolveMethodOverload(candidateFunction, argumentTypesName, call->callee, call->loc());
                 if(!f){
                     call->resolvedType = "unknown";
                     return call->resolvedType;
@@ -112,7 +112,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
     }
     auto functionIT = functions.find(call->callee);
     if (functionIT == functions.end()) {
-        diag.report("ERROR371", call->line, 1, "", call->callee);
+        diag.report("ERROR371", call->line, call->column, call->length, call->callee);
         
         call->resolvedType = "unknown";
         return call->resolvedType;
@@ -121,7 +121,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
     for(auto& hello : call->arguments){
         argTypes.push_back(analyzeExpression(hello.get()));
     }
-    const FunctionSignature* signature = resolveFunctionOverload(functionIT->second, argTypes, call->callee, call->line);
+    const FunctionSignature* signature = resolveFunctionOverload(functionIT->second, argTypes, call->callee, call->loc());
     if(!signature){
         call->resolvedType = "unknown";
         return call->resolvedType;
@@ -132,7 +132,7 @@ std::string TypeChecker::checkCallExpr(ASTNode* node) {
 }
 
 
-FunctionDefNode* TypeChecker::resolveMethodOverload(const std::vector<FunctionDefNode*>& candidate, const std::vector<std::string>& argTypes, const std::string& label, int line){
+FunctionDefNode* TypeChecker::resolveMethodOverload(const std::vector<FunctionDefNode*>& candidate, const std::vector<std::string>& argTypes, const std::string& label, SourceLoc loc){
     for(auto* a : candidate){
         std::vector<std::string> parameterTypeList;
         for(auto& p : a->parameters){
@@ -158,8 +158,7 @@ FunctionDefNode* TypeChecker::resolveMethodOverload(const std::vector<FunctionDe
     }
     if(matchCount==1){return c;}
     if(matchCount>1){
-        diag.report("ERROR392", line, 1, "", label + "' with " + std::to_string(argTypes.size()));
-        
+        diag.report("ERROR392", loc.line, loc.column, loc.length, label + "' with " + std::to_string(argTypes.size()));
         return nullptr;
     }
     bool isAnyMethodMatchingToThisWhatToThisToThisCallCall = false;
@@ -169,15 +168,16 @@ FunctionDefNode* TypeChecker::resolveMethodOverload(const std::vector<FunctionDe
         }
     }
     if(!isAnyMethodMatchingToThisWhatToThisToThisCallCall){
-        diag.report("ERROR393", line, 1, "", label + "' accepts the " + std::to_string(argTypes.size()));
+        diag.report("ERROR393", loc.line, loc.column, loc.length, label + "' accepts the " + std::to_string(argTypes.size()));
+
     }
-    else{diag.report("ERROR394", line, 1, "", label);}
+    else{diag.report("ERROR394", loc.line, loc.column, loc.length, label);}
     
     return nullptr;
 }
 
 
-const FunctionSignature* TypeChecker::resolveFunctionOverload(const std::vector<FunctionSignature>& candidate, const std::vector<std::string>& argTypes, const std::string& label, int line){
+const FunctionSignature* TypeChecker::resolveFunctionOverload(const std::vector<FunctionSignature>& candidate, const std::vector<std::string>& argTypes, const std::string& label, SourceLoc loc){
     for(auto& a : candidate){
         if(isParameterTypeExactlyMatching(a.parameterTypes, argTypes)){
             return &a;
@@ -199,9 +199,9 @@ const FunctionSignature* TypeChecker::resolveFunctionOverload(const std::vector<
     }
     if(matchCount==1){return c;}
     if(matchCount>1){
-         diag.report("ERROR395", line, 1, "", label + "' with " + std::to_string(argTypes.size()));
-         
-         return nullptr;
+        diag.report("ERROR395", loc.line, loc.column, loc.length, label + "' with " + std::to_string(argTypes.size()));
+        
+        return nullptr;
     }
     bool isAnyMethodMatchingToThisWhatToThisToThisCallCall = false;
     for(auto& f : candidate){
@@ -210,9 +210,9 @@ const FunctionSignature* TypeChecker::resolveFunctionOverload(const std::vector<
         }
     }
     if(!isAnyMethodMatchingToThisWhatToThisToThisCallCall){
-        diag.report("ERROR396", line, 1, "", label + "' accepts the " + std::to_string(argTypes.size()));
+        diag.report("ERROR396",loc.line, loc.column, loc.length, label + "' accepts the " + std::to_string(argTypes.size()));
     }
-    else{diag.report("ERROR397", line, 1, "", label);}
+    else{diag.report("ERROR397", loc.line, loc.column, loc.length, label);}
     
     return nullptr;
 }

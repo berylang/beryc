@@ -40,7 +40,7 @@ std::vector<std::unique_ptr<ASTNode>> Parser::parseVarDecl(AccessSpecifier acces
             advance();
             value = parseExpression();
         }
-        decls.push_back(std::make_unique<VarDeclNode>(varType, name.lexeme, std::move(value), access,name.line, isConst));
+        decls.push_back(withLoc(std::make_unique<VarDeclNode>(varType, name.lexeme, std::move(value), access, name.line, isConst), name));
     } while (!isAtEnd() && check(TokenType::TOKEN_COMMA) && (advance(), true));
 
     consume(TokenType::TOKEN_SEMICOLON, "ERROR259");
@@ -50,30 +50,30 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
     Token t = peek();
 
     switch(t.type) {
-        case TokenType::TOKEN_INT_LIT: 
+        case TokenType::TOKEN_INT_LIT:
             advance();
-            return std::make_unique<IntLitNode>(std::stoll(t.lexeme), t.line);
-        case TokenType::TOKEN_DECIMAL_LIT: 
+            return withLoc(std::make_unique<IntLitNode>(std::stoll(t.lexeme), t.line), t);
+        case TokenType::TOKEN_DECIMAL_LIT:
             advance();
-            return std::make_unique<DecimalLitNode>(std::stod(t.lexeme), t.line);
+            return withLoc(std::make_unique<DecimalLitNode>(std::stod(t.lexeme), t.line), t);
         case TokenType::TOKEN_TRUE:
             advance();
-            return std::make_unique<BoolLitNode>(true, t.line);
+            return withLoc(std::make_unique<BoolLitNode>(true, t.line), t);
         case TokenType::TOKEN_FALSE:
             advance();
-            return std::make_unique<BoolLitNode>(false, t.line);
+            return withLoc(std::make_unique<BoolLitNode>(false, t.line), t);
         case TokenType::TOKEN_CHAR_LIT:
             advance();
-            return std::make_unique<CharLitNode>(t.lexeme[0], t.line);
+            return withLoc(std::make_unique<CharLitNode>(t.lexeme[0], t.line), t);
         case TokenType::TOKEN_STRING_LIT:
             advance();
-            return std::make_unique<StringLitNode>(t.lexeme, t.line);
+            return withLoc(std::make_unique<StringLitNode>(t.lexeme, t.line), t);
         case TokenType::TOKEN_NULL:
             advance();
-            return std::make_unique<NullLitNode>(t.line);
+            return withLoc(std::make_unique<NullLitNode>(t.line), t);
         default:
             errors = true;
-            diag.report("ERROR256", t.line, 1, t.lexeme);
+            diag.report("ERROR256", t.line, t.column, t.length);
             throw ParseError();
     }
 }
@@ -103,13 +103,13 @@ std::unique_ptr<ASTNode> Parser::parseArrayDeclTail(const std::string& elementTy
         else if(isDynamic) {
             valueExpr = parseExpression();
         } else {
-            diag.report("ERROR257", peek().line, 1, peek().lexeme);
+            diag.report("ERROR257", peek().line, peek().column, peek().length);
             errors = true;
             while (!isAtEnd() && !check(TokenType::TOKEN_SEMICOLON)) advance();
-            return std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), access, isConst, nameToken.line);
+            withLoc(std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), access, isConst, nameToken.line), nameToken);
         }
     }
-    auto decl = std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), access, isConst, nameToken.line);
+    auto decl = withLoc(std::make_unique<ArrayDeclNode>(elementType, name, dimensions, std::move(initializers), access, isConst, nameToken.line), nameToken);
     decl->valueExpr = std::move(valueExpr);
     return decl;
 }
@@ -131,7 +131,6 @@ void Parser::parseArrayInitializer(std::vector<std::unique_ptr<ASTNode>>& initia
 // @enum data declaration
 std::unique_ptr<ASTNode> Parser::parseEnumDecl() {
     advance();
-    int line = previous().line;
     Token nameTok = consume(TokenType::TOKEN_IDENT, "ERROR263");
     consume(TokenType::TOKEN_EQUAL, "ERROR264");
     consume(TokenType::TOKEN_LBRACE, "ERROR265");
@@ -147,22 +146,24 @@ std::unique_ptr<ASTNode> Parser::parseEnumDecl() {
     consume(TokenType::TOKEN_RBRACE, "ERROR267");
     consume(TokenType::TOKEN_SEMICOLON, "ERROR268");
 
-    return std::make_unique<EnumDeclNode>(nameTok.lexeme, std::move(values), line);
+    return withLoc(std::make_unique<EnumDeclNode>(nameTok.lexeme, std::move(values), nameTok.line), nameTok);
 }
 
 // @import statements, with path resolution and (.bry) extension
 std::unique_ptr<ASTNode> Parser::parseImportDecl() {
     advance();
-    int line = previous().line;
 
     Token startTok = consume(TokenType::TOKEN_IDENT, "ERROR269");
     std::string fullName = startTok.lexeme;
-
+    Token lastTok = startTok;
     while (check(TokenType::TOKEN_DOT)) {
-        advance(); 
+        advance();
         Token nextIdent = consume(TokenType::TOKEN_IDENT, "ERROR217");
         fullName += "." + nextIdent.lexeme;
+        lastTok = nextIdent;
     }
+    Token pathTok = startTok;
+    pathTok.length = (lastTok.line == startTok.line) ? lastTok.column + lastTok.length - startTok.column : startTok.length;
 
     consume(TokenType::TOKEN_SEMICOLON, "ERROR259");
     std::string filePath = fullName;
@@ -171,7 +172,7 @@ std::unique_ptr<ASTNode> Parser::parseImportDecl() {
     }
     filePath += ".bry";
 
-    return std::make_unique<ImportNode>(fullName, filePath, line);
+    return withLoc(std::make_unique<ImportNode>(fullName, filePath, startTok.line), pathTok);
 }
 
 // @FFI declarations using extern keyword
@@ -210,5 +211,5 @@ std::unique_ptr<ASTNode> Parser::parseExternDecl() {
         }
     }
     consume(TokenType::TOKEN_SEMICOLON, "ERROR273");
-    return std::make_unique<ExternDeclNode>(nameToken.lexeme, returnType, std::move(params), ln);
+    return withLoc(std::make_unique<ExternDeclNode>(nameToken.lexeme, returnType, std::move(params), nameToken.line), nameToken);
 }

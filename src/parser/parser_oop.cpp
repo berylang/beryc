@@ -7,7 +7,6 @@
 
 std::unique_ptr<ASTNode> Parser::parseClassDecl() {
     advance();
-    int line = previous().line;
     Token className = consume(TokenType::TOKEN_IDENT, "ERROR214");
 
     std::string parentName = "";
@@ -25,7 +24,7 @@ std::unique_ptr<ASTNode> Parser::parseClassDecl() {
         methodSection = parseMethodSection(className.lexeme);
     }
     consume(TokenType::TOKEN_RBRACE, "ERROR243");
-    return std::make_unique<ClassDefNode>(className.lexeme, parentName, std::move(attrSection), std::move(methodSection), line);
+    return withLoc(std::make_unique<ClassDefNode>(className.lexeme, parentName, std::move(attrSection), std::move(methodSection), className.line), className);
 }
 
 std::unique_ptr<AttributeSectionNode> Parser::parseAttributeSection() {
@@ -58,12 +57,11 @@ std::unique_ptr<AttributeSectionNode> Parser::parseAttributeSection() {
             attributes.push_back(std::move(v));
         }
     }
-    return std::make_unique<AttributeSectionNode>(selfToken.lexeme, std::move(attributes), selfToken.line);
+    return withLoc(std::make_unique<AttributeSectionNode>(selfToken.lexeme, std::move(attributes), selfToken.line), selfToken);
 }
 
 std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string& className) {
-    int line = peek().line;
-    consume(TokenType::TOKEN_METHODS, "ERROR249");
+    Token methodsTok = consume(TokenType::TOKEN_METHODS, "ERROR249");
     consume(TokenType::TOKEN_DCOLON, "ERROR250");
 
     std::vector<std::unique_ptr<ASTNode>> methods;
@@ -86,10 +84,10 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
             advance();
             Token nameToken =consume(TokenType::TOKEN_IDENT, "ERROR251");
             if (nameToken.lexeme!= className) {
-                diag.report("ERROR240", nameToken.line, 1, nameToken.lexeme, className);
+                diag.report("ERROR240", nameToken.line, nameToken.column, nameToken.length, className);
                 errors = true;
             }
-            int declLine = nameToken.line;
+            // No need - int declLine = nameToken.line;
             consume(TokenType::TOKEN_LPARAN, "ERROR252");
             std::vector<std::pair<std::string, std::string>> params;
             if (!check(TokenType::TOKEN_RPARAN)) {
@@ -108,7 +106,7 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
             consume(TokenType::TOKEN_RPARAN, "ERROR223");
             consume(TokenType::TOKEN_LBRACE, "ERROR253");
             auto body = parseBlock();
-            methods.push_back(std::make_unique<FunctionDefNode>(className, std::move(params), "void", std::move(body), access, declLine, false, true));
+            methods.push_back(withLoc(std::make_unique<FunctionDefNode>(className, std::move(params), "void", std::move(body), access, nameToken.line, false, true), nameToken));
             continue;
         }
 
@@ -133,7 +131,7 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
             consume(TokenType::TOKEN_RPARAN, "ERROR223");
             consume(TokenType::TOKEN_LBRACE, "ERROR255");
             auto body =parseBlock();
-            methods.push_back(std::make_unique<FunctionDefNode>(className, std::move(params), "void", std::move(body), access, declLine, true, false));
+            methods.push_back(withLoc(std::make_unique<FunctionDefNode>(className, std::move(params), "void", std::move(body), access, nameToken.line, true, false), nameToken));
             continue;
         }
 
@@ -142,7 +140,7 @@ std::unique_ptr<MethodSectionNode> Parser::parseMethodSection(const std::string&
         methods.push_back(parseFunctionDef(access));
     }
 
-    return std::make_unique<MethodSectionNode>(std::move(methods), line);
+    return withLoc(std::make_unique<MethodSectionNode>(std::move(methods), methodsTok.line), methodsTok);
 }
 
 bool Parser::isClassVarDecl() {

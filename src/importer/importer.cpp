@@ -54,7 +54,7 @@ void Importer::resolveImports(ProgramNode* mainProgram, const std::string& sourc
             auto* imp = static_cast<ImportNode*>(node.get());
             std::string fullPath = resolvePath(imp->moduleName, sourceBasePath, stdlibPath);
             if (fullPath.empty()) {
-                diag.report("ERROR501", 0, 0, "", imp->moduleName);
+                diag.report("ERROR501", 0, 0, 0, imp->moduleName);
                 diag.printAll();
                 exit(1);
             }
@@ -73,7 +73,7 @@ void Importer::loadModule(const std::string& modName, const std::string& fullPat
 
     std::ifstream file(fullPath);
     if (!file.is_open()) {
-        diag.report("ERROR501", 0, 0, "", modName);
+        diag.report("ERROR501", 0, 0, 0, modName);
         diag.printAll();
         exit(1);
     }
@@ -89,8 +89,8 @@ void Importer::loadModule(const std::string& modName, const std::string& fullPat
     auto* importedProg = static_cast<ProgramNode*>(ast.get());
 
     if (moduleDiag.hasErrors() || parser.hasErrors()) {
-        moduleDiag.printAll();
-        std::cerr << "Bery: Compilation halted due to syntax errors in imported module '" << modName << "'.\n";
+        moduleDiag.printAll("syntax");
+        std::cerr << "error: could not import module '" << modName << "'\n";
         exit(1);
     }
 
@@ -100,7 +100,7 @@ void Importer::loadModule(const std::string& modName, const std::string& fullPat
             auto* imp = static_cast<ImportNode*>(node.get());
             std::string nextFullPath = resolvePath(imp->moduleName, sourceBasePath, stdlibPath);
             if (nextFullPath.empty()) {
-                diag.report("ERROR501", imp->line, 1, "", imp->moduleName);
+                diag.report("ERROR501", imp->line, imp->column, imp->length, imp->moduleName);
                 diag.printAll();
                 exit(1);
             }

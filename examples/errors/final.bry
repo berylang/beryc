@@ -1,0 +1,7 @@
+run {
+    int a = 1 +2;                 --- syntax: caret under ';'
+    string s = "abcd";         --- ERROR106: caret under \q, message shows '\q'
+    int b = 0xFF + "x";          --- sema: caret covers the whole expression, not one char
+    if (a + 1) { pass; }         --- ERROR306: caret covers `a + 1`
+    foo.bar = 3;                 --- member access path (the code you just fixed)
+}

@@ -27,28 +27,30 @@ bool SemanticAnalyzer::isImplicityConversionCheck(const std::string& fromType, c
 void SemanticAnalyzer::analyzeVarDecl(ASTNode* node) {
     auto* decl = static_cast<VarDeclNode*>(node);
     if (!isKnownType(decl->varType)) {
-        diag.report("ERROR315", decl->line, 1, "", decl->varType);
+        diag.report("ERROR315", decl->line, decl->column, decl->length, decl->varType);
         return;
     }
     if (symbolTable.existsInCurrentScope(decl->name)) {
-        diag.report("ERROR316", decl->line, 1, "", decl->name);
+        diag.report("ERROR316", decl->line, decl->column, decl->length, decl->name);
         return;
     }
     if (decl->isConst && !decl->value) {
-        diag.report("ERROR317", decl->line, 1, "", decl->name);
+        
+        diag.report("ERROR317", decl->line, decl->column, decl->length, decl->name);
         return;
     }
     if (decl->value) {
         std::string exprtype = typeChecker.analyzeExpression(decl->value.get());
+        auto vw = decl->value->whole();
         if (exprtype != "unknown" && exprtype != decl->varType) {
             if (exprtype == "null") {
                 if (decl->varType != "string") {
-                    diag.report("ERROR318", decl->line, 1, "", decl->varType);
+                    diag.report("ERROR318", vw.line, vw.column, vw.length, decl->varType);
                     return;
                 }
             }
             else if (!isImplicityConversionCheck(exprtype, decl->varType)) {
-                diag.report("ERROR319", decl->line, 1, "", {decl->name, decl->varType, exprtype});
+                diag.report("ERROR319", vw.line, vw.column, vw.length, {decl->name, decl->varType, exprtype});
                 return;
             }
         }
@@ -72,11 +74,11 @@ bool SemanticAnalyzer::isKnownType(const std::string& t) {
 void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
     auto* decl = static_cast<ArrayDeclNode*>(node);
     if (!isKnownType(decl->elementType)) {
-        diag.report("ERROR320", decl->line, 1, "", decl->elementType);
+        diag.report("ERROR320", decl->line, decl->column, decl->length, decl->elementType);
          return;
     }
     if (symbolTable.existsInCurrentScope(decl->name)) {
-        diag.report("ERROR321", decl->line, 1, "", decl->name);
+        diag.report("ERROR321", decl->line, decl->column, decl->length, decl->name);
          return;
     }
     std::string arrayType = "array<" + decl->elementType + ">";
@@ -86,7 +88,7 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
         if (decl->valueExpr) {
             std::string exprType = typeChecker.analyzeExpression(decl->valueExpr.get());
             if (exprType != "unknown" && exprType != arrayType) {
-                diag.report("ERROR322", decl->line, 1, "", decl->name + "'. Expected '" + arrayType + "', got '" + exprType);
+                diag.report("ERROR322", decl->line, decl->column, decl->length, decl->name + "'. Expected '" + arrayType + "', got '" + exprType);
                 
             }
             symbolTable.addVariable(decl->name, arrayType, decl->isConst, true, decl->line, decl->dimensions);
@@ -101,7 +103,7 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
             if (exprType != "unknown" && exprType != decl->elementType) {
                 if (!(decl->elementType == "float" && exprType == "int") &&
                     !(decl->elementType == "double" && exprType == "int")) {
-                    diag.report("ERROR323", decl->line, 1, "", "");
+                    diag.report("ERROR323", decl->line, decl->column, decl->length, "");
                      return;
                 }
             }
@@ -116,12 +118,12 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
     for (size_t i = 0; i < decl->dimensions.size(); ++i) {
         if (decl->dimensions[i] < 0) {
             if (i != 0) {
-                diag.report("ERROR324", decl->line, 1, "", "");
+                diag.report("ERROR324", decl->line, decl->column, decl->length, "");
                  return;
             }
             inferredDim = i;
         } else if (decl->dimensions[i] == 0) {
-            diag.report("ERROR325", decl->line, 1, "", "");
+            diag.report("ERROR325", decl->line, decl->column, decl->length, "");
              return;
         } else {
             totalSize *= decl->dimensions[i];
@@ -129,11 +131,11 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
     }
     if (inferredDim != -1) {
         if (decl->initializers.empty()) {
-            diag.report("ERROR326", decl->line, 1, "", "");
+            diag.report("ERROR326", decl->line, decl->column, decl->length, "");
              return;
         }
         if (decl->initializers.size() % totalSize != 0) {
-            diag.report("ERROR327", decl->line, 1, "", "");
+            diag.report("ERROR327", decl->line, decl->column, decl->length, "");
              return;
         }
         decl->dimensions[0] = decl->initializers.size() / totalSize;
@@ -141,7 +143,7 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
     }
 
     if (!decl->initializers.empty() && decl->initializers.size() > (size_t)totalSize) {
-        diag.report("ERROR328", decl->line, 1, "", "");
+        diag.report("ERROR328", decl->line, decl->column, decl->length, "");
          return;
     }
 
@@ -150,7 +152,7 @@ void SemanticAnalyzer::analyzeArrayDecl(ASTNode* node) {
         if (exprType != "unknown" && exprType != decl->elementType) {
             if (!(decl->elementType == "float" && exprType == "int") &&
                 !(decl->elementType == "double" && exprType == "int")) {
-                diag.report("ERROR323", decl->line, 1, "", "");
+                diag.report("ERROR323", decl->line, decl->column, decl->length, "");
                  return;
             }
         }
@@ -163,11 +165,11 @@ void SemanticAnalyzer::analyzeFuncDef(ASTNode* node) {
 
     for (auto& param : func->parameters) {
         if (!isKnownType(param.first)) {
-            diag.report("ERROR329", func->line, 1, "", {param.first, func->name});
+            diag.report("ERROR329", func->line, func->column, func->length, {param.first, func->name});
         }
     }
     if (func->returnType != "void" && !func->returnType.empty() && !isKnownType(func->returnType)) {
-        diag.report("ERROR330", func->line, 1, "", {func->returnType, func->name});
+        diag.report("ERROR330", func->line, func->column, func->length, {func->returnType, func->name});
     }
 
     currentFunctionReturnType = (func->returnType == "void") ? "" : func->returnType;
@@ -189,25 +191,27 @@ void SemanticAnalyzer::analyzeFuncDef(ASTNode* node) {
 void SemanticAnalyzer::analyzeReturnStmt(ASTNode* node) {
     auto* ret = static_cast<ReturnStmtNode*>(node);
     if (functionDepth <= 0) {
-        diag.report("ERROR331", ret->line, 1, "", "");
+        diag.report("ERROR331", ret->line, ret->column, ret->length, "");
         return;
     }
 
     if (currentFunctionReturnType.empty()) {
         if (ret->value) {
-            diag.report("ERROR403", ret->line, 1, "", "");
+            auto vw = ret->value->whole();
+            diag.report("ERROR403", vw.line, vw.column, vw.length, "");
         }
         return;
     }
 
     if (!ret->value) {
-        diag.report("ERROR332", ret->line, 1, "", currentFunctionReturnType);
+        diag.report("ERROR332", ret->line, ret->column, ret->length, currentFunctionReturnType);
         return;
     }
 
     std::string valType = typeChecker.analyzeExpression(ret->value.get());
     if (valType != "unknown" && valType != currentFunctionReturnType && !isImplicityConversionCheck(valType, currentFunctionReturnType)) {
-        diag.report("ERROR333", ret->line, 1, "", {currentFunctionReturnType, valType});
+        auto vw = ret->value->whole();
+        diag.report("ERROR333", vw.line, vw.column, vw.length, {currentFunctionReturnType, valType});
     }
 }
 void SemanticAnalyzer::analyzeEnumDecl(ASTNode* node) {
@@ -215,7 +219,7 @@ void SemanticAnalyzer::analyzeEnumDecl(ASTNode* node) {
     for (const auto& val : enumDecl->values) {
         std::string mangledName = enumDecl->name + "." + val; 
         if (symbolTable.existsInCurrentScope(mangledName)) {
-            diag.report("ERROR334", enumDecl->line, 1, "", mangledName);
+            diag.report("ERROR334", enumDecl->line, enumDecl->column, enumDecl->length, mangledName);
             
         } else {
             symbolTable.addVariable(mangledName, "int", true, true, enumDecl->line);
@@ -227,15 +231,15 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
     auto* cls = static_cast<ClassDefNode*>(node);
     if (!cls->parentName.empty()) {
         if (cls->parentName == cls->name) {
-            diag.report("ERROR335", cls->line, 1, "", cls->name);
+            diag.report("ERROR335", cls->line, cls->column, cls->length, cls->name);
         } else if (!classes.count(cls->parentName)) {
-            diag.report("ERROR336", cls->line, 1, "", {cls->parentName, cls->name});
+            diag.report("ERROR336", cls->line, cls->column, cls->length, {cls->parentName, cls->name});
         } else {
             std::unordered_set<std::string> visited;
             std::string cur = cls->parentName;
             while (!cur.empty()) {
                 if (cur == cls->name) {
-                    diag.report("ERROR337", cls->line, 1, "", cls->name);
+                    diag.report("ERROR337", cls->line, cls->column, cls->length, cls->name);
                     break;
                 }
                 if (visited.count(cur)) break;
@@ -260,10 +264,10 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                     if (exprType != "unknown" && exprType != fieldType) {
                         if (exprType == "null") {
                             if (fieldType != "string" && !classes.count(fieldType)) {
-                                diag.report("ERROR338", field->line, 1, "", fieldName);
+                                diag.report("ERROR338", field->line, field->column, field->length, fieldName);
                             }
                         } else if (!isImplicityConversionCheck(exprType, fieldType)) {
-                            diag.report("ERROR339", field->line, 1, "", {fieldName, fieldType, exprType});
+                            diag.report("ERROR339", field->line, field->column, field->length, {fieldName, fieldType, exprType});
                         }
                     }
                 }
@@ -273,12 +277,12 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                 fieldType = "array<" + field->elementType + ">";
 
                 if (!isKnownType(field->elementType)) {
-                    diag.report("ERROR320", field->line, 1, "", field->elementType);
+                    diag.report("ERROR320", field->line, field->column, field->length, field->elementType);
                 }
             } else { continue; }
 
             if (seen.count(fieldName)) {
-                diag.report("ERROR340", attr->line, 1, "", {fieldName, cls->name});
+                diag.report("ERROR340", attr->line, attr->column, attr->length, {fieldName, cls->name});
             }
             seen.insert(fieldName);
         }
@@ -291,10 +295,10 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
             if (f->isDestructor) {
                 destructorCount++;
                 if (destructorCount > 1) {
-                    diag.report("ERROR341", f->line, 1, "", cls->name);
+                    diag.report("ERROR341", f->line, f->column, f->length, cls->name);
                 }
                 if (!f->parameters.empty()) {
-                    diag.report("ERROR342", f->line, 1, "", cls->name);
+                    diag.report("ERROR342", f->line, f->column, f->length, cls->name);
                 }
             }
         }
@@ -304,11 +308,11 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
             auto* func = static_cast<FunctionDefNode*>(m.get());
             for (auto& p : func->parameters) {
                 if (!isKnownType(p.first)) {
-                    diag.report("ERROR343", func->line, 1, "", {p.first, func->name});
+                    diag.report("ERROR343", func->line, func->column, func->length, {p.first, func->name});
                 }
             }
             if (!func->isConstructor && !func->isDestructor && func->returnType != "void" && !func->returnType.empty() && !isKnownType(func->returnType)) {
-                diag.report("ERROR344", func->line, 1, "", {func->returnType, func->name});
+                diag.report("ERROR344", func->line, func->column, func->length, {func->returnType, func->name});
             }
 
             if (!func->isDestructor) {
@@ -328,7 +332,7 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                         for (const auto& parentFuncSig : parentFunc->second) {
                             if (parentFuncSig.parameterTypes == sig.parameterTypes) {
                                 if (parentFuncSig.returnType != sig.returnType) {
-                                    diag.report("ERROR345", func->line, 1, "", func->name);
+                                    diag.report("ERROR345", func->line, func->column, func->length, func->name);
                                 }
                                 break;
                             }
@@ -343,7 +347,7 @@ void SemanticAnalyzer::analyzeClassDecl(ASTNode* node) {
                     }
                 }
                 if (dupeoverload) {
-                    diag.report("ERROR346", func->line, 1, "", func->name);
+                    diag.report("ERROR346", func->line, func->column, func->length, func->name);
                 }
                 moverload.push_back(sig);
             }

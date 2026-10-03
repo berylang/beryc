@@ -5,12 +5,26 @@
 #include <iomanip>
 #include <algorithm>
 
-static const std::string COL_RED    = "\033[31m";
-static const std::string COL_YELLOW = "\033[33m";
-static const std::string COL_ORANGE = "\033[38;5;208m";
-static const std::string COL_WHITE  = "\033[37m";
-static const std::string COL_RESET  = "\033[0m";
-static const std::string COL_GREEN  = "\033[32m";
+#include <cstdlib>
+#ifdef _WIN32
+  #include <io.h>
+  #define BERY_ISATTY(fd) _isatty(fd)
+  #define BERY_FILENO(f)  _fileno(f)
+#else
+  #include <unistd.h>
+  #define BERY_ISATTY(fd) isatty(fd)
+  #define BERY_FILENO(f)  fileno(f)
+#endif
+#include <cstdio>
+
+static bool useColor(FILE* stream) {
+    if (std::getenv("NO_COLOR")) return false;
+    return BERY_ISATTY(BERY_FILENO(stream)) != 0;
+}
+
+static std::string sgr(const char* code, FILE* stream = stdout) {
+    return useColor(stream) ? std::string("\033[") + code + "m" : std::string();
+}
 
 DiagnosticEngine::DiagnosticEngine(const std::string& source, const std::string& filename)
     : filename(filename) {
@@ -19,7 +33,19 @@ DiagnosticEngine::DiagnosticEngine(const std::string& source, const std::string&
 void DiagnosticEngine::splitSource(const std::string& source) {
     std::stringstream ss(source);
     std::string line;
-    while (std::getline(ss, line)) sourceLines.push_back(line);
+    while (std::getline(ss, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        sourceLines.push_back(line);
+    }
+}
+void DiagnosticEngine::fatal(const std::string& message, const std::string& hint) {
+    const std::string RESET = sgr("0", stderr);
+    const std::string BOLD  = sgr("1", stderr);
+    const std::string DIM   = sgr("2", stderr);
+
+    std::cerr << sgr("1;31", stderr) << "error" << RESET << BOLD << ": " << message << RESET << "\n";
+    if (!hint.empty())
+        std::cerr << DIM << "   = hint: " << RESET << hint << "\n";
 }
 
 static std::string formatTemplate(const std::string& tmpl, const std::vector<std::string>& contexts) {
@@ -34,11 +60,12 @@ static std::string formatTemplate(const std::string& tmpl, const std::vector<std
     return out;
 }
 
-void DiagnosticEngine::report(const std::string& code, int line, int column, const std::string& lexeme, const std::string& context) {
-    report(code, line, column, lexeme, context.empty() ? std::vector<std::string>{} : std::vector<std::string>{context});
+void DiagnosticEngine::report(const std::string& code, int line, int column, int length, const std::string& context) {
+    report(code, line, column, length, context.empty() ? std::vector<std::string>{} : std::vector<std::string>{context});
 }
 
-void DiagnosticEngine::report(const std::string& code, int line, int column, const std::string& lexeme, const std::vector<std::string>& contexts) {
+
+void DiagnosticEngine::report(const std::string& code, int line, int column, int length, const std::vector<std::string>& contexts) {
     auto it = DiagnosticRegistry.find(code);
     if (it == DiagnosticRegistry.end()) {
         std::cerr << "[internal] Unknown diagnostic code: " << code << "\n";
@@ -50,7 +77,7 @@ void DiagnosticEngine::report(const std::string& code, int line, int column, con
     d.severity = it->second.severity;
     d.line = line;
     d.column = column;
-    d.lexeme = lexeme;
+    d.length = length; 
     d.contexts = contexts;
 
     diagnostics.push_back(d);
@@ -63,54 +90,71 @@ bool DiagnosticEngine::hasWarnings() const { return warningCount > 0;}
 
 void DiagnosticEngine::printOne(const Diagnostic& d) {
     const auto& info = DiagnosticRegistry.at(d.code);
-    std::string color = (d.severity == Severity::ERROR) ? COL_RED : COL_YELLOW;
+    const bool isErr = (d.severity == Severity::ERROR);
+
+    const std::string RESET = sgr("0");
+    const std::string BOLD  = sgr("1");
+    const std::string DIM   = sgr("2");
+    const std::string SEV   = isErr ? sgr("1;31") : sgr("1;33");   // bold red / bold yellow
 
     std::string message = formatTemplate(info.messageTemplate, d.contexts);
-    std::cout << color << filename << " [" << d.code << "] " << d.line << ":" << d.column << ": " << message << COL_RESET << "\n\n";
 
-    int idx = d.line - 1;
-    int startIdx = std::max(0, idx - 1);
-    int endIdx   = std::min((int)sourceLines.size() - 1, idx + 1);
+    std::cout << SEV << (isErr ? "error" : "warning") << "[" << d.code << "]" << RESET
+              << BOLD << ": " << message << RESET << "\n";
+    std::cout << DIM << "  --> " << RESET << filename << ":" << d.line << ":" << d.column << "\n";
 
-    for (int i = startIdx; i <= endIdx; ++i) {
-        std::cout << COL_WHITE << std::setw(2) << std::setfill('0') << (i + 1) << " | " << sourceLines[i] << COL_RESET << "\n";
+    if (d.line >= 1 && !sourceLines.empty()) {
+        int idx = std::min(d.line - 1, (int)sourceLines.size() - 1);
+        const std::string& src = sourceLines[idx];
+        int w = (int)std::to_string(idx + 1).size();
+        std::string gutter(w, ' ');
 
-        if (i == idx) {
-            int caretLen = d.lexeme.empty() ? 1 : (int)d.lexeme.length();
-            std::cout << "   | " << std::string(std::max(0, d.column - 1), ' ') << color << std::string(caretLen, '^') << COL_RESET << "\n";
-        }
+        int lineLen  = (int)src.size();
+        int col0     = (d.line - 1 > idx) ? lineLen : std::max(0, d.column - 1);
+        int room     = std::max(1, lineLen - col0);
+        int caretLen = std::clamp(d.length, 1, room);
+
+        std::string pad;                                  // keep tabs as tabs so the caret lines up
+        for (int k = 0; k < col0; ++k)
+            pad += (k < lineLen && src[k] == '\t') ? '\t' : ' ';
+
+        std::cout << DIM << " " << gutter << " |" << RESET << "\n";
+        std::cout << DIM << " " << std::setfill(' ') << std::setw(w) << (idx + 1) << " | " << RESET << src << "\n";
+        std::cout << DIM << " " << gutter << " | " << RESET << pad << SEV << std::string(caretLen, '^') << RESET << "\n";
     }
 
-    std::cout << "\n";
     if (!info.hint.empty()) {
-        std::string hint = formatTemplate(info.hint, d.contexts);
-        std::cout << COL_GREEN << " Hint : " << hint << COL_RESET << "\n";
+        std::cout << DIM << "   = hint: " << RESET << formatTemplate(info.hint, d.contexts) << "\n";
     }
     std::cout << "\n";
 }
 
-void DiagnosticEngine::printStatsBox() {
-    int total = errorCount + warningCount;
-    std::ostringstream l1, l2, l3;
-    l1 << "Total Errors   : "   << std::setw(2) << std::setfill('0') << errorCount;
-    l2 << "Total Warnings : " << std::setw(2) << std::setfill('0') << warningCount;
-    l3 << "Total Messages : " << std::setw(2) << std::setfill('0') << total;
-
-    size_t width = std::max({l1.str().size(), l2.str().size(), l3.str().size()}) + 2;
-
-    auto padRow = [&](const std::string& text) {
-        std::cout << COL_ORANGE << "| " << text << std::string(width - text.size() - 1, ' ') << " |" << COL_RESET << "\n";
+void DiagnosticEngine::printSummary(const std::string& stage) {
+    auto plural = [](int n, const std::string& word) {
+        return std::to_string(n) + " " + word + (n == 1 ? "" : "s");
     };
+    const std::string RESET = sgr("0");
+    const std::string BOLD  = sgr("1");
 
-    std::cout << COL_ORANGE << "+" << std::string(width + 1, '-') << "+" << COL_RESET << "\n";
-    padRow(l1.str());
-    padRow(l2.str());
-    padRow(l3.str());
-    std::cout << COL_ORANGE << "+" << std::string(width + 1, '-') << "+" << COL_RESET << "\n";
+    if (errorCount > 0) {
+        std::string what = stage.empty() ? "error" : stage + " error";
+        std::cout << sgr("1;31") << "error" << RESET << BOLD
+                  << ": aborting due to " << plural(errorCount, what);
+        if (warningCount > 0) std::cout << "; " << plural(warningCount, "warning") << " emitted";
+        std::cout << RESET << "\n";
+    } else if (warningCount > 0) {
+        std::cout << sgr("1;33") << "warning" << RESET << BOLD
+                  << ": " << plural(warningCount, "warning") << " emitted" << RESET << "\n";
+    }
 }
 
-void DiagnosticEngine::printAll() {
+void DiagnosticEngine::printAll(const std::string& stage) {
     if (diagnostics.empty()) return;
+    std::stable_sort(diagnostics.begin(), diagnostics.end(),
+        [](const Diagnostic& a, const Diagnostic& b) {
+            if (a.line != b.line) return a.line < b.line;
+            return a.column < b.column;
+        });
     for (const auto& d : diagnostics) printOne(d);
-    printStatsBox();
+    printSummary(stage);
 }

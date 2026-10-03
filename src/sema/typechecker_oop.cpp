@@ -13,7 +13,7 @@ std::string TypeChecker::checkNewExpr(ASTNode* node) {
     auto* newExpr = static_cast<NewExprNode*>(node);
     auto classIt = classes.find(newExpr->className);
     if (classIt == classes.end()) {
-        diag.report("ERROR384", newExpr->line, 1, "", newExpr->className);
+        diag.report("ERROR384", newExpr->line, newExpr->column, newExpr->length, newExpr->className);
         
         newExpr->resolvedType = "unknown";
         return newExpr->resolvedType;
@@ -22,7 +22,7 @@ std::string TypeChecker::checkNewExpr(ASTNode* node) {
     std::vector<FunctionDefNode*> candidates = findConstructors(classIt->second);
     if (candidates.empty()) {
         if (!newExpr->arguments.empty()) {
-            diag.report("ERROR385", newExpr->line, 1, "", newExpr->className + "' has no constructor accepting " + std::to_string(newExpr->arguments.size()));
+            diag.report("ERROR385", newExpr->line, newExpr->column, newExpr->length, newExpr->className + "' has no constructor accepting " + std::to_string(newExpr->arguments.size()));
             
         }
         for (auto& arg : newExpr->arguments) analyzeExpression(arg.get());
@@ -32,7 +32,7 @@ std::string TypeChecker::checkNewExpr(ASTNode* node) {
 
     std::vector<std::string> argTypes;
     for (auto& arg : newExpr->arguments) argTypes.push_back(analyzeExpression(arg.get()));
-    FunctionDefNode* ctor = resolveMethodOverload(candidates, argTypes, newExpr->className, newExpr->line);
+    FunctionDefNode* ctor = resolveMethodOverload(candidates, argTypes, newExpr->className, newExpr->loc());
     if (!ctor) {
         newExpr->resolvedType = "unknown";
         return newExpr->resolvedType;
@@ -63,7 +63,7 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
     auto* call = static_cast<CallExprNode*>(node);
 
     if (currentClass.empty() || !classes.count(currentClass) || classes.at(currentClass)->parentName.empty()) {
-        diag.report("ERROR386", call->line, 1, "", "");
+        diag.report("ERROR386", call->line, call->column, call->length, "");
         
         call->resolvedType = "unknown";
         return call->resolvedType;
@@ -72,7 +72,7 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
 
     if (call->callee == "super") {
         if (!inConstructor) {
-            diag.report("ERROR387", call->line, 1, "", "");
+            diag.report("ERROR387", call->line, call->column, call->length, "");
             
             call->resolvedType = "unknown";
             return call->resolvedType;
@@ -80,7 +80,7 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
         std::vector<FunctionDefNode*> candidates = findConstructors(classes.at(parentName));
         if (candidates.empty()) {
             if (!call->arguments.empty()) {
-                diag.report("ERROR388", call->line, 1, "", currentClass);
+                diag.report("ERROR388", call->line, call->column, call->length, currentClass);
                 
             }
             for (auto& arg : call->arguments) analyzeExpression(arg.get());
@@ -90,7 +90,7 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
         }
         std::vector<std::string> argTypes;
         for (auto& arg : call->arguments) argTypes.push_back(analyzeExpression(arg.get()));
-        FunctionDefNode* ctor = resolveMethodOverload(candidates, argTypes, "super(...)", call->line);
+        FunctionDefNode* ctor = resolveMethodOverload(candidates, argTypes, "super(...)", call->loc());
         if (!ctor) { call->resolvedType = "unknown"; return call->resolvedType; }
         call->resolvedParamTypes.clear();
         for (auto& p : ctor->parameters) call->resolvedParamTypes.push_back(p.first);
@@ -101,17 +101,17 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
     std::string method = call->callee.substr(6);
     std::vector<FunctionDefNode*> candidates = getInheritedMethods(classes.at(parentName), method);
     if (candidates.empty()) {
-        diag.report("ERROR389", call->line, 1, "", method + "' found in parent chain of '" + currentClass);
+        diag.report("ERROR389", call->line, call->column, call->length, method + "' found in parent chain of '" + currentClass);
         
         call->resolvedType = "unknown";
         return call->resolvedType;
     }
     std::vector<std::string> argTypes;
     for (auto& arg : call->arguments) argTypes.push_back(analyzeExpression(arg.get()));
-    FunctionDefNode* methodDef = resolveMethodOverload(candidates, argTypes, method, call->line);
+    FunctionDefNode* methodDef = resolveMethodOverload(candidates, argTypes, method, call->loc());
     if (!methodDef) { call->resolvedType = "unknown"; return call->resolvedType; }
     if (methodDef->access == AccessSpecifier::PRIVATE) {
-        diag.report("ERROR390", call->line, 1, "", method);
+        diag.report("ERROR390", call->line, call->column, call->length, method);
         
         call->resolvedType = "unknown";
         return call->resolvedType;
@@ -125,7 +125,7 @@ std::string TypeChecker::checkSuperCall(ASTNode* node) {
 std::string TypeChecker::checkRefExpr(ASTNode* node) {
     auto* refNode = static_cast<RefExprNode*>(node);
     if (refNode->target->type != NodeType::IDENT && refNode->target->type != NodeType::INDEX_EXPR) {
-        diag.report("ERROR391", refNode->line, 1, "", "");
+        diag.report("ERROR391", refNode->line, refNode->column, refNode->length, "");
         
         refNode->resolvedType = "unknown";
         return refNode->resolvedType;
