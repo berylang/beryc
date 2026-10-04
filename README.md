@@ -48,6 +48,21 @@ Project pipeline follows :
 6. **DiagnosticEgine** : (`src/diagnostics/..`) It reports all warnings and/or errors in the file. (uses panic mode).
 7. **LLVMHelper** : (`src/llvm/..`) It consists of helper functions which are used in codegen to creating `.ll` file.
 
+## Install
+
+Download from https://berylang.in/download
+
+**Linux (x64)**
+    tar -xf bery-1.0.0-linux-x64.tar.xz
+    sudo mv bery-1.0.0 /opt/bery
+    echo 'export PATH="/opt/bery/bin:$PATH"' >> ~/.bashrc
+    source ~/.bashrc
+    bery --version
+
+**Windows (x64)**
+1. Unzip `bery-1.0.0-windows-x64.zip` to `C:\Bery`
+2. Add `C:\Bery\bin` to your PATH (Settings → System → About → Advanced system settings → Environment Variables)
+3. Open a new terminal and run `bery --version`
 
 ## Bery Team
 | Member | Role |

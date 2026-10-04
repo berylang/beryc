@@ -308,7 +308,7 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& outputStream) {
             std::string elementType = iterType.substr(6, iterType.size() - 7);
             std::string elementLlvmType = llvmType(elementType);
             llvm.__declareExternFn("i64", "bery_array_length", {"i8*"});
-            llvm.__declareExternFn("i8*", "bery_array_get", {"i8*", "i64*"});
+            llvm.__declareExternFn("i8*", "bery_array_get", {"i8*", "i64"});
             std::string arrReg = genExpression(forIn->iterableOrStart.get(), iterType, outputStream);
             std::string arrHold = llvm.__emitNamedAlloca("forin_arr", "i8*", outputStream);
             llvm.__emitStore("i8*", arrReg, arrHold, outputStream);
@@ -360,7 +360,7 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& outputStream) {
 
         } else if (iterType == "string") {
             llvm.__declareExternFn("i64", "bery_string_length", {"i8*"});
-            llvm.__declareExternFn("i8*","bery_string_char_at", {"i8*", "i64*"});
+            llvm.__declareExternFn("i8", "bery_string_char_at", {"i8*", "i64"});
 
             std::string strReg = genExpression(forIn->iterableOrStart.get(), "string", outputStream);
             std::string strHold = llvm.__emitNamedAlloca("forin_str", "i8*", outputStream);
@@ -414,7 +414,9 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& outputStream) {
 
             llvm.__emitLabel(bodyLabel, outputStream);
 
-            std::string gepReg = llvm.__emitTypedGEP(lt, arrPtr, {{idxType, currIdxReg}}, true, outputStream);
+            std::string arrayLLVMType = symbolTable.get(arrName).llvmAllocType;
+            std::string elementPtr = llvm.__emitBitcast(arrayLLVMType + "*", arrPtr, lt + "*", outputStream);
+            std::string gepReg = llvm.__emitTypedGEP(lt, elementPtr, {{idxType, currIdxReg}}, true, outputStream);
             std::string valReg = llvm.__emitLoad(lt, gepReg, outputStream);
             if (classLayouts.count(forIn->varType)) {
                 valReg = cloneClassInstance(forIn->varType, valReg, outputStream);

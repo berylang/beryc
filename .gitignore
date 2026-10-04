@@ -17,3 +17,4 @@ build-windows/
 dist/
 toolchain-linux/
 toolchain-windows/
+dist-toolchain/

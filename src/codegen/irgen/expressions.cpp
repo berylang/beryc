@@ -12,6 +12,12 @@
 #include <cstdint>
 #include <cstring>
 
+static std::string widenNumeric(LLVMHelper& llvm, const std::string& fromLT, const std::string& toLT, const std::string& reg, std::ostream& out) {
+    if (fromLT == "float" && toLT == "double") return llvm.__emitConvert("fpext", "float", reg, "double", out);
+    if (fromLT == "i32" && (toLT == "float" || toLT == "double")) return llvm.__emitConvert("sitofp", "i32", reg, toLT, out);
+    return reg;
+}
+
 static std::vector<std::string> splitDots(const std::string& s) {
     std::vector<std::string> parts;
     size_t start =0, pos;
@@ -464,7 +470,7 @@ std::string CodeGen::genTernaryExpr(ASTNode* node, std::ostream& outputStream) {
     std::string llvmRT = llvmType(tern->resolvedType);
     std::string resAlloc = llvm.__emitAlloca(llvmRT, outputStream);
     std::string condReg = genExpression(tern->condition.get(), "bool", outputStream);
-
+    
     int id = llvm.__uniqueId();
     std::string trueBlk = llvm.__labelWithId("tern_true", id);
     std::string falseBlk = llvm.__labelWithId("tern_false", id);
@@ -474,11 +480,13 @@ std::string CodeGen::genTernaryExpr(ASTNode* node, std::ostream& outputStream) {
 
     llvm.__emitLabel(trueBlk, outputStream);
     std::string tReg = genExpression(tern->trueExpr.get(), tern->resolvedType, outputStream);
+    tReg = widenNumeric(llvm, llvmType(tern->trueExpr->resolvedType), llvmRT, tReg, outputStream);
     llvm.__emitStore(llvmRT, tReg, resAlloc, outputStream);
     llvm.__emitBr(endBlk, outputStream);
 
     llvm.__emitLabel(falseBlk, outputStream);
     std::string fReg = genExpression(tern->falseExpr.get(), tern->resolvedType, outputStream);
+    fReg = widenNumeric(llvm, llvmType(tern->falseExpr->resolvedType), llvmRT, fReg, outputStream);
     llvm.__emitStore(llvmRT, fReg, resAlloc, outputStream);
     llvm.__emitBr(endBlk, outputStream);
 

@@ -23,7 +23,9 @@
 #include <fstream>
 #include <iomanip>
 #include <functional>
-
+static bool isVoidReturnType(const std::string& type) {
+    return type.empty() || type == "void";
+}
 CodeGen::CodeGen(ASTNode* root, SymbolTable& symbolTable)
    : root(root), symbolTable(symbolTable){}
 
@@ -31,7 +33,6 @@ void CodeGen::generate(const std::string& outputPath) {
     auto* program = static_cast<ProgramNode*>(root);
     
     std::ostringstream globalsOutputStream;
-    globalsOutputStream <<"declare double @llvm.pow.f64(double, double)\n";
     globalsOutputStream <<"declare void @bery_runtime_startup()\n";
     globalsOutputStream <<"declare void @bery_runtime_shutdown()\n";
     globalsOutputStream <<"declare void @bery_runtime_set_gc(i1)\n";
@@ -66,7 +67,6 @@ void CodeGen::generate(const std::string& outputPath) {
             for (auto& p : func->parameters) signature.parameterTypes.push_back(p.first);
             std::string mangledName = llvm.__mangleOverload(func->name, signature.parameterTypes);
             functions[mangledName] = signature;
-            genFuncDef(node.get(), mangledName, globalsOutputStream);
         }
         else if (node->type == NodeType::EXTERN_DECL) {
             auto* extern_node = static_cast<ExternDeclNode*>(node.get());
@@ -79,12 +79,19 @@ void CodeGen::generate(const std::string& outputPath) {
                 parameterLLVMTypes.push_back(llvmType(p.first));
             }
             functions[extern_node->name] = signature;
-            globalsOutputStream << llvm.__formatDeclare(llvmType(extern_node->returnType), extern_node->name, parameterLLVMTypes) <<"\n";
+            std::string returnLLVMType = isVoidReturnType(extern_node->returnType) ? "void" : llvmType(extern_node->returnType);
+            globalsOutputStream << llvm.__formatDeclare(returnLLVMType, extern_node->name, parameterLLVMTypes) << "\n";
         }
     }
 
     for (auto* n : orderedClasses) genClassDecl(n);
-
+    for (auto& node : program->globals) {
+        if (node->type != NodeType::FUNC_DEF) continue;
+        auto* func = static_cast<FunctionDefNode*>(node.get());
+        std::vector<std::string> parameterTypes;
+        for (auto& p : func->parameters) parameterTypes.push_back(p.first);
+        genFuncDef(node.get(), llvm.__mangleOverload(func->name, parameterTypes), globalsOutputStream);
+    }
     for (auto& node : program->globals) {
         if (node->type == NodeType::VAR_DECL) {
             auto* decl = static_cast<VarDeclNode*>(node.get());
@@ -214,3 +221,4 @@ void CodeGen::generate(const std::string& outputPath) {
     outputStream << llvm.__GLOBAL_STRINGS.str() <<"\n";
     outputStream << body.str();
 }
+
