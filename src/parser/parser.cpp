@@ -56,7 +56,13 @@ std::unique_ptr<ASTNode> Parser::parse() {
                 program->globals.push_back(parseExternDecl());
             } else if(check(TokenType::TOKEN_CLASS)) {
                 program->globals.push_back(parseClassDecl());
-            } else {
+            } else if (check(TokenType::TOKEN_CONST)) {
+                advance();
+                auto vars = parseVarDecl(AccessSpecifier::PUBLIC, true);
+                program->globals.insert(program->globals.end(), std::make_move_iterator(vars.begin()), std::make_move_iterator(vars.end()));
+            }
+            
+            else {
                 bool isConst = false;
                 if (check(TokenType::TOKEN_CONST)) { advance(); isConst = true; }
                 if (isTypeToken(peek().type) || isClassVarDecl()) {
