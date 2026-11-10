@@ -8,6 +8,8 @@
 - Diagnostics columns and carets are measured in characters.
 - New diagnostics ERROR118-ERROR121.
 
+[1.1.0]: https://github.com/berylang/beryc/releases/tag/v1.1.0
+
 ### Changed
 - `char` ABI changed from `i8` to `i32`.
 
@@ -20,4 +22,4 @@
 ### Known issues
 - Some bugs related to the IR generation are their.
 
-[1.0.0]: https://github.com/berylang/berc/releases/tag/v1.0.0
+[1.0.0]: https://github.com/berylang/beryc/releases/tag/v1.0.0
