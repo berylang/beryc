@@ -158,7 +158,7 @@ void SemanticAnalyzer::analyzeSwitchStmt(ASTNode* node) {
             if (c.value->type == NodeType::INT_LIT) {
                 literalKey = "i:" + std::to_string(static_cast<IntLitNode*>(c.value.get())->value);
             } else if (c.value->type == NodeType::CHAR_LIT) {
-                literalKey = "c:" + std::string(1, static_cast<CharLitNode*>(c.value.get())->value);
+                literalKey = "c:" + std::to_string(static_cast<CharLitNode*>(c.value.get())->value);
             }
 
             // One warning regrading this - if the same literal case value has already declared, report 

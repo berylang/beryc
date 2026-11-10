@@ -22,7 +22,7 @@
 #include "ast/expressions.h"
 #include "ast/functions.h"
 #include "ast/importer.h"
-
+#include "../common/utf8.h"
 
 std::vector<std::unique_ptr<ASTNode>> Parser::parseVarDecl(AccessSpecifier access,bool isConst) {
     std::vector<std::unique_ptr<ASTNode>> decls;
@@ -64,7 +64,7 @@ std::unique_ptr<ASTNode> Parser::parseLiteral() {
             return withLoc(std::make_unique<BoolLitNode>(false, t.line), t);
         case TokenType::TOKEN_CHAR_LIT:
             advance();
-            return withLoc(std::make_unique<CharLitNode>(t.lexeme[0], t.line), t);
+            return withLoc(std::make_unique<CharLitNode>(utf8::decodeAt(t.lexeme, 0).codePoint, t.line), t);
         case TokenType::TOKEN_STRING_LIT:
             advance();
             return withLoc(std::make_unique<StringLitNode>(t.lexeme, t.line), t);

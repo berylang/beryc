@@ -674,14 +674,14 @@ std::string CodeGen::genCastExpr(ASTNode* node, std::ostream& outputStream) {
         llvm.__declareExternFn("i8*", "bery_to_string_bigint", {"i64"});
         llvm.__declareExternFn("i8*", "bery_to_string_float", {"float"});
         llvm.__declareExternFn("i8*", "bery_to_string_double", {"double"});
-        llvm.__declareExternFn("i8*", "bery_to_string_char", {"i8"});
+        llvm.__declareExternFn("i8*", "bery_to_string_char", {"i32"});
         llvm.__declareExternFn("i8*", "bery_to_string_bool", {"i1"});
 
         if (sType == "int")    return llvm.__emitCall("i8*", "bery_to_string_int", {{"i32", srcReg}}, outputStream);
         if (sType == "bigint") return llvm.__emitCall("i8*", "bery_to_string_bigint", {{"i64", srcReg}}, outputStream);
         if (sType == "float")  return llvm.__emitCall("i8*", "bery_to_string_float", {{"float", srcReg}}, outputStream);
         if (sType == "double") return llvm.__emitCall("i8*", "bery_to_string_double", {{"double", srcReg}}, outputStream);
-        if (sType == "char")   return llvm.__emitCall("i8*", "bery_to_string_char", {{"i8", srcReg}}, outputStream);
+        if (sType == "char")   return llvm.__emitCall("i8*", "bery_to_string_char", {{"i32", srcReg}}, outputStream);
         if (sType == "bool")   return llvm.__emitCall("i8*", "bery_to_string_bool", {{"i1", srcReg}}, outputStream);
     }
 
@@ -697,8 +697,8 @@ std::string CodeGen::genCastExpr(ASTNode* node, std::ostream& outputStream) {
             return llvm.__emitConvert("fpext", "float", srcReg, "double", outputStream);
         return llvm.__emitConvert("fptrunc", "double", srcReg, "float", outputStream);
     }
-    int sW = (sType == "bigint") ? 64 : (sType == "int" ? 32 : (sType == "char" ? 8 : 1));
-    int tW = (tType == "bigint") ? 64 : (tType == "int" ? 32 : (tType == "char" ? 8 : 1));
+    int sW = (sType == "bigint") ? 64 : (sType == "int" ? 32 : (sType == "char" ? 32 : 1));
+    int tW = (tType == "bigint") ? 64 : (tType == "int" ? 32 : (tType == "char" ? 32 : 1));
     if (sW > tW)
         return llvm.__emitConvert("trunc", sLLVM, srcReg, tLLVM, outputStream);
     if (sW < tW)
@@ -741,11 +741,11 @@ std::string CodeGen::genIndexExpr(ASTNode* node, std::ostream& outputStream) {
     }
 
     if (arrBaseType == "string") {
-        llvm.__declareExternFn("i8", "bery_string_char_at", {"i8*", "i64"});
+        llvm.__declareExternFn("i32", "bery_string_char_at", {"i8*", "i64"});
         std::string str = llvm.__emitLoad("i8*", arrBaseReg, outputStream);
         std::string index = genExpression(idx->indices[0].get(), "int", outputStream);
         std::string index64 = llvm.__emitSext("i32", index, "i64", outputStream);
-        return llvm.__emitCall("i8", "bery_string_char_at", {{"i8*", str}, {"i64", index64}}, outputStream);
+        return llvm.__emitCall("i32", "bery_string_char_at", {{"i8*", str}, {"i64", index64}}, outputStream);
     }
     
     if (arrBaseType.size() > 6 && arrBaseType.substr(0, 6) == "array<") {

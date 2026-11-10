@@ -1,0 +1,18 @@
+run {
+    string s = "नमस्कार, わたしはなまえはヴィツタルです。 😀";
+    println(s);
+    println(s.len());
+    char c = 'é';
+    char e = '\u{1F600}';
+    println(c);
+    println(e);
+    println(s[0]);
+    println(s.substr(0, 3));
+    for (char ch in s) {
+        print(ch);
+        print('|');
+    }
+    println();
+    string नाम = "Vitthal";
+    println(नाम);
+}

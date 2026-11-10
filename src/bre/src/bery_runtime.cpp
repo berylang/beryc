@@ -5,8 +5,14 @@
 #include "../include/bery_native.h"
 #include <cstdlib>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
 BeryRuntimeState g_beryRuntime;
-
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
 void bery_runtime_startup() {
     g_beryRuntime.heapHead = nullptr;
     g_beryRuntime.rootStackHead = nullptr;

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include "../common/utf8.h"
 
 #include <cstdlib>
 #ifdef _WIN32
@@ -35,6 +36,7 @@ void DiagnosticEngine::splitSource(const std::string& source) {
     std::string line;
     while (std::getline(ss, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (sourceLines.empty() && line.compare(0, 3, "\xEF\xBB\xBF") == 0) line.erase(0, 3);
         sourceLines.push_back(line);
     }
 }
@@ -88,6 +90,20 @@ void DiagnosticEngine::report(const std::string& code, int line, int column, int
 bool DiagnosticEngine::hasErrors() const { return errorCount > 0; }
 bool DiagnosticEngine::hasWarnings() const { return warningCount > 0;}
 
+static std::string buildCaretPad(const std::string& src, int col0) {
+    std::string pad;
+    size_t pos = 0;
+    for (int k = 0; k < col0; ++k) {
+        if (pos < src.size()) {
+            pad += (src[pos] == '\t') ? '\t' : ' ';
+            pos += utf8::decodeAt(src, pos).length;
+        } else {
+            pad += ' ';
+        }
+    }
+    return pad;
+}
+
 void DiagnosticEngine::printOne(const Diagnostic& d) {
     const auto& info = DiagnosticRegistry.at(d.code);
     const bool isErr = (d.severity == Severity::ERROR);
@@ -109,14 +125,12 @@ void DiagnosticEngine::printOne(const Diagnostic& d) {
         int w = (int)std::to_string(idx + 1).size();
         std::string gutter(w, ' ');
 
-        int lineLen  = (int)src.size();
-        int col0     = (d.line - 1 > idx) ? lineLen : std::max(0, d.column - 1);
-        int room     = std::max(1, lineLen - col0);
+        int lineLen = (int)utf8::countCodePoints(src);
+        int col0 = (d.line - 1 > idx) ? lineLen : std::max(0, d.column - 1);
+        int room = std::max(1, lineLen - col0);
         int caretLen = std::clamp(d.length, 1, room);
 
-        std::string pad;                                  // keep tabs as tabs so the caret lines up
-        for (int k = 0; k < col0; ++k)
-            pad += (k < lineLen && src[k] == '\t') ? '\t' : ' ';
+        std::string pad = buildCaretPad(src, col0);
 
         std::cout << DIM << " " << gutter << " |" << RESET << "\n";
         std::cout << DIM << " " << std::setfill(' ') << std::setw(w) << (idx + 1) << " | " << RESET << src << "\n";

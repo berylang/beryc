@@ -1,5 +1,7 @@
 #include "../include/bery_native.h"
 #include "../include/bery_string.h"
+#include <cctype>
+#include "../../common/utf8.h"
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -63,7 +65,10 @@ void bery_print_double(double value) {
 void bery_print_bool(bool value){bufferWriteStr(value ? "true" : "false");}
 
 
-void bery_print_char(char value) {bufferWrite(&value, 1);}
+void bery_print_char(int32_t value) {
+    std::string encoded = utf8::encode(static_cast<uint32_t>(value));
+    bufferWrite(encoded.data(), encoded.size());
+}
 BeryString* bery_input(BeryString* prompt) {
     if (prompt) { 
         bufferWrite(prompt->data, prompt->length); 
@@ -151,14 +156,27 @@ bool bery_input_bool(BeryString* prompt) {
     return val != 0;
 }
 
-char bery_input_char(BeryString* prompt) {
-    if (prompt) { 
-        bufferWrite(prompt->data, prompt->length); 
-        bery_output_flush(); 
+static int32_t readCodePointFromStdin() {
+    int c = getchar();
+    while (c != EOF && isspace(c)) c = getchar();
+    if (c == EOF) return 0;
+
+    char buffer[4] = {static_cast<char>(c), 0, 0, 0};
+    size_t need = utf8::sequenceLength(static_cast<unsigned char>(c));
+    for (size_t i = 1; i < need; ++i) {
+        int next = getchar();
+        if (next == EOF) return static_cast<int32_t>(utf8::REPLACEMENT_CHAR);
+        buffer[i] = static_cast<char>(next);
     }
-    char val = 0;
-    scanf(" %c", &val);
-    return val;
+    return static_cast<int32_t>(utf8::decodeAt(buffer, need, 0).codePoint);
+}
+
+int32_t bery_input_char(BeryString* prompt) {
+    if (prompt) {
+        bufferWrite(prompt->data, prompt->length);
+        bery_output_flush();
+    }
+    return readCodePointFromStdin();
 }
 
 
@@ -177,7 +195,7 @@ void __bery_print_double(double v)      {
 void __bery_print_bool(bool v)          { 
     bery_print_bool(v); 
 }
-void __bery_print_char(char v)          { 
+void __bery_print_char(int32_t v) { 
     bery_print_char(v); 
 }
 void __bery_print_string(BeryString* v) {
@@ -195,5 +213,5 @@ int64_t  __bery_input_bigint(BeryString* p) { return bery_input_bigint(p); }
 float    __bery_input_float(BeryString* p)  { return bery_input_float(p); }
 double   __bery_input_double(BeryString* p) { return bery_input_double(p); }
 bool     __bery_input_bool(BeryString* p)   { return bery_input_bool(p); }
-char     __bery_input_char(BeryString* p)   { return bery_input_char(p); }
+int32_t  __bery_input_char(BeryString* p)   { return bery_input_char(p); }
 BeryString* __bery_input_string(BeryString* p) { return bery_input(p); }
