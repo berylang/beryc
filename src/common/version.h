@@ -1,6 +1,6 @@
 #pragma once
 
 #define BERY_VERSION_MAJOR 1
-#define BERY_VERSION_MINOR 0
+#define BERY_VERSION_MINOR 1
 #define BERY_VERSION_PATCH 0
-#define BERY_VERSION "1.0.0"
+#define BERY_VERSION "1.1.0"
