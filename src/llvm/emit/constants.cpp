@@ -67,13 +67,13 @@ void LLVMHelper::__emitGlobalVar(const std::string& name,
     const std::string& llvmType, const std::string& initVal, 
     std::ostream& outputStream) {
 
-        outputStream <<"@"<<name<<" = global "<<llvmType<<" "<< initVal <<"\n";
+        outputStream <<"@"<<__safeName(name)<<" = global "<<llvmType<<" "<< initVal <<"\n";
 
     }
 
 std::string LLVMHelper::__globalRef(const std::string& name) 
 
-    {return "@" + name;}
+    {return "@" + __safeName(name);}
 
 std::string LLVMHelper::__globalRef(const std::string& name, const std::string& suffix) 
-    {return "@" + name + suffix;}
+    {return "@" + __safeName(name) + suffix;}

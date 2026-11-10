@@ -2,6 +2,7 @@
 #include "../include/bery_alloc.h"
 #include "../include/bery_type_registry.h"
 #include "../include/bery_object.h"
+#include "../../common/utf8.h"
 #include <cstring>
 #include <cstdlib>
 #include <string>
@@ -54,15 +55,18 @@ bool bery_string_equals(BeryString* a, BeryString* b) {
 }
 
 size_t bery_string_length(BeryString* a) {
-    return a->length;
+    return utf8::countCodePoints(a->data, a->length);
 }
 
 BeryString* bery_string_substring(BeryString* str, size_t start, size_t end) {
-    size_t newLen = end - start;
+    size_t startByte = utf8::byteOffsetOf(str->data, str->length, start);
+    size_t endByte = utf8::byteOffsetOf(str->data, str->length, end);
+    if (endByte < startByte) endByte = startByte;
+    size_t newLen = endByte - startByte;
     BeryString* s = static_cast<BeryString*>(bery_alloc(sizeof(BeryString), g_beryStringTypeId));
     s->length = newLen;
     s->data = static_cast<char*>(malloc(newLen + 1));
-    memcpy(s->data, str->data + start, newLen);
+    memcpy(s->data, str->data + startByte, newLen);
     s->data[newLen] = '\0';
     return s;
 }
@@ -86,15 +90,16 @@ BeryString* bery_to_string_double(double value) {
     return bery_string_from_literal(s.c_str());
 }
 
-BeryString* bery_to_string_char(char value) {
-    char str[2] = { value, '\0' };
-    return bery_string_from_literal(str);
+BeryString* bery_to_string_char(int32_t value) {
+    std::string encoded = utf8::encode(static_cast<uint32_t>(value));
+    return bery_string_from_literal(encoded.c_str());
 }
 
 BeryString* bery_to_string_bool(bool value) {
     return bery_string_from_literal(value ? "true" : "false");
 }
-char bery_string_char_at(BeryString* str, size_t index) {
-    return str->data[index];
-    
+int32_t bery_string_char_at(BeryString* str, size_t index) {
+    size_t pos = utf8::byteOffsetOf(str->data, str->length, index);
+    if (pos >= str->length) return 0;
+    return static_cast<int32_t>(utf8::decodeAt(str->data, str->length, pos).codePoint);
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "node.h"
 #include <string>
-
+#include <cstdint>
 
 
 struct IntLitNode : public ASTNode {
@@ -40,12 +40,12 @@ struct IdentNode : public ASTNode {
 };
 
 struct CharLitNode : public ASTNode {
-    char value;
-    CharLitNode(char v, int ln) : value(v) {
+    uint32_t value;
+    CharLitNode(uint32_t v, int ln) : value(v) {
         type = NodeType::CHAR_LIT;
         line = ln;
     }
-};
+};  
 
 struct StringLitNode : public ASTNode {
     std::string value;

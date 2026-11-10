@@ -1,0 +1,33 @@
+func 长度(string 文) -> int {
+    return 文.len();
+}
+
+run {
+    string 马 = "नमस्कार";
+    string 日 = "日本語";
+    string 笑 = "\u{1F600}";
+    string 混 = "aé日😀";
+
+    println(长度(马));
+    println(长度(日));
+    println(长度(笑));
+    println(长度(混));
+
+    println(混[0]);
+    println(混[1]);
+    println(混[2]);
+    println(混[3]);
+
+    println(混.substr(1, 3));
+
+    char 字 = '\u{65E5}';
+    println(字);
+
+    for (char c in 混) {
+        print(c);
+        print('|');
+    }
+    println();
+
+    println("A\u{E9}\u{4E16}");
+}

@@ -65,7 +65,7 @@ void CodeGen::genStatement(ASTNode* statement, std::ostream& outputStream) {
             std::string mangledName = enumDecl->name + "." + val;
             std::string lt = "i32";
             std::string safeRegName = enumDecl->name + "_" + val; 
-            std::string memReg = "%" + safeRegName + "_" + std::to_string(llvm.__uniqueId());
+            std::string memReg = "%" + llvm.__safeName(safeRegName) + "_" + std::to_string(llvm.__uniqueId());
             
             Symbol sym;
             sym.symbolType = SymbolType::VARIABLE;

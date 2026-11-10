@@ -5,7 +5,7 @@
 
 
 std::string LLVMHelper::__structTypeName(const std::string& className) {
-    return "%class." + className;
+    return "%class." + __safeName(className);
 }
 
 void LLVMHelper::__emitStructType(const std::string& structTypeName, const std::vector<std::string>&  fieldLLVMTypes) {
@@ -28,19 +28,19 @@ void LLVMHelper::__emitClassNameGlobal(const std::string& className) {
 
     int len = (int) className.size() + 1;
 
-    __GLOBAL_STRINGS <<"@.classname." << className <<" = private unnamed_addr constant [" << len <<" x i8] c\"" << escape <<"\"\n";
-    __GLOBAL_STRINGS <<"@" << className <<"_typeid = global i32 0\n";
+    __GLOBAL_STRINGS <<"@.classname."<< __safeName(className) <<" = private unnamed_addr constant [" << len <<" x i8] c\"" << escape <<"\"\n";
+    __GLOBAL_STRINGS <<"@" << __safeName(className) <<"_typeid = global i32 0\n";
 }
 
 
 std::string LLVMHelper::__emitClassNameGEP(const std::string& className, int nameLen) {
     return "getelementptr (["+std::to_string(nameLen) + " x i8], [" +std::to_string(nameLen)+
-        " x i8]* @.classname." +className +", i32 0, i32 0)";
+        " x i8]* @.classname." +__safeName(className) +", i32 0, i32 0)";
 }
 
 std::string LLVMHelper::__emitDestructorBitcast(const std::string& structType, const std::string& className, std::ostream& outputStream) {
     std::string reg = __uniqueReg();
-    outputStream <<"   "<< reg <<" = bitcast void (" << structType <<"*)* @" << className<<"$destructor to i8*\n";
+    outputStream <<"   "<< reg <<" = bitcast void (" << structType <<"*)* @" << __safeName(className)<<"$destructor to i8*\n";
     return reg;
 }
 
@@ -51,7 +51,7 @@ std::string LLVMHelper::__emitTypeRegisterCall(const std::string& className, int
     std::string idRegister = __uniqueReg();
     outputStream<<"    " << idRegister <<" = call i32 @bery_type_register(i8* "<< __emitClassNameGEP(className, nameLen)
     <<", i64 " << instanceSize <<", i8* null, i64 0, " << destructorArg <<")\n";
-    outputStream <<"   store i32 " << idRegister <<", i32* @" << className <<"_typeid\n";
+    outputStream <<"   store i32 " << idRegister <<", i32* @" << __safeName(className)<<"_typeid\n";
     return idRegister;
 }
 
@@ -75,6 +75,8 @@ std::string LLVMHelper::__mangleOverload(const std::string& base, const std::vec
             result += "." + beryType;
         } else if (beryType == "string") {
             result += ".str";
+        } else if (beryType == "char") {
+            result += ".char";
         } else if (beryType.size() > 6 && beryType.substr(0, 6) == "array<") {
             result += ".arr";
         } else {

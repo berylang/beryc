@@ -2,7 +2,7 @@
 
 void LLVMHelper::__emitFunctionHeader(const std::string& returnType, const std::string& name, 
     const std::vector<std::pair<std::string, std::string>>& params, std::ostream& outputStream) {
-    outputStream <<"\ndefine " << returnType <<" @" << name <<"(";
+    outputStream <<"\ndefine " << returnType <<" @" << __safeName(name) <<"(";
     for(size_t i = 0; i < params.size(); ++i) {
         outputStream << params[i].first <<" " << params[i].second;
         if (i+1 < params.size()) 
@@ -31,5 +31,5 @@ void LLVMHelper::__emitDefaultReturn(const std::string& llvmType, std::ostream& 
 }
 
 std::string LLVMHelper::__arguementRegName(const std::string& paramName) {
-    return "%" + paramName + "_arg";
+    return "%" + __safeName(paramName) + "_arg";
 }

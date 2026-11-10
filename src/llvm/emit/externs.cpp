@@ -9,7 +9,7 @@ void LLVMHelper::__declareExtern(const std::string& declareText, const std::stri
 }
 
 std::string LLVMHelper::__formatDeclare(const std::string& returnType, const std::string& functionName, const std::vector<std::string>& parameterTypes) {
-    std::string decl = "declare " + returnType + " @" + functionName + "(";
+    std::string decl = "declare " + returnType + " @" + __safeName(functionName) + "(";
     for (size_t i = 0; i < parameterTypes.size(); ++i) {
         decl += parameterTypes[i];
         if (i + 1 < parameterTypes.size()) decl += ", ";

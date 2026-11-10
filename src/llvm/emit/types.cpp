@@ -11,7 +11,7 @@ std::string LLVMHelper::__llvmType(const std::string& beryType) {
     if (beryType == "float") return "float";
     if (beryType == "double") return "double";
 
-    if (beryType == "char") return "i8";
+    if (beryType == "char") return "i32";
     if(beryType  == "string") return "i8*";
 
     if(beryType.size() > 6  && beryType.substr(0, 6) == "array<")

@@ -32,6 +32,7 @@ public:
     int __uniqueId();
     std::string __uniqueLabel(const std::string& prefix);
     std::string __namedReg(const std::string& prefix);
+    std::string __safeName(const std::string& name);
     std::string __labelWithId(const std::string& prefix, int id);
     std::string __indexedLabel(const std::string& prefix, int index, int id);
 

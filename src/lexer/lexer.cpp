@@ -12,6 +12,7 @@
 #include "lexer.h"
 #include <unordered_map>
 #include <stdexcept>
+#include "../common/utf8.h"
 #include <iostream>
 
 
@@ -79,6 +80,7 @@ Lexer::Lexer(const std::string& source, DiagnosticEngine& diag)
     : source(source), current(0), line(1), col(1), startColumn(1), startLine(1), startOffset(0), diag(diag) {}
 
 std::vector<Token> Lexer::tokanize() {
+    validateSource();
     while (!isAtEnd()) {
         skipWhitespaces();
         if (!isAtEnd()) scanToken();
@@ -93,6 +95,10 @@ void Lexer::scanToken() {
     startColumn = col;
     startLine = line;
     startOffset = current;
+    if (isNonAscii(peek())) {
+        scanNonAscii();
+        return;
+    }
     char c = advance();
 
     if (isAlpha(c)) {
@@ -459,58 +465,53 @@ void Lexer::scanNumber() {
 // @todo : Enhance it later for Errors
 void Lexer::scanCharLit() {
 
-    /*
-    
-        Single character datatype currently only finds
-        ASCII values.
-
-        @todo : Changed it to the UTF-8 encoding.
-    
-    */
     if (peek() == '\'') {
         advance();
         diag.report("ERROR100", startLine, startColumn, spanLen());
         return;
     }
 
-    char value = 0;
+    uint32_t value = 0;
 
-    if (peek() == '\\') { 
-        advance(); 
+    if (peek() == '\\') {
+        int escLine = line, escCol = col, escOffset = current;
+        advance();
         if (isAtEnd() || peek() == '\'') {
             diag.report("ERROR102", startLine, startColumn, spanLen());
             return;
         }
 
         char es = advance();
-        switch (es) {
-
-            // supported escape sequences - \n, \t, \r, \\, \0, \" and \'
-            // change it for UTF-8 encoding.
-            case 'n':  value = '\n'; break;
-            case 't':  value = '\t'; break;
-            case 'r':  value = '\r'; break;
-            case '\\': value = '\\'; break;
-            case '0':  value = '\0'; break;
-            case '"':  value = '\"'; break;
-            case '\'': value = '\''; break;
-            default:
-                diag.report("ERROR103", startLine, startColumn, spanLen(), std::string(1, es));
-                return;
+        if (es == 'u') {
+            if (!scanUnicodeEscape(value, escLine, escCol, escOffset)) return;
+        } else {
+            switch (es) {
+                case 'n':  value = '\n'; break;
+                case 't':  value = '\t'; break;
+                case 'r':  value = '\r'; break;
+                case '\\': value = '\\'; break;
+                case '0':  value = 0; break;
+                case '"':  value = '\"'; break;
+                case '\'': value = '\''; break;
+                default:
+                    diag.report("ERROR103", startLine, startColumn, spanLen(), std::string(1, es));
+                    return;
+            }
         }
-    } 
-    
+    }
+
     else {
         if (peek() == '\n' || peek() == '\r') {
             diag.report("ERROR101", startLine, startColumn, spanLen());
             return;
         }
-        value = advance();
+        value = utf8::decodeAt(source, current).codePoint;
+        advanceCodePoint();
     }
 
-    if (!isAtEnd() && peek() == '\'') {        
-        advance(); 
-        emit(TokenType::TOKEN_CHAR_LIT, std::string(1,value));
+    if (!isAtEnd() && peek() == '\'') {
+        advance();
+        emit(TokenType::TOKEN_CHAR_LIT, utf8::encode(value));
         return;
     }
 
@@ -519,23 +520,26 @@ void Lexer::scanCharLit() {
         advance();
     }
     if (!isAtEnd() && peek() == '\'') {
-        advance(); 
+        advance();
         foundClosingQuote = true;
     }
     if (foundClosingQuote) diag.report("ERROR104", startLine, startColumn, spanLen());
     else                   diag.report("ERROR105", startLine, startColumn, spanLen());
 }
-
-
 void Lexer::scanStringLit() {
     std::string value = "";
     while (!isAtEnd() && peek() != '"') {
         if (peek() == '\\') {
-            int escLine = line, escCol = col;
+            int escLine = line, escCol = col, escOffset = current;
             advance();
             if (isAtEnd()) return;
 
             char es = advance();
+            if (es == 'u') {
+                uint32_t codePoint = 0;
+                if (scanUnicodeEscape(codePoint, escLine, escCol, escOffset)) utf8::encode(codePoint, value);
+                continue;
+            }
             switch (es) {
                 case 'n':  value += '\n'; break;
                 case 't':  value += '\t'; break;
@@ -553,21 +557,99 @@ void Lexer::scanStringLit() {
             value += advance();
         }
     }
-   if (isAtEnd()) {
+    if (isAtEnd()) {
         diag.report("ERROR107", startLine, startColumn, spanLen());
         return;
     }
 
-    advance(); 
+    advance();
     emit(TokenType::TOKEN_STRING_LIT, value);
 }
+
 void Lexer::scanIdentifierOrKeyword() {
-    int start = current - 1;
-    while (!isAtEnd() && isAlphaNumeric(peek())) advance();
+    int start = startOffset;
+    while (!isAtEnd() && isIdentifierPartHere()) advanceCodePoint();
     std::string lexeme = source.substr(start, current - start);
     emit(checkKeyword(lexeme), lexeme);
 }
 
+int Lexer::spanLen() const {
+    return static_cast<int>(utf8::countCodePoints(source, startOffset, current));
+}
+
+bool Lexer::isNonAscii(char c) {
+    return static_cast<unsigned char>(c) >= 0x80;
+}
+
+void Lexer::advanceCodePoint() {
+    size_t length = utf8::decodeAt(source, current).length;
+    for (size_t i = 0; i < length; ++i) advance();
+}
+
+bool Lexer::isIdentifierPartHere() {
+    char c = peek();
+    if (!isNonAscii(c)) return isAlphaNumeric(c);
+    utf8::Decoded d = utf8::decodeAt(source, current);
+    return d.valid && utf8::isIdentifierCodePoint(d.codePoint);
+}
+
+void Lexer::scanNonAscii() {
+    utf8::Decoded d = utf8::decodeAt(source, current);
+    if (d.valid && utf8::isIdentifierCodePoint(d.codePoint)) {
+        scanIdentifierOrKeyword();
+        return;
+    }
+    std::string bad = source.substr(current, d.length);
+    advanceCodePoint();
+    if (d.valid) diag.report("ERROR121", startLine, startColumn, 1, bad);
+}
+
+void Lexer::validateSource() {
+    if (source.size() >= 3 && source.compare(0, 3, "\xEF\xBB\xBF") == 0) current = 3;
+
+    int ln = 1;
+    int column = 1;
+    size_t pos = current;
+    while (pos < source.size()) {
+        utf8::Decoded d = utf8::decodeAt(source, pos);
+        if (!d.valid) {
+            diag.report("ERROR118", ln, column, 1);
+            return;
+        }
+        if (source[pos] == '\n') {
+            ln++;
+            column = 1;
+        } else {
+            column++;
+        }
+        pos += d.length;
+    }
+}
+bool Lexer::scanUnicodeEscape(uint32_t& outValue, int escLine, int escCol, int escOffset) {
+    if (peek() != '{') {
+        diag.report("ERROR119", escLine, escCol, current - escOffset);
+        return false;
+    }
+    advance();
+    int digitsStart = current;
+    while (!isAtEnd() && isHexDigit(peek())) advance();
+    int digitCount = current - digitsStart;
+
+    if (digitCount == 0 || digitCount > 6 || isAtEnd() || peek() != '}') {
+        diag.report("ERROR119", escLine, escCol, current - escOffset);
+        return false;
+    }
+    std::string hex = source.substr(digitsStart, digitCount);
+    advance();
+
+    uint32_t cp = static_cast<uint32_t>(std::stoul(hex, nullptr, 16));
+    if (!utf8::isValidScalar(cp)) {
+        diag.report("ERROR120", escLine, escCol, current - escOffset, hex);
+        return false;
+    }
+    outValue = cp;
+    return true;
+}
 
 void Lexer::skipWhitespaces() {
     while (!isAtEnd()) {
@@ -625,7 +707,7 @@ bool Lexer::isHexDigit(char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c
 char Lexer::advance() {
     char c = source[current++];
     if (c == '\n') bumpLine();
-    else col++;
+    else if (!utf8::isContinuation(static_cast<unsigned char>(c))) col++;
     return c;
 }
 char Lexer::peek() {return source[current];}

@@ -26,10 +26,10 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR100", { Severity::ERROR, "Empty char literal", "put a character between the quotes" } },
     { "ERROR101", { Severity::ERROR, "Newline in char literal", "char literals cannot span multiple lines" } },
     { "ERROR102", { Severity::ERROR, "Incomplete escape sequence", "finish the escape sequence, e.g. '\\\\n'" } },
-    { "ERROR103", { Severity::ERROR, "Invalid escape sequence '\\{}'", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\'" } },
-    { "ERROR104", { Severity::ERROR, "Multi-character char literal", "char literals must hold exactly one character" } },
+    { "ERROR103", { Severity::ERROR, "Invalid escape sequence '\\{}'", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\' \\u{XXXX}" } },
+    { "ERROR104", { Severity::ERROR, "Multi-character char literal", "a char holds one Unicode code point; use a string for combined characters" } },
     { "ERROR105", { Severity::ERROR, "Unclosed char literal", "add a closing '" } },
-    { "ERROR106", { Severity::ERROR, "Invalid escape sequence '\\{}' in string", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\'" } },
+    { "ERROR106", { Severity::ERROR, "Invalid escape sequence '\\{}' in string", "use one of: \\n \\t \\r \\\\ \\0 \\\" \\' \\u{XXXX}" } },
     { "ERROR107", { Severity::ERROR, "Unclosed string literal", "add a closing \"" } },
     { "ERROR108", { Severity::ERROR, "Unclosed comment", "add '!--' to close the comment block" } },
     { "ERROR110", { Severity::ERROR, "Hex literal '{}' has no digits after '0x'", "add at least one hex digit (0-9, a-f)" } },
@@ -40,7 +40,10 @@ static const std::unordered_map<std::string, DiagnosticInfo> DiagnosticRegistry 
     { "ERROR115", { Severity::ERROR, "Invalid digit '{}' in octal literal", "octal digits must be 0-7" } },
     { "ERROR116", { Severity::ERROR, "Malformed exponent '{}' in numeric literal", "add digits after 'e', e.g. '1e10' or '1e-3'" } },
     { "ERROR117", { Severity::ERROR, "Integer literal '{}' is out of range", "use a smaller value or a wider type" } },
-
+    { "ERROR118", { Severity::ERROR, "Invalid UTF-8 byte sequence", "save the source file as UTF-8" } },
+    { "ERROR119", { Severity::ERROR, "Malformed unicode escape", "use \\u{XXXX} with 1 to 6 hex digits, e.g. \\u{1F600}" } },
+    { "ERROR120", { Severity::ERROR, "Invalid Unicode code point U+{}", "code points must be at most 10FFFF and outside the surrogate range D800-DFFF" } },
+    { "ERROR121", { Severity::ERROR, "Unexpected character '{}'", "this character cannot be used in an identifier or as an operator" } },
 
     // @PARSER ERRORS and WARNINGS
     { "ERROR201", { Severity::ERROR, "Expected ';' after {}", "put ';' symbol right after {}" } },

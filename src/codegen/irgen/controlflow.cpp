@@ -224,7 +224,7 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& outputStream) {
             lt = "double";
             isFloat = true;
         } else if (forIn->varType == "char") {
-            lt = "i8";
+            lt = "i32";
         } else if (forIn->varType == "bigint") {
             lt = "i64";
         }
@@ -360,7 +360,7 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& outputStream) {
 
         } else if (iterType == "string") {
             llvm.__declareExternFn("i64", "bery_string_length", {"i8*"});
-            llvm.__declareExternFn("i8", "bery_string_char_at", {"i8*", "i64"});
+            llvm.__declareExternFn("i32", "bery_string_char_at", {"i8*", "i64"});
 
             std::string strReg = genExpression(forIn->iterableOrStart.get(), "string", outputStream);
             std::string strHold = llvm.__emitNamedAlloca("forin_str", "i8*", outputStream);
@@ -380,8 +380,8 @@ void CodeGen::genForInStmt(ASTNode* node, std::ostream& outputStream) {
             std::string strLoadReg = llvm.__emitLoad("i8*", strHold, outputStream);
             std::string indexExt = llvm.__emitSext("i32", currIdxReg, "i64", outputStream);
 
-            std::string charReg = llvm.__emitCall("i8", "bery_string_char_at", {{"i8*", strLoadReg}, {"i64", indexExt}}, outputStream);
-            llvm.__emitStore("i8", charReg, varReg, outputStream);
+            std::string charReg = llvm.__emitCall("i32", "bery_string_char_at", {{"i8*", strLoadReg}, {"i64", indexExt}}, outputStream);
+            llvm.__emitStore("i32", charReg, varReg, outputStream);
 
             breakTracker.push_back(endLabel);
             continueTracker.push_back(updateLabel);

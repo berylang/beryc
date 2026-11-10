@@ -8,10 +8,10 @@ std::string LLVMHelper::__emitCall(const std::string& returnType, const std::str
 
     if (returnType != "void") {
         reg = __uniqueReg();
-        outputStream <<"   " << reg<<" = call "<< returnType <<" @"<< functionName <<"("; 
+        outputStream <<"   " << reg<<" = call "<< returnType <<" @"<< __safeName(functionName) <<"(";
     }
     else {
-        outputStream <<"   call " << returnType <<" @" << functionName<<"(";
+        outputStream <<"   call " << returnType <<" @" << __safeName(functionName)<<"(";
 
     }
     for (size_t i = 0; i < arguments.size(); ++i) {

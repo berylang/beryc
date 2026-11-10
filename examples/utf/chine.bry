@@ -1,0 +1,41 @@
+func 加法(int 甲, int 乙) -> int {
+    return 甲 + 乙;
+}
+
+func 乘法(int 甲, int 乙) -> int {
+    return 甲 * 乙;
+}
+
+func 问候(string 名字) -> string {
+    return "你好，" + 名字 + "！";
+}
+
+func 最大值(int 甲, int 乙) -> int {
+    if (甲 > 乙) {
+        return 甲;
+    }
+    return 乙;
+}
+
+run {
+    string 名字 = "世界";
+    println(问候(名字));
+
+    println(加法(10, 20));
+    println(乘法(6, 7));
+    println(最大值(3, 9));
+
+    char 字 = '中';
+    println(字);
+
+    string 诗 = "你好，世界";
+    println(诗.len());
+    println(诗[0]);
+    println(诗.substr(0, 2));
+
+    for (char 子 in 诗) {
+        print(子);
+        print('|');
+    }
+    println();
+}
